@@ -58,6 +58,20 @@ npm run dev
 
 真实模式需要同时满足：百度 Web 服务 AK 已开通地理编码、地点检索和步行路线权限；浏览器端 AK 已将 `localhost` 或实际访问域名加入域名白名单。`BAIDU_MAP_SECRET` 只在后端使用，不会返回给浏览器。
 
+### 脱敏环境变量
+
+`.env.example` 只包含空值占位符，不要把真实 AK、Secret 或导出报告提交到版本库。
+
+| 变量 | 用途 | 建议值 |
+| --- | --- | --- |
+| `BAIDU_MAP_MODE` | 后端提供方 | `mock` 用于离线，`real` 用于真实 API |
+| `BAIDU_MAP_AK` / `BAIDU_MAP_SECRET` | 服务器端地图凭证 | 仅放在本地 `.env` 或密钥管理器 |
+| `VITE_BAIDU_MAP_AK` | 浏览器底图 AK | 限制域名白名单，不与 Secret 混用 |
+| `LIFE_CIRCLE_DATABASE_PATH` | SQLite 数据库路径 | 开发可指向 `/tmp` 独立文件 |
+| `WALKING_*` | 步行缓存、并发、QPS、超时与重试 | 真实 API 按配额调整，离线模式保持默认值 |
+
+离线快照标记为合成样例，不代表当前真实 POI。如需更新快照，只能在不输出凭证的本地环境执行抓取脚本。
+
 ## V2 报告契约兼容说明
 
 公开分析流程仍保持 `POST /api/analyze`、`GET /api/analyze/{task_id}` 和 `GET /api/report/{task_id}`，原有 `source`、`quality`、`pois`、`zones`、`categories` 等字段继续保留。V2 报告新增以下稳定字段：
@@ -90,6 +104,26 @@ npm run dev
 真实地图模式优先使用提供方的批量步行矩阵能力；提供方不支持批量时，系统按 `WALKING_MAX_CONCURRENCY` 和 `WALKING_QPS` 执行受控并发。超时、最大重试次数、指数退避基数和缓存有效期分别由 `WALKING_TIMEOUT_SECONDS`、`WALKING_MAX_RETRIES`、`WALKING_RETRY_BASE_SECONDS` 和 `WALKING_CACHE_TTL_SECONDS` 配置。部分坐标对失败不会使整份报告失败，但报告会标记为部分结果，受影响类别不会纳入综合评分。
 
 V2 报告的 `execution.metrics` 记录步行提供方调用量、真实 API 调用量、批量调用量、缓存命中/未命中/过期量、重试、限流、超时、格式错误、最终失败、降级结果和步行计算耗时；`data_quality` 同时披露缓存、限流、超时和格式错误事件。
+
+## 技术规则与导出
+
+- 地图 API 分为设施发现、直线距离预筛、步行路线和报告组装四个阶段。多关键词按词分别请求，以百度 `uid` 优先、再按规范化名称+坐标去重，避免一次组合查询导致召回为零。
+- 等时圈使用径向采样；`demo` 使用较少方向，`analysis` 增加方向和边界细化。任一采样失败都会写入数据质量事件。
+- 服务区域按民生设施类别独立分类：步行超时且周边 1 公里无同类设施才是重点盲区；只满足一个条件则为稀疏区。评分包含数量、最近步行时间、空间分布三个子分，无有效数据的类别不纳入综合分。
+- 规划建议引用具体类别和网格，模拟新增设施仅修改场景报告，不修改来源 POI。
+
+### 导出指南
+
+完成分析后，在报告面板选择 JSON、CSV、GeoJSON 或 PDF；也可直接调用：
+
+```bash
+curl -OJ http://localhost:8000/api/reports/<report_id>/exports/json
+curl -OJ http://localhost:8000/api/reports/<report_id>/exports/csv
+curl -OJ http://localhost:8000/api/reports/<report_id>/exports/geojson
+curl -OJ http://localhost:8000/api/reports/<report_id>/exports/pdf
+```
+
+JSON 是完整报告，CSV 适合设施和评分表格，GeoJSON 使用 BD-09 坐标，PDF 适合评审与汇报。每种格式都带报告标识、参数和数据质量说明。
 
 ## 性能基线
 
