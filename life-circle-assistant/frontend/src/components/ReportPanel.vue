@@ -29,7 +29,7 @@
       <div class="score-block"><div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ scoreText }}<small v-if="overallScore !== null">/100</small></div><span class="score-trend"><TrendCharts /> {{ report.scoring.explanation }}</span></div><div class="score-ring" :class="{ unavailable: overallScore === null }" :style="scoreRingStyle"><b>{{ scoreText }}</b><span>{{ overallScore === null ? '暂不展示' : '健康度' }}</span></div></div>
       <div class="stat-grid"><div><strong>{{ report.summary.poi_count }}</strong><span>设施点位</span></div><div><strong>{{ report.summary.area_sqm.toLocaleString() }}</strong><span>可达面积 m²</span></div><div class="danger"><strong>{{ report.summary.critical_zone_count }}</strong><span>重点盲区</span></div><div class="amber"><strong>{{ report.summary.sparse_zone_count }}</strong><span>设施稀疏区</span></div></div>
       <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>可展开核验计算过程</small></div><div ref="chartRef" class="chart"></div><ScoreBreakdown :scores="report.category_scores" /></div>
-      <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><article v-for="item in report.recommendations" :key="item.title" class="recommendation"><span :class="['priority', item.priority === '高' ? 'high' : 'medium']">{{ item.priority }}</span><div><strong>{{ item.title }}</strong><p>{{ item.body }}</p></div></article></div>
+      <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" @locate="emit('locate-recommendation', $event)" /></div>
       <button class="export-action" @click="emit('export')"><Download />导出体检数据 <span>JSON</span></button>
     </div>
     <div v-else class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span></div>
@@ -45,9 +45,11 @@ import type { Report } from '../types/report'
 import DataQualityDetails from './DataQualityDetails.vue'
 import ScoreBreakdown from './ScoreBreakdown.vue'
 import ReportHistory from './ReportHistory.vue'
+import RecommendationList from './RecommendationList.vue'
 
 const props = defineProps<{
   report: Report | null
+  selectedRecommendationId: string | null
   historyItems: HistoryReportItem[]
   historyTotal: number
   historyLoading: boolean
@@ -60,6 +62,7 @@ const emit = defineEmits<{
   'refresh-history': []
   'open-history': [reportId: string]
   'rerun-history': [reportId: string]
+  'locate-recommendation': [recommendationId: string]
 }>()
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)

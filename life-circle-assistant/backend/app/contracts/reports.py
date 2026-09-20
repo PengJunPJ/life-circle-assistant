@@ -123,6 +123,12 @@ def create_report_skeleton(
         "categories": [],
         "category_scores": [],
         "scoring": {},
+        "recommendation_summary": {
+            "status": "no_shortage",
+            "message": "所选类别未发现重点服务盲区，当前无需生成补充设施建议。",
+            "recommendation_count": 0,
+            "target_region_count": 0,
+        },
         "recommendations": [],
         "simulations": [],
         "exports": {},

@@ -165,6 +165,26 @@ class PartialWalkingFixtureMapProvider(FixtureMapProvider):
         return rows
 
 
+class LongWalkingFixtureMapProvider(FixtureMapProvider):
+    async def walking_matrix(self, origins: list[tuple[float, float]], destinations: list[tuple[float, float]]):
+        self.calls.append("walking_matrix")
+        return [
+            [
+                WalkingResult(
+                    origin=origin,
+                    destination=destination,
+                    success=True,
+                    distance_m=1_800,
+                    duration_s=1_200,
+                    source="real_api",
+                    method="fixture_walking_matrix",
+                )
+                for destination in destinations
+            ]
+            for origin in origins
+        ]
+
+
 def test_provider_can_be_replaced_without_real_baidu_requests():
     provider = FixtureMapProvider()
     fixture_client = TestClient(create_app(provider))
@@ -342,3 +362,31 @@ def test_report_keeps_selected_center_address_and_method():
     assert report["center"]["lat"] == 23.11
     assert report["center"]["address"] == "广州市黄埔区测试候选地址"
     assert report["center"]["selection_method"] == "address"
+
+
+def test_report_recommendations_trace_back_to_actual_critical_regions():
+    provider = LongWalkingFixtureMapProvider()
+    fixture_client = TestClient(create_app(provider))
+    response = fixture_client.post("/api/analyze", json={"minutes": 15, "categories": ["market", "school"]})
+    report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
+
+    actual_critical_ids = {
+        feature["properties"]["grid_id"]
+        for feature in report["service_areas"]["features"]
+        if feature["properties"]["kind"] == "critical"
+    }
+    assert report["recommendation_summary"]["status"] == "needs_action"
+    assert report["recommendations"]
+    for recommendation in report["recommendations"]:
+        assert set(recommendation["target_region_ids"]) <= actual_critical_ids
+        assert all(
+            region_id.startswith(f"{recommendation['category']}-")
+            for region_id in recommendation["target_region_ids"]
+        )
+        assert recommendation["priority_level"] in {"high", "medium"}
+        assert recommendation["problem_basis"]
+        assert recommendation["candidate_locations"]
+        assert all(
+            candidate["region_id"] in recommendation["target_region_ids"]
+            for candidate in recommendation["candidate_locations"]
+        )

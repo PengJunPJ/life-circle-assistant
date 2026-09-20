@@ -11,6 +11,7 @@ from ..contracts.reports import build_quality_summary, create_report_skeleton, q
 from ..maps.provider import MapProvider, MapProviderError, WalkingResult
 from ..mock_data import CATEGORIES, mock_isochrone
 from ..schemas import AnalyzeRequest
+from .recommendations import build_planning_recommendations
 from .scoring import score_report
 from .service_areas import build_category_service_areas
 
@@ -128,17 +129,7 @@ class AnalysisApplicationService:
         overall_scoring = scoring["overall"]
         critical = sum(item["properties"]["kind"] == "critical" for item in zones["features"])
         sparse = sum(item["properties"]["kind"] == "sparse" for item in zones["features"])
-        recommendations = [
-            {
-                "priority": "高",
-                "title": f"补充{item['label']}服务",
-                "body": f"{item['label']}的步行覆盖仍有不足，建议结合盲区位置补充服务点。",
-                "category": item["category"],
-            }
-            for item in stats
-            if item["category"] not in failed_categories
-            and (item["count"] == 0 or (item["nearest_walk_minutes"] or 0) > request.minutes)
-        ]
+        recommendation_result = build_planning_recommendations(stats, zones)
 
         self._stage("report_assembly", 95)
         data_quality = build_quality_summary(descriptor, events, partial_failures)
@@ -193,7 +184,8 @@ class AnalysisApplicationService:
                 "categories": stats,
                 "category_scores": stats,
                 "scoring": overall_scoring,
-                "recommendations": recommendations,
+                "recommendation_summary": recommendation_result["summary"],
+                "recommendations": recommendation_result["recommendations"],
             }
         )
         self._stage("completed", 100)

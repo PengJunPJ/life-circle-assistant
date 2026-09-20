@@ -43,12 +43,15 @@
         :show-critical="showCritical"
         :loading="loading"
         :progress="progress"
+        :focus-recommendation-id="selectedRecommendationId"
         @map-ready="handleMapReady"
         @select-center="selectMapPoint"
         @refresh="startAnalysis"
+        @service-area-select="handleServiceAreaSelect"
       />
       <ReportPanel
         :report="report"
+        :selected-recommendation-id="selectedRecommendationId"
         :history-items="historyItems"
         :history-total="historyTotal"
         :history-loading="historyLoading"
@@ -56,6 +59,7 @@
         :opening-report-id="openingReportId"
         :rerunning-report-id="rerunningReportId"
         @export="exportReport(report)"
+        @locate-recommendation="selectedRecommendationId = $event"
         @refresh-history="loadHistory"
         @open-history="handleOpenHistory"
         @rerun-history="handleRerunHistory"
@@ -70,12 +74,14 @@ import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
 import { exportReport } from './utils/report'
+import { recommendationForServiceArea } from './utils/recommendationLinks'
 import AppHeader from './components/AppHeader.vue'
 import AnalysisControls from './components/AnalysisControls.vue'
 import MapStage from './components/MapStage.vue'
 import ReportPanel from './components/ReportPanel.vue'
 
 const analysisStarted = ref(false)
+const selectedRecommendationId = ref<string | null>(null)
 const {
   center,
   addressQuery,
@@ -118,6 +124,7 @@ const {
 } = useReportHistory()
 
 async function startAnalysis() {
+  selectedRecommendationId.value = null
   await runAnalysis()
   if (report.value) await loadHistory()
 }
@@ -147,6 +154,7 @@ function handleMapReady(_value: boolean) {
 }
 
 function applySelectedReport(selected: NonNullable<typeof report.value>) {
+  selectedRecommendationId.value = null
   restoreCenter({
     lng: selected.center.lng,
     lat: selected.center.lat,
@@ -155,6 +163,15 @@ function applySelectedReport(selected: NonNullable<typeof report.value>) {
     selectionMethod: selected.center.selection_method || selected.parameters.center_selection_method || 'default',
   })
   applyReport(selected)
+}
+
+function handleServiceAreaSelect(serviceAreaId: string | null) {
+  if (!serviceAreaId || !report.value) {
+    selectedRecommendationId.value = null
+    return
+  }
+  const recommendation = recommendationForServiceArea(report.value.recommendations, serviceAreaId)
+  selectedRecommendationId.value = recommendation?.id || null
 }
 
 onMounted(loadHistory)

@@ -25,6 +25,11 @@ button { border: 0; cursor: pointer; }
 .evidence-metrics b { display: block; margin-top: 2px; color: #294f4a; font-size: 11px; }
 .service-area-evidence p { margin: 10px 0 6px; color: #5c706b; font-size: 10px; line-height: 1.55; }
 .service-area-evidence small { color: #8a9995; font-size: 9px; }
+.candidate-legend b { background: #2f8f80; }
+.candidate-map-label { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 2px; border: 1px solid rgba(47,143,128,.35); border-radius: 13px; background: rgba(255,255,255,.96); box-shadow: 0 2px 7px rgba(28,55,57,.2); color: #31564f; font: 600 10px/1.2 Inter, "PingFang SC", sans-serif; }
+.candidate-map-label b { width: 21px; height: 21px; display: grid; place-items: center; border-radius: 50%; background: #2f8f80; color: #fff; font-size: 9px; }
+.candidate-map-label.focused { border-color: #17333d; box-shadow: 0 0 0 2px rgba(23,51,61,.16), 0 3px 9px rgba(28,55,57,.24); color: #17333d; }
+.candidate-map-label.focused b { background: #17333d; }
 .quality-details { margin: -8px 0 16px; padding: 12px; border: 1px solid #d7e5de; border-radius: 5px; background: #f4f8f5; color: #536a65; font-size: 10px; }
 .quality-details-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .quality-details-heading strong { display: block; color: #2f514a; font-size: 11px; }

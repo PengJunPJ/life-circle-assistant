@@ -1,6 +1,7 @@
 import type { DataQuality } from './quality'
 import type { CategoryScore, OverallScoring } from './scoring'
 import type { CenterSelectionMethod } from './location'
+import type { PlanningRecommendation, RecommendationSummary } from './recommendations'
 
 export type AnalysisMode = 'demo' | 'analysis'
 export type AnalysisMinutes = 10 | 15 | 20
@@ -98,7 +99,8 @@ export type Report = {
   categories: Category[]
   category_scores: CategoryScore[]
   scoring: OverallScoring
-  recommendations: { priority: string; title: string; body: string; category: string }[]
+  recommendation_summary: RecommendationSummary
+  recommendations: PlanningRecommendation[]
   center: {
     lng: number
     lat: number
