@@ -60,9 +60,20 @@ npm run dev
 
 ## 测试
 
+完成后端与前端依赖安装后，在应用目录执行统一质量检查：
+
 ```bash
-cd backend
-pytest
+make quality
 ```
+
+该命令固定使用本地快照模式，不需要百度地图凭证，并依次执行：
+
+- 后端接口测试；
+- 前端 TypeScript/Vue 类型检查；
+- 前端单元测试；
+- 前端生产构建；
+- 前后端容器构建、健康检查和演示模式体检报告冒烟验证。
+
+也可以分别执行 `make backend-check`、`make frontend-check` 或 `make container-check`。GitHub Actions 会在推送和拉取请求中运行同一组质量门禁，任一检查失败都会阻止流程通过。
 
 项目文档、领域术语和架构决策位于上级 `docs/` 目录。
