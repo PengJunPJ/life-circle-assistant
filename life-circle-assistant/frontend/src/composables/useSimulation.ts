@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import ElMessage from 'element-plus/es/components/message/index'
 import { simulateFacility } from '../services/analysisApi'
 import type { RecommendationCandidate } from '../types/recommendations'
 import type { Report } from '../types/report'

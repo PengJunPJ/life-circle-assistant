@@ -1,4 +1,4 @@
-.PHONY: quality backend-check frontend-check container-check
+.PHONY: quality backend-check frontend-check container-check performance-snapshot
 
 quality: backend-check frontend-check container-check
 
@@ -13,3 +13,6 @@ frontend-check:
 
 container-check:
 	./scripts/container-smoke.sh
+
+performance-snapshot:
+	python3 scripts/performance_baseline.py --runs 2 --output docs/performance/latest-snapshot.json

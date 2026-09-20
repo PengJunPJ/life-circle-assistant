@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import ElMessage from 'element-plus/es/components/message/index'
 import { DEFAULT_CATEGORIES } from '../constants/facilities'
 import { createAnalysis, waitForAnalysis } from '../services/analysisApi'
 import type { AnalysisCenter } from '../types/location'

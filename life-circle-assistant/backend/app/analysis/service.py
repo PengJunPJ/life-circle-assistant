@@ -59,10 +59,17 @@ class AnalysisApplicationService:
         self.walking_service = walking_service or WalkingService(provider)
         self.update_stage = update_stage or (lambda _code, _label, _progress: None)
         self.stage_history: list[dict[str, Any]] = []
+        self._stage_durations_ms: dict[str, int] = {}
+        self._active_stage: str | None = None
+        self._active_stage_started: float | None = None
 
     async def run(self, task_id: str, request: AnalyzeRequest) -> dict[str, Any]:
         # 服务对象可被测试复用；每次运行仍必须报告本次分析而非累计指标。
         self.walking_service.metrics = type(self.walking_service.metrics)()
+        self.stage_history = []
+        self._stage_durations_ms = {}
+        self._active_stage = None
+        self._active_stage_started = None
         started_at = now()
         started_clock = time.perf_counter()
         events: list[dict[str, Any]] = []
@@ -97,8 +104,10 @@ class AnalysisApplicationService:
         self._stage("facility_discovery", 32)
         facilities: list[dict[str, Any]] = []
         facility_search_failed_categories: set[str] = set()
+        facility_provider_calls = 0
         for category in request.categories:
             try:
+                facility_provider_calls += 1
                 results = await self.provider.search_facilities(category, center, radius_m=3_000)
                 facilities.extend(asdict(item) for item in results)
             except MapProviderError as exc:
@@ -203,18 +212,33 @@ class AnalysisApplicationService:
         data_quality = build_quality_summary(descriptor, events, partial_failures)
         completed_at = now()
         completeness = "partial" if partial_failures else "complete"
+        # 把“完成”作为显式阶段边界，确保报告组装耗时被记录，而不是只记录时间戳。
+        self._stage("completed", 100)
+        metrics = {
+            "facility_count": len(facilities),
+            "facility_provider_calls": facility_provider_calls,
+            "facility_api_calls": facility_provider_calls if descriptor.source == "real_api" else 0,
+            "quality_event_count": len(events),
+            "partial_failure_count": len(partial_failures),
+            **self.walking_service.metrics.report_values(),
+        }
+        cache_lookups = metrics["walking_cache_hits"] + metrics["walking_cache_misses"]
         execution = {
             "current_stage": "completed",
             "current_stage_label": STAGES["completed"],
-            "stages": [*self.stage_history, {"code": "completed", "label": STAGES["completed"], "progress": 100, "at": completed_at}],
+            "stages": [*self.stage_history],
             "total_duration_ms": round((time.perf_counter() - started_clock) * 1_000),
-            "metrics": {
-                "facility_count": len(facilities),
-                "quality_event_count": len(events),
-                "partial_failure_count": len(partial_failures),
-                **self.walking_service.metrics.report_values(),
+            "stage_durations_ms": dict(self._stage_durations_ms),
+            "api_calls": metrics["facility_api_calls"] + metrics["walking_api_calls"],
+            "cache": {
+                "hits": metrics["walking_cache_hits"],
+                "misses": metrics["walking_cache_misses"],
+                "hit_rate": round(metrics["walking_cache_hits"] / cache_lookups, 4) if cache_lookups else 0.0,
             },
+            "metrics": metrics,
         }
+        for stage in execution["stages"]:
+            stage["duration_ms"] = execution["stage_durations_ms"].get(stage["code"], 0)
         report = create_report_skeleton(
             report_id=str(uuid.uuid4()),
             task_id=task_id,
@@ -257,12 +281,18 @@ class AnalysisApplicationService:
                 "recommendations": recommendation_result["recommendations"],
             }
         )
-        self._stage("completed", 100)
         return report
 
     def _stage(self, code: str, progress: int) -> None:
         label = STAGES[code]
-        self.stage_history.append({"code": code, "label": label, "progress": progress, "at": now()})
+        timestamp = now()
+        clock = time.perf_counter()
+        if self._active_stage is not None and self._active_stage_started is not None:
+            elapsed = max(0, round((clock - self._active_stage_started) * 1_000))
+            self._stage_durations_ms[self._active_stage] = self._stage_durations_ms.get(self._active_stage, 0) + elapsed
+        self._active_stage = code
+        self._active_stage_started = clock
+        self.stage_history.append({"code": code, "label": label, "progress": progress, "at": timestamp})
         self.update_stage(code, label, progress)
 
     async def _attach_walking_results(

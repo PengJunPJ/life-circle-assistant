@@ -71,7 +71,8 @@ class WalkingService:
         self.provider = provider
         self.cache = cache
         resolved_settings = settings or WalkingSettings.from_env()
-        if settings is None and provider.descriptor.mode != "real" and "WALKING_QPS" not in os.environ:
+        # 快照/测试提供方不消耗外部配额；即使应用层传入默认设置，也不应人为按真实 API QPS 降速。
+        if provider.descriptor.mode != "real" and "WALKING_QPS" not in os.environ:
             resolved_settings = replace(resolved_settings, qps=0)
         self.settings = resolved_settings
         self.metrics = WalkingMetrics()
