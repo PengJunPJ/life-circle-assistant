@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService
 from .maps import MapProvider, MapProviderError, create_map_provider
+from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .mock_data import CATEGORIES, CENTER
 from .schemas import AnalyzeRequest
 from .storage import Database, ReportRepository, TaskRepository
@@ -103,11 +104,40 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             raise HTTPException(status_code=status_code, detail=str(exc)) from exc
         if not candidates:
             raise HTTPException(status_code=404, detail="地址没有匹配候选")
-        first = candidates[0]
+        supported_candidates = [
+            candidate for candidate in candidates if is_in_supported_huangpu_area(candidate.lng, candidate.lat)
+        ]
+        if not supported_candidates:
+            raise HTTPException(status_code=422, detail="地址候选超出当前支持范围；V2 仅支持广州市黄埔区样例")
+        first = supported_candidates[0]
         return {
             "source": map_provider.descriptor.source,
+            "provider": map_provider.descriptor.id,
             "result": {"location": {"lng": first.lng, "lat": first.lat}, "formatted_address": first.address},
-            "candidates": [asdict(candidate) for candidate in candidates],
+            "candidates": [asdict(candidate) for candidate in supported_candidates],
+        }
+
+    @app.get("/api/locations/reverse")
+    async def reverse_geocode(
+        lng: float,
+        lat: float,
+        map_provider: MapProvider = Depends(get_map_provider),
+    ):
+        if not -180 <= lng <= 180 or not -90 <= lat <= 90:
+            raise HTTPException(status_code=422, detail="请输入合法的 BD-09 经纬度")
+        try:
+            require_supported_huangpu_area(lng, lat)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        try:
+            result = await map_provider.reverse_geocode(lng, lat)
+        except MapProviderError as exc:
+            status_code = 422 if map_provider.descriptor.mode == "snapshot" else 502
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        return {
+            "source": map_provider.descriptor.source,
+            "provider": map_provider.descriptor.id,
+            "result": asdict(result),
         }
 
     @app.get("/api/pois")
@@ -129,12 +159,26 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         return {"center": CENTER, "categories": CATEGORIES}
 
     @app.post("/api/analyze")
-    def create_analysis(
+    async def create_analysis(
         analysis_request: AnalyzeRequest,
         background_tasks: BackgroundTasks,
         request: Request,
         task_repository: TaskRepository = Depends(get_task_repository),
+        map_provider: MapProvider = Depends(get_map_provider),
     ):
+        # 分析入口再次校验中心点，避免调用方绕过选点接口提交超出支持范围的位置。
+        try:
+            require_supported_huangpu_area(analysis_request.lng, analysis_request.lat)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=f"分析中心点不可用：{exc}") from exc
+        try:
+            resolved_center = await map_provider.reverse_geocode(analysis_request.lng, analysis_request.lat)
+        except MapProviderError as exc:
+            status_code = 422 if map_provider.descriptor.mode == "snapshot" else 502
+            raise HTTPException(status_code=status_code, detail=f"分析中心点不可用：{exc}") from exc
+        analysis_request = analysis_request.model_copy(
+            update={"center_address": analysis_request.center_address.strip() or resolved_center.address}
+        )
         task = task_repository.create(analysis_request.model_dump())
         background_tasks.add_task(execute_analysis_task, request.app, task["id"], analysis_request)
         return task

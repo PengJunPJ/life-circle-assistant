@@ -24,6 +24,14 @@ def test_map_status_and_mock_geocode():
     assert unsupported.status_code == 422
     assert "只支持内置" in unsupported.json()["detail"]
 
+    reverse = client.get("/api/locations/reverse", params={"lng": 113.4872, "lat": 23.1068})
+    assert reverse.status_code == 200
+    assert reverse.json()["result"]["address"] == "广州市黄埔区萝岗街道样例社区"
+
+    outside = client.get("/api/locations/reverse", params={"lng": 113.6, "lat": 23.2})
+    assert outside.status_code == 422
+    assert "超出本地快照支持范围" in outside.json()["detail"]
+
 
 def test_snapshot_place_search_keeps_legacy_category_label_behavior():
     response = client.get("/api/pois", params={"query": "药店"})
@@ -51,6 +59,32 @@ def test_create_and_get_analysis():
     assert body["execution"]["current_stage"] == "completed"
     assert body["data_quality"]["overall_status"] == "limited"
     assert "不代表最新真实地图测算" in body["data_quality"]["summary"]
+    assert body["center"] == {
+        "lng": 113.4872,
+        "lat": 23.1068,
+        "address": "广州市黄埔区萝岗街道样例社区",
+        "selection_method": "default",
+        "source": "local_snapshot",
+        "support_status": "supported",
+    }
+
+
+def test_analysis_rejects_center_outside_snapshot_supported_area():
+    response = client.post("/api/analyze", json={"lng": 113.6, "lat": 23.2})
+    assert response.status_code == 422
+    assert "分析中心点不可用" in response.json()["detail"]
+
+
+def test_location_endpoints_reject_points_outside_huangpu_delivery_scope():
+    provider = FixtureMapProvider()
+    fixture_client = TestClient(create_app(provider))
+    reverse = fixture_client.get("/api/locations/reverse", params={"lng": 121.47, "lat": 31.23})
+    assert reverse.status_code == 422
+    assert "仅支持广州市黄埔区" in reverse.json()["detail"]
+
+    analyze = fixture_client.post("/api/analyze", json={"lng": 121.47, "lat": 31.23})
+    assert analyze.status_code == 422
+    assert "仅支持广州市黄埔区" in analyze.json()["detail"]
 
 
 class FixtureMapProvider:
@@ -152,6 +186,7 @@ def test_provider_can_be_replaced_without_real_baidu_requests():
     assert all(len(item["components"]) == 3 for item in report["category_scores"])
     assert all(sum(component["weight"] for component in item["components"]) == 1 for item in report["category_scores"])
     assert provider.calls.count("geocode") == 1
+    assert provider.calls.count("reverse_geocode") == 1
     assert "search_facilities:market" in provider.calls
     assert "search_facilities:school" in provider.calls
     assert "walking_matrix" in provider.calls
@@ -288,3 +323,22 @@ def test_running_task_is_marked_failed_after_restart(tmp_path):
     assert recovered.json()["status"] == "failed"
     assert recovered.json()["stage_label"] == "服务重启已中断"
     assert "重新运行" in recovered.json()["error"]
+
+
+def test_report_keeps_selected_center_address_and_method():
+    provider = FixtureMapProvider()
+    fixture_client = TestClient(create_app(provider))
+    response = fixture_client.post(
+        "/api/analyze",
+        json={
+            "lng": 113.51,
+            "lat": 23.11,
+            "center_address": "广州市黄埔区测试候选地址",
+            "center_selection_method": "address",
+        },
+    )
+    report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
+    assert report["center"]["lng"] == 113.51
+    assert report["center"]["lat"] == 23.11
+    assert report["center"]["address"] == "广州市黄埔区测试候选地址"
+    assert report["center"]["selection_method"] == "address"

@@ -10,6 +10,8 @@ from .provider import (
     WalkingResult,
 )
 
+SNAPSHOT_SUPPORTED_RADIUS_M = 1_000
+
 
 class SnapshotMapProvider:
     def __init__(self, snapshot: dict | None = None) -> None:
@@ -36,9 +38,12 @@ class SnapshotMapProvider:
 
     async def reverse_geocode(self, lng: float, lat: float) -> LocationResult:
         distance = haversine_meters((lng, lat), (float(self.center["lng"]), float(self.center["lat"])))
-        if distance > 100:
-            raise MapProviderError("本地快照只支持内置的萝岗街道样例位置")
-        return LocationResult(lng=lng, lat=lat, address=str(self.center["address"]))
+        if distance > SNAPSHOT_SUPPORTED_RADIUS_M:
+            raise MapProviderError("该位置超出本地快照支持范围；离线模式仅支持萝岗街道样例中心周边 1 公里")
+        address = str(self.center["address"])
+        if distance > 30:
+            address = f"{address}（样例范围内坐标选点）"
+        return LocationResult(lng=lng, lat=lat, address=address)
 
     async def search_places(
         self,

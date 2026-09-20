@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 CoreCategory = Literal["market", "pharmacy", "school", "medical"]
+CenterSelectionMethod = Literal["default", "address", "map", "coordinates"]
 
 class AnalyzeRequest(BaseModel):
     lng: float = Field(default=113.4872, ge=-180, le=180)
@@ -11,6 +12,8 @@ class AnalyzeRequest(BaseModel):
     minutes: Literal[10, 15, 20] = 15
     mode: Literal["demo", "analysis"] = "demo"
     categories: list[CoreCategory] = Field(default_factory=lambda: ["market", "pharmacy", "school", "medical"], min_length=1)
+    center_address: str = Field(default="", max_length=200)
+    center_selection_method: CenterSelectionMethod = "default"
 
     @field_validator("categories")
     @classmethod

@@ -1,11 +1,11 @@
-import { ref, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { DEFAULT_CATEGORIES, DEFAULT_CENTER } from '../constants/facilities'
-import { createAnalysis, geocodeAddress, waitForAnalysis } from '../services/analysisApi'
+import { DEFAULT_CATEGORIES } from '../constants/facilities'
+import { createAnalysis, waitForAnalysis } from '../services/analysisApi'
+import type { AnalysisCenter } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, Report } from '../types/report'
 
-export function useAnalysis(realMapReady: Ref<boolean>) {
-  const address = ref('广州市黄埔区萝岗街道样例社区')
+export function useAnalysis(center: Ref<AnalysisCenter>) {
   const mode = ref<AnalysisMode>('demo')
   const minutes = ref<AnalysisMinutes>(15)
   const visibleCategories = ref([...DEFAULT_CATEGORIES])
@@ -15,12 +15,27 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
   const loading = ref(false)
   const progress = ref(0)
   const report = ref<Report | null>(null)
-  const centerPoint = ref({ ...DEFAULT_CENTER })
+
+  watch(center, (nextCenter) => {
+    if (report.value
+      && report.value.center.lng === nextCenter.lng
+      && report.value.center.lat === nextCenter.lat
+      && report.value.center.address === nextCenter.address) return
+    // 新选点不能继续展示旧中心点的报告，避免标记、请求和报告互相矛盾。
+    report.value = null
+    progress.value = 0
+  })
 
   function applyReport(selected: Report) {
     report.value = selected
-    centerPoint.value = { lng: selected.center.lng, lat: selected.center.lat }
-    address.value = selected.center.address
+    center.value = {
+      lng: selected.center.lng,
+      lat: selected.center.lat,
+      address: selected.center.address,
+      selectionMethod: selected.center.selection_method || selected.parameters.center_selection_method || 'default',
+      source: selected.center.source || selected.source,
+      supportStatus: 'supported',
+    }
     mode.value = selected.parameters.mode
     minutes.value = selected.parameters.minutes
     visibleCategories.value = [...selected.parameters.categories]
@@ -33,16 +48,16 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
     progress.value = 18
     report.value = null
     try {
-      if (realMapReady.value && address.value.trim()) {
-        const geocode = await geocodeAddress(address.value.trim())
-        if (geocode.result?.location) centerPoint.value = geocode.result.location
-      }
+      if (center.value.supportStatus !== 'supported') throw new Error('请先选择当前支持范围内的分析中心点')
+      if (!visibleCategories.value.length) throw new Error('请至少选择一种民生设施类别')
       const task = await createAnalysis({
-        lng: centerPoint.value.lng,
-        lat: centerPoint.value.lat,
+        lng: center.value.lng,
+        lat: center.value.lat,
         minutes: minutes.value,
         mode: mode.value,
         categories: visibleCategories.value,
+        center_address: center.value.address,
+        center_selection_method: center.value.selectionMethod,
       })
       progress.value = 52
       const completedReport = await waitForAnalysis(task, (value) => { progress.value = value })
@@ -63,7 +78,6 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
   }
 
   return {
-    address,
     mode,
     minutes,
     visibleCategories,

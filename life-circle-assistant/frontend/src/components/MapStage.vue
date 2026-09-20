@@ -5,7 +5,7 @@
     <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady }"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady }" @click="handleCanvasClick"></canvas>
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
     <div v-if="loading" class="map-loading"><div class="loader-ring"></div><strong>正在生成生活圈体检</strong><span>正在计算真实步行可达性… {{ progress }}%</span></div>
-    <div class="map-caption"><span class="caption-kicker">分析区域</span><strong>广州市黄埔区 · 萝岗街道</strong><span>中心点周边 1 公里</span></div>
+    <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
     <article v-if="selectedServiceArea" class="service-area-evidence" aria-live="polite">
       <button class="evidence-close" aria-label="关闭区域判定依据" @click="closeServiceAreaEvidence">×</button>
       <div class="evidence-kicker">{{ selectedServiceArea.properties.category_label }} · {{ selectedServiceArea.properties.label }}</div>
@@ -25,16 +25,26 @@ import { toRef, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
+import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
 
-const props = defineProps<{ report: Report | null; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number }>()
-const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean] }>()
+const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number }>()
+const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number] }>()
 const report = toRef(props, 'report')
+const analysisCenter = toRef(props, 'analysisCenter')
 const visibleCategories = toRef(props, 'visibleCategories')
 const showNormal = toRef(props, 'showNormal')
 const showSparse = toRef(props, 'showSparse')
 const showCritical = toRef(props, 'showCritical')
-const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, handleCanvasClick, closeServiceAreaEvidence } = useMapRenderer({ report, visibleCategories, showNormal, showSparse, showCritical })
+const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, handleCanvasClick, closeServiceAreaEvidence } = useMapRenderer({
+  report,
+  analysisCenter,
+  visibleCategories,
+  showNormal,
+  showSparse,
+  showCritical,
+  onSelectCenter: (lng, lat) => emit('select-center', lng, lat),
+})
 
 function formatMetric(value: number | null, unit: string) {
   return value === null ? '无有效结果' : `${value}${unit}`

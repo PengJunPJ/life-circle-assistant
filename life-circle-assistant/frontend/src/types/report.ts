@@ -1,5 +1,6 @@
 import type { DataQuality } from './quality'
 import type { CategoryScore, OverallScoring } from './scoring'
+import type { CenterSelectionMethod } from './location'
 
 export type AnalysisMode = 'demo' | 'analysis'
 export type AnalysisMinutes = 10 | 15 | 20
@@ -98,13 +99,22 @@ export type Report = {
   category_scores: CategoryScore[]
   scoring: OverallScoring
   recommendations: { priority: string; title: string; body: string; category: string }[]
-  center: { lng: number; lat: number; address: string }
+  center: {
+    lng: number
+    lat: number
+    address: string
+    selection_method?: CenterSelectionMethod
+    source?: string
+    support_status?: 'supported' | 'unsupported'
+  }
   parameters: {
     lng: number
     lat: number
     minutes: AnalysisMinutes
     mode: AnalysisMode
     categories: string[]
+    center_address?: string
+    center_selection_method?: CenterSelectionMethod
   }
 }
 
@@ -123,4 +133,4 @@ export type AnalysisTask = {
   completed_at?: string | null
 }
 
-export type MapConfig = { mode: string; browser_ak: string }
+export type MapConfig = { mode: string; provider_mode: 'real' | 'snapshot' | 'fixture'; browser_ak: string }

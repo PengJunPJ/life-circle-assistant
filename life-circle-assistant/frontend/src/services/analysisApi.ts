@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../constants/facilities'
 import type { ReportHistoryResponse } from '../types/history'
+import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, Report } from '../types/report'
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -12,9 +13,24 @@ export async function fetchMapConfig() {
   return parseResponse<MapConfig>(await fetch(`${API_BASE_URL}/api/map/config`))
 }
 
-export async function geocodeAddress(address: string) {
-  return parseResponse<{ result?: { location?: { lng: number; lat: number } } }>(
+export async function searchAddressCandidates(address: string) {
+  const payload = await parseResponse<{
+    source: string
+    provider: string
+    candidates: { lng: number; lat: number; address: string }[]
+  }>(
     await fetch(`${API_BASE_URL}/api/geocode?address=${encodeURIComponent(address)}&city=广州`),
+  )
+  return payload.candidates.map<LocationCandidate>((candidate) => ({
+    ...candidate,
+    source: payload.source,
+    provider: payload.provider,
+  }))
+}
+
+export async function reverseGeocode(lng: number, lat: number) {
+  return parseResponse<LocationApiResponse>(
+    await fetch(`${API_BASE_URL}/api/locations/reverse?lng=${encodeURIComponent(lng)}&lat=${encodeURIComponent(lat)}`),
   )
 }
 
@@ -24,6 +40,8 @@ export async function createAnalysis(params: {
   minutes: AnalysisMinutes
   mode: AnalysisMode
   categories: string[]
+  center_address: string
+  center_selection_method: CenterSelectionMethod
 }) {
   return parseResponse<AnalysisTask>(
     await fetch(`${API_BASE_URL}/api/analyze`, {

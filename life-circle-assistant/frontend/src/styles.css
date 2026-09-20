@@ -66,3 +66,24 @@ button { border: 0; cursor: pointer; }
 .history-rerun { flex: 0 0 42px; border-left: 1px solid #e2e9e4; background: #f4f8f5; color: #4d7d72; font-size: 9px; }
 .history-open:hover, .history-rerun:hover { background: #edf6f1; }
 .history-open:disabled, .history-rerun:disabled { cursor: wait; opacity: .58; }
+.search-box .search-submit { flex: 0 0 auto; padding: 4px 6px; border-radius: 3px; background: #e8f2ed; color: #287666; font-size: 9px; font-weight: 700; }
+.search-box .search-submit:disabled { opacity: .55; cursor: wait; }
+.candidate-list { display: grid; gap: 4px; max-height: 132px; margin-top: 6px; overflow: auto; }
+.candidate-list button { display: flex; align-items: flex-start; gap: 7px; width: 100%; padding: 7px; border: 1px solid #dbe7e1; border-radius: 4px; background: #fff; color: #34534d; text-align: left; }
+.candidate-list button:hover, .candidate-list button:focus-visible { border-color: #76ad9f; background: #f1f8f4; outline: 0; }
+.candidate-list svg { flex: 0 0 auto; width: 13px; color: #d26950; }
+.candidate-list span, .selected-center > span:nth-child(2) { min-width: 0; }
+.candidate-list strong, .candidate-list small, .selected-center strong, .selected-center small { display: block; }
+.candidate-list strong, .selected-center strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.candidate-list small, .selected-center small { margin-top: 3px; color: #879792; font-size: 8px; }
+.coordinate-entry { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 5px; margin-top: 8px; }
+.coordinate-entry input { min-width: 0; height: 30px; padding: 0 6px; border: 1px solid #cedbd5; border-radius: 4px; outline: 0; color: #294b4c; font-size: 9px; }
+.coordinate-entry input:focus { border-color: #5e9f90; box-shadow: 0 0 0 2px rgba(59,154,125,.1); }
+.coordinate-entry button { padding: 0 7px; border-radius: 4px; background: #e8f2ed; color: #287666; font-size: 9px; font-weight: 700; }
+.location-error { margin: 7px 1px 0; color: #b14f3b; font-size: 9px; line-height: 1.45; }
+.selected-center { margin: 8px 1px 0; display: flex; align-items: flex-start; gap: 7px; padding: 7px; border-radius: 4px; background: #edf6f1; color: #45635d; }
+.selected-center.unsupported { background: #f9e9e5; color: #a24f3e; }
+.selected-center .selected { flex: 0 0 auto; margin-left: auto; font-size: 9px; }
+.map-pick-hint { margin: 6px 2px 0; color: #8c9a96; font-size: 8px; line-height: 1.45; }
+.map-canvas { cursor: crosshair; }
+.map-container { cursor: crosshair; }
