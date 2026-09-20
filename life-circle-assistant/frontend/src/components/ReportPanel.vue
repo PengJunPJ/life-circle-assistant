@@ -37,6 +37,18 @@
       </div>
       <div class="score-block"><div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ scoreText }}<small v-if="overallScore !== null">/100</small></div><span class="score-trend"><TrendCharts /> {{ report.scoring.explanation }}</span></div><div class="score-ring" :class="{ unavailable: overallScore === null }" :style="scoreRingStyle"><b>{{ scoreText }}</b><span>{{ overallScore === null ? '暂不展示' : '健康度' }}</span></div></div>
       <div class="stat-grid"><div><strong>{{ report.summary.poi_count }}</strong><span>设施点位</span></div><div><strong>{{ report.summary.area_sqm.toLocaleString() }}</strong><span>可达面积 m²</span></div><div class="danger"><strong>{{ report.summary.critical_zone_count }}</strong><span>重点盲区</span></div><div class="amber"><strong>{{ report.summary.sparse_zone_count }}</strong><span>设施稀疏区</span></div></div>
+      <section class="report-section execution-section" aria-labelledby="execution-title">
+        <div class="section-title"><span id="execution-title">执行指标</span><small>可复现性能观测</small></div>
+        <div class="execution-metrics">
+          <div><span>总耗时</span><strong>{{ formatDuration(report.execution.total_duration_ms) }}</strong></div>
+          <div><span>地图 API 调用</span><strong>{{ report.execution.api_calls }}</strong></div>
+          <div><span>缓存命中</span><strong>{{ report.execution.cache.hits }}<small>（{{ formatRate(report.execution.cache.hit_rate) }}）</small></strong></div>
+          <div><span>缓存未命中</span><strong>{{ report.execution.cache.misses }}</strong></div>
+        </div>
+        <div class="stage-duration-list" aria-label="主要阶段耗时">
+          <span v-for="stage in stageDurations" :key="stage.code"><b>{{ stage.label }}</b><em>{{ formatDuration(stage.duration_ms) }}</em></span>
+        </div>
+      </section>
       <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>可展开核验计算过程</small></div><div ref="chartRef" class="chart"></div><ScoreBreakdown :scores="report.category_scores" /></div>
       <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" @locate="emit('locate-recommendation', $event)" @simulate="(category, candidate) => emit('simulate-candidate', category, candidate)" /></div>
       <div class="report-section">
@@ -62,7 +74,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import * as echarts from 'echarts'
+import type { ECharts } from '../utils/chartRuntime'
 import { CircleCheck, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { HistoryReportItem } from '../types/history'
 import type { RecommendationCandidate } from '../types/recommendations'
@@ -111,19 +123,56 @@ const emit = defineEmits<{
 }>()
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
+type ChartRuntime = typeof import('../utils/chartRuntime')
+let echartsImport: Promise<ChartRuntime> | null = null
 const overallScore = computed(() => props.report?.summary.score ?? null)
 const scoreText = computed(() => overallScore.value === null ? '—' : overallScore.value)
 const scoreTone = computed(() => overallScore.value === null ? 'unavailable' : overallScore.value >= 80 ? 'good' : overallScore.value >= 60 ? 'fair' : 'risk')
 const scoreRingStyle = computed(() => ({ '--score': `${(overallScore.value ?? 0) * 3.6}deg` }))
+const stageLabels: Record<string, string> = {
+  request_validation: '请求校验', facility_discovery: '设施发现', walking_calculation: '步行计算',
+  region_classification: '区域分类', scoring: '评分生成', report_assembly: '报告组装',
+}
+const stageDurations = computed(() => Object.entries(props.report?.execution.stage_durations_ms || {})
+  .map(([code, duration_ms]) => ({ code, duration_ms, label: stageLabels[code] || code })))
 
-function drawChart() {
+function formatDuration(value: number) {
+  return value < 1_000 ? `${value} ms` : `${(value / 1_000).toFixed(2)} s`
+}
+
+function formatRate(value: number) {
+  return `${Math.round(value * 100)}%`
+}
+
+async function drawChart() {
+  if (!chartRef.value || !props.report) return
+  echartsImport ||= loadChartRuntime()
+  const echarts = await echartsImport
   if (!chartRef.value || !props.report) return
   chart?.dispose()
   chart = echarts.init(chartRef.value)
   chart.setOption({ grid: { top: 12, right: 12, bottom: 28, left: 32 }, xAxis: { type: 'category', data: props.report.categories.map((item) => item.label), axisLabel: { color: '#71838a', fontSize: 11 } }, yAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: '#edf0ed' } }, axisLabel: { color: '#9aa7a5' } }, series: [{ type: 'bar', barWidth: 20, data: props.report.categories.map((item) => ({ value: item.score ?? 0, itemStyle: { color: item.score === null ? '#c5cfcb' : item.color, borderRadius: [3, 3, 0, 0] } })) }] })
 }
 
-watch(() => props.report, async () => { await nextTick(); drawChart() }, { immediate: true })
+async function loadChartRuntime(): Promise<ChartRuntime> {
+  return import('../utils/chartRuntime')
+}
+
+watch(() => props.report, async () => { await nextTick(); await drawChart() }, { immediate: true })
 onBeforeUnmount(() => chart?.dispose())
 </script>
+
+<style scoped>
+.execution-section { border-top: 1px solid #e7eeea; padding-top: 11px; }
+.execution-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.execution-metrics > div { padding: 7px 8px; border-radius: 4px; background: #f1f6f3; }
+.execution-metrics span, .execution-metrics strong { display: block; }
+.execution-metrics span { color: #81908c; font-size: 8px; }
+.execution-metrics strong { margin-top: 3px; color: #315e55; font-size: 11px; }
+.execution-metrics small { color: #78918a; font-size: 8px; font-weight: 500; }
+.stage-duration-list { display: flex; flex-wrap: wrap; gap: 5px 10px; margin-top: 7px; }
+.stage-duration-list span { display: inline-flex; gap: 4px; color: #7b8c87; font-size: 8px; }
+.stage-duration-list em { color: #4d7168; font-style: normal; }
+@media (max-width: 760px) { .execution-metrics { grid-template-columns: repeat(2, 1fr); } }
+</style>

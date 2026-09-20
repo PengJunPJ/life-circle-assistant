@@ -82,6 +82,18 @@ class ConcurrentOnlyProvider(MatrixProvider):
         ]
 
 
+class SnapshotFixtureProvider(MatrixProvider):
+    @property
+    def descriptor(self):
+        return ProviderDescriptor(
+            id="snapshot-walking-test-provider",
+            mode="snapshot",
+            source="local_snapshot",
+            label="快照步行测试提供方",
+            is_latest_real_measurement=False,
+        )
+
+
 def settings(**overrides):
     values = {
         "cache_ttl_seconds": 60,
@@ -129,6 +141,13 @@ def test_provider_without_batch_uses_configured_concurrency_limit():
     assert len(provider.calls) == 4
     assert provider.max_active == 2
     assert service.metrics.concurrent_fallback_calls == 4
+
+
+def test_snapshot_provider_is_not_artificially_throttled_by_default_real_api_qps(monkeypatch):
+    monkeypatch.delenv("WALKING_QPS", raising=False)
+    service = WalkingService(SnapshotFixtureProvider(), settings=settings(qps=8))
+
+    assert service.settings.qps == 0
 
 
 def test_expired_cache_is_not_used(tmp_path):

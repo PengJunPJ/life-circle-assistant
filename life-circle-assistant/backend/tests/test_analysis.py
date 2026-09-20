@@ -57,6 +57,14 @@ def test_create_and_get_analysis():
     assert body["zones"]["type"] == "FeatureCollection"
     assert body["schema_version"] == "2.0"
     assert body["execution"]["current_stage"] == "completed"
+    assert body["execution"]["total_duration_ms"] >= 0
+    assert body["execution"]["stage_durations_ms"]["walking_calculation"] >= 0
+    assert body["execution"]["cache"]["hits"] == body["execution"]["metrics"]["walking_cache_hits"]
+    assert body["execution"]["api_calls"] == (
+        body["execution"]["metrics"]["facility_api_calls"]
+        + body["execution"]["metrics"]["walking_api_calls"]
+    )
+    assert all("duration_ms" in stage for stage in body["execution"]["stages"])
     assert body["data_quality"]["overall_status"] == "limited"
     assert "不代表最新真实地图测算" in body["data_quality"]["summary"]
     assert body["center"] == {

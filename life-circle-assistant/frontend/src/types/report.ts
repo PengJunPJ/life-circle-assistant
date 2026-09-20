@@ -80,7 +80,10 @@ export type Report = {
     current_stage: string
     current_stage_label: string
     total_duration_ms: number
-    stages: { code: string; label: string; progress: number; at: string }[]
+    stages: { code: string; label: string; progress: number; at: string; duration_ms: number }[]
+    stage_durations_ms: Record<string, number>
+    api_calls: number
+    cache: { hits: number; misses: number; hit_rate: number }
     metrics: Record<string, number>
   }
   isochrone: GeoJsonFeature

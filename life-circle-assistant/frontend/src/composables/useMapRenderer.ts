@@ -1,5 +1,5 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import ElMessage from 'element-plus/es/components/message/index'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { drawCanvasAnalysisCenter, renderBaiduAnalysisCenter } from '../mapLayers/analysisCenterLayer'
 import { fetchMapConfig } from '../services/analysisApi'

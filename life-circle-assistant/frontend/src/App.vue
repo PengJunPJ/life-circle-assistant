@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
@@ -135,8 +135,9 @@ import { recommendationForServiceArea } from './utils/recommendationLinks'
 import AppHeader from './components/AppHeader.vue'
 import AnalysisControls from './components/AnalysisControls.vue'
 import MapStage from './components/MapStage.vue'
-import ReportPanel from './components/ReportPanel.vue'
-import ReportComparisonPanel from './components/ReportComparisonPanel.vue'
+// 报告、图表、历史和导出只在工作台完成分析后使用，拆成异步块避免阻塞地图首屏。
+const ReportPanel = defineAsyncComponent(() => import('./components/ReportPanel.vue'))
+const ReportComparisonPanel = defineAsyncComponent(() => import('./components/ReportComparisonPanel.vue'))
 
 const analysisStarted = ref(false)
 const selectedRecommendationId = ref<string | null>(null)

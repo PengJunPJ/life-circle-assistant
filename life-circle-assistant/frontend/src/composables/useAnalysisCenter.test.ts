@@ -8,7 +8,9 @@ const api = vi.hoisted(() => ({
 }))
 
 vi.mock('../services/analysisApi', () => api)
-vi.mock('element-plus', () => ({ ElMessage: { success: vi.fn(), error: vi.fn() } }))
+vi.mock('element-plus/es/components/message/index', () => ({
+  default: { success: vi.fn(), error: vi.fn() },
+}))
 
 import { useAnalysis } from './useAnalysis'
 import { useAnalysisCenter } from './useAnalysisCenter'

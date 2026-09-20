@@ -91,6 +91,14 @@ npm run dev
 
 V2 报告的 `execution.metrics` 记录步行提供方调用量、真实 API 调用量、批量调用量、缓存命中/未命中/过期量、重试、限流、超时、格式错误、最终失败、降级结果和步行计算耗时；`data_quality` 同时披露缓存、限流、超时和格式错误事件。
 
+## 性能基线
+
+完成报告会展示总耗时、主要阶段耗时、步行 API 调用量和缓存命中情况。可复现的本地快照与真实 API 测量命令、环境记录要求、优化结果和已知瓶颈见 [V2 性能基线文档](docs/performance/v2-baseline.md)。后端运行后可直接执行：
+
+```bash
+python3 scripts/performance_baseline.py --runs 2
+```
+
 ## 测试
 
 完成后端与前端依赖安装后，在应用目录执行统一质量检查：
