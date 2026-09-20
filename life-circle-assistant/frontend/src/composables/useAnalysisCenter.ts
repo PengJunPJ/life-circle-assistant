@@ -3,7 +3,7 @@ import { DEFAULT_CENTER } from '../constants/facilities'
 import { reverseGeocode, searchAddressCandidates } from '../services/analysisApi'
 import type { AnalysisCenter, CenterSelectionMethod, LocationCandidate } from '../types/location'
 
-const DEFAULT_ADDRESS = '广州市黄埔区萝岗街道样例社区'
+const DEFAULT_ADDRESS = '广州市黄埔区红山街道海韵东路离线样例中心'
 
 export function useAnalysisCenter() {
   const center = ref<AnalysisCenter>({

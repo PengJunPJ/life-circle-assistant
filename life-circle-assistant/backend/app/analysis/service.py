@@ -105,6 +105,7 @@ class AnalysisApplicationService:
         facilities: list[dict[str, Any]] = []
         facility_search_failed_categories: set[str] = set()
         facility_provider_calls = 0
+        facility_request_start = getattr(self.provider, "facility_request_count", None)
         for category in request.categories:
             try:
                 facility_provider_calls += 1
@@ -124,6 +125,11 @@ class AnalysisApplicationService:
                         category=category,
                     )
                 )
+
+        facility_api_calls = facility_provider_calls if descriptor.source == "real_api" else 0
+        facility_request_end = getattr(self.provider, "facility_request_count", None)
+        if isinstance(facility_request_start, int) and isinstance(facility_request_end, int):
+            facility_api_calls = max(0, facility_request_end - facility_request_start)
 
         self._stage("walking_calculation", 54)
         await self._attach_walking_results(center, facilities, events, partial_failures)
@@ -217,7 +223,7 @@ class AnalysisApplicationService:
         metrics = {
             "facility_count": len(facilities),
             "facility_provider_calls": facility_provider_calls,
-            "facility_api_calls": facility_provider_calls if descriptor.source == "real_api" else 0,
+            "facility_api_calls": facility_api_calls,
             "quality_event_count": len(events),
             "partial_failure_count": len(partial_failures),
             **self.walking_service.metrics.report_values(),

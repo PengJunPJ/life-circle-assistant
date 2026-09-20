@@ -18,7 +18,7 @@ def test_map_status_and_mock_geocode():
     status = client.get("/api/map/status")
     assert status.status_code == 200
     assert status.json()["mock_available"] is True
-    geocode = client.get("/api/geocode", params={"address": "萝岗街道"})
+    geocode = client.get("/api/geocode", params={"address": "红山街道海韵东路"})
     assert geocode.json()["source"] == "local_snapshot"
     unsupported = client.get("/api/geocode", params={"address": "广州市其他任意地址"})
     assert unsupported.status_code == 422
@@ -26,7 +26,7 @@ def test_map_status_and_mock_geocode():
 
     reverse = client.get("/api/locations/reverse", params={"lng": 113.4872, "lat": 23.1068})
     assert reverse.status_code == 200
-    assert reverse.json()["result"]["address"] == "广州市黄埔区萝岗街道样例社区"
+    assert reverse.json()["result"]["address"] == "广州市黄埔区红山街道海韵东路离线样例中心"
 
     outside = client.get("/api/locations/reverse", params={"lng": 113.6, "lat": 23.2})
     assert outside.status_code == 422
@@ -70,7 +70,7 @@ def test_create_and_get_analysis():
     assert body["center"] == {
         "lng": 113.4872,
         "lat": 23.1068,
-        "address": "广州市黄埔区萝岗街道样例社区",
+        "address": "广州市黄埔区红山街道海韵东路离线样例中心",
         "selection_method": "default",
         "source": "local_snapshot",
         "support_status": "supported",

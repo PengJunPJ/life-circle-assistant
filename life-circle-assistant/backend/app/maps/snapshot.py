@@ -32,14 +32,14 @@ class SnapshotMapProvider:
     async def geocode(self, address: str, city: str = "广州") -> list[LocationResult]:
         normalized = address.strip()
         known_address = str(self.center["address"])
-        if not normalized or not any(token in normalized for token in ("萝岗", "样例社区", known_address)):
-            raise MapProviderError("本地快照只支持内置的萝岗街道样例位置，不能解析任意地址")
+        if not normalized or not any(token in normalized for token in ("红山", "海韵东路", "离线样例", known_address)):
+            raise MapProviderError("本地快照只支持内置的红山街道海韵东路离线样例中心，不能解析任意地址")
         return [LocationResult(lng=float(self.center["lng"]), lat=float(self.center["lat"]), address=known_address)]
 
     async def reverse_geocode(self, lng: float, lat: float) -> LocationResult:
         distance = haversine_meters((lng, lat), (float(self.center["lng"]), float(self.center["lat"])))
         if distance > SNAPSHOT_SUPPORTED_RADIUS_M:
-            raise MapProviderError("该位置超出本地快照支持范围；离线模式仅支持萝岗街道样例中心周边 1 公里")
+            raise MapProviderError("该位置超出本地快照支持范围；离线模式仅支持红山街道海韵东路离线样例中心周边 1 公里")
         address = str(self.center["address"])
         if distance > 30:
             address = f"{address}（样例范围内坐标选点）"
