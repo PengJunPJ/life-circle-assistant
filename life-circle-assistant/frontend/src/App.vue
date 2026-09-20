@@ -7,13 +7,17 @@
         :mode="mode"
         :minutes="minutes"
         :visible-categories="visibleCategories"
+        :show-normal="showNormal"
         :show-sparse="showSparse"
+        :show-critical="showCritical"
         :loading="loading"
         :source="report?.source"
         @update:address="address = $event"
         @update:mode="mode = $event"
         @update:minutes="minutes = $event"
+        @update:show-normal="showNormal = $event"
         @update:show-sparse="showSparse = $event"
+        @update:show-critical="showCritical = $event"
         @toggle-category="toggleCategory"
         @run="runAnalysis"
       />
@@ -21,7 +25,9 @@
         :report="report"
         :minutes="minutes"
         :visible-categories="visibleCategories"
+        :show-normal="showNormal"
         :show-sparse="showSparse"
+        :show-critical="showCritical"
         :loading="loading"
         :progress="progress"
         @map-ready="handleMapReady"
@@ -43,7 +49,7 @@ import ReportPanel from './components/ReportPanel.vue'
 
 const mapReady = ref(false)
 const analysisStarted = ref(false)
-const { address, mode, minutes, visibleCategories, showSparse, loading, progress, report, runAnalysis, toggleCategory } = useAnalysis(mapReady)
+const { address, mode, minutes, visibleCategories, showNormal, showSparse, showCritical, loading, progress, report, runAnalysis, toggleCategory } = useAnalysis(mapReady)
 
 // 地图组件先确定真实底图是否可用，再启动首次分析，避免真实地图初始化与任务请求竞态。
 function handleMapReady(value: boolean) {

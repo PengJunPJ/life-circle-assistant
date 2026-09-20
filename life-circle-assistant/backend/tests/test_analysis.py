@@ -109,6 +109,24 @@ class FixtureMapProvider:
         ]
 
 
+class PartialWalkingFixtureMapProvider(FixtureMapProvider):
+    async def walking_matrix(self, origins: list[tuple[float, float]], destinations: list[tuple[float, float]]):
+        rows = await super().walking_matrix(origins, destinations)
+        if len(origins) > 1 and rows and rows[0]:
+            rows[0][0] = WalkingResult(
+                origin=origins[0],
+                destination=destinations[0],
+                success=False,
+                distance_m=None,
+                duration_s=None,
+                source="real_api",
+                method="fixture_walking_matrix",
+                error_code="fixture_timeout",
+                error_message="确定性步行超时",
+            )
+        return rows
+
+
 def test_provider_can_be_replaced_without_real_baidu_requests():
     provider = FixtureMapProvider()
     fixture_client = TestClient(create_app(provider))
@@ -133,6 +151,40 @@ def test_provider_can_be_replaced_without_real_baidu_requests():
     assert "search_facilities:market" in provider.calls
     assert "search_facilities:school" in provider.calls
     assert "walking_matrix" in provider.calls
+
+
+def test_service_areas_are_complete_per_category_and_include_walking_evidence():
+    provider = FixtureMapProvider()
+    fixture_client = TestClient(create_app(provider))
+    response = fixture_client.post("/api/analyze", json={"minutes": 15, "categories": ["market", "school"]})
+    report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
+
+    features = report["service_areas"]["features"]
+    assert len(features) == 32
+    assert {feature["properties"]["category"] for feature in features} == {"market", "school"}
+    assert all(feature["properties"]["coordinate_system"] == "BD-09" for feature in features)
+    assert all(feature["properties"]["kind"] in {"normal", "sparse", "critical"} for feature in features)
+    assert all("basis" in feature["properties"] for feature in features)
+    assert all("nearest_walk_minutes" in feature["properties"] for feature in features)
+    assert all("nearest_walk_distance_m" in feature["properties"] for feature in features)
+    assert provider.calls.count("walking_matrix") >= 2
+
+
+def test_partial_grid_walking_result_is_disclosed_without_failing_whole_report():
+    provider = PartialWalkingFixtureMapProvider()
+    fixture_client = TestClient(create_app(provider))
+    response = fixture_client.post("/api/analyze", json={"categories": ["market"]})
+    report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
+
+    assert report["status"] == "completed"
+    assert report["completeness"] == "partial"
+    assert any(
+        event["code"] == "service_area_walking_partial" and event["category"] == "market"
+        for event in report["data_quality"]["events"]
+    )
+    first_cell = report["service_areas"]["features"][0]["properties"]
+    assert first_cell["failed_route_count"] == 1
+    assert first_cell["confidence"] == "low"
 
 
 def test_category_failure_produces_partial_report_and_quality_event():

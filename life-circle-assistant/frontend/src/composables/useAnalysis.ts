@@ -9,7 +9,9 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
   const mode = ref<AnalysisMode>('demo')
   const minutes = ref<AnalysisMinutes>(15)
   const visibleCategories = ref([...DEFAULT_CATEGORIES])
+  const showNormal = ref(false)
   const showSparse = ref(true)
+  const showCritical = ref(true)
   const loading = ref(false)
   const progress = ref(0)
   const report = ref<Report | null>(null)
@@ -49,5 +51,5 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
       : [...visibleCategories.value, category]
   }
 
-  return { address, mode, minutes, visibleCategories, showSparse, loading, progress, report, runAnalysis, toggleCategory }
+  return { address, mode, minutes, visibleCategories, showNormal, showSparse, showCritical, loading, progress, report, runAnalysis, toggleCategory }
 }

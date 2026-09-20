@@ -7,12 +7,12 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import Any, Callable
 
-from ..baidu import haversine_meters
 from ..contracts.reports import build_quality_summary, create_report_skeleton, quality_event
 from ..maps.provider import MapProvider, MapProviderError, WalkingResult
 from ..mock_data import CATEGORIES, mock_isochrone
 from ..schemas import AnalyzeRequest
 from .scoring import score_report
+from .service_areas import build_category_service_areas
 
 
 StageUpdater = Callable[[str, str, int], None]
@@ -89,7 +89,7 @@ class AnalysisApplicationService:
         failed_categories: set[str] = set()
         for category in request.categories:
             try:
-                results = await self.provider.search_facilities(category, center)
+                results = await self.provider.search_facilities(category, center, radius_m=3_000)
                 facilities.extend(asdict(item) for item in results)
             except MapProviderError as exc:
                 failed_categories.add(category)
@@ -111,7 +111,16 @@ class AnalysisApplicationService:
         isochrone = await self._build_isochrone(center, request, events, partial_failures)
 
         self._stage("region_classification", 72)
-        zones = self._build_zones(center, facilities, descriptor.label)
+        zones, zone_events, zone_failures = await build_category_service_areas(
+            self.provider,
+            center,
+            list(request.categories),
+            facilities,
+            request.minutes,
+            failed_categories=failed_categories,
+        )
+        events.extend(zone_events)
+        partial_failures.extend(zone_failures)
 
         self._stage("scoring", 86)
         scoring = score_report(request.categories, facilities, center, failed_categories)
@@ -362,36 +371,3 @@ class AnalysisApplicationService:
                 object_ref=object_ref,
             )
         )
-
-    @staticmethod
-    def _build_zones(center: tuple[float, float], facilities: list[dict[str, Any]], source_label: str) -> dict[str, Any]:
-        features = []
-        grid_size, span = 4, 1_000
-        cell = span * 2 / grid_size
-        for row in range(grid_size):
-            for column in range(grid_size):
-                x, y = -span + column * cell, -span + row * cell
-                grid_center = interpolate_point(center, math.atan2(y, x), math.hypot(x, y))
-                nearest = min((haversine_meters(grid_center, (item["lng"], item["lat"])) for item in facilities), default=2_000)
-                kind = "critical" if nearest > 1_000 else "sparse" if nearest > 650 else None
-                if not kind:
-                    continue
-                corners = [
-                    interpolate_point(center, math.atan2(y + dy, x + dx), math.hypot(x + dx, y + dy))
-                    for dx, dy in [(0, 0), (cell, 0), (cell, cell), (0, cell)]
-                ]
-                coords = [[lng, lat] for lng, lat in corners]
-                coords.append(coords[0])
-                features.append(
-                    polygon_feature(
-                        coords,
-                        {
-                            "kind": kind,
-                            "label": "重点服务盲区" if kind == "critical" else "设施稀疏区",
-                            "category": "mixed",
-                            "color": "#c75c43" if kind == "critical" else "#d8a64e",
-                            "basis": f"{source_label}设施坐标预筛选",
-                        },
-                    )
-                )
-        return {"type": "FeatureCollection", "features": features}

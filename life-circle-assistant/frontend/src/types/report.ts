@@ -18,11 +18,43 @@ export type Poi = {
   calculation_method?: string
 }
 
-export type GeoJsonFeature = {
+export type ServiceAreaKind = 'normal' | 'sparse' | 'critical'
+
+export type ServiceAreaProperties = {
+  grid_id: string
+  coordinate_system: 'BD-09'
+  kind: ServiceAreaKind
+  region_type: ServiceAreaKind
+  label: string
+  category: string
+  category_label: string
+  color: string
+  threshold_minutes: number
+  nearby_radius_m: number
+  nearby_facility_count: number
+  lacks_nearby_facility: boolean
+  candidate_prefilter_radius_m: number
+  candidate_facility_count: number
+  nearest_facility_id: string | null
+  nearest_facility_name: string | null
+  nearest_walk_minutes: number | null
+  nearest_walk_distance_m: number | null
+  walk_threshold_exceeded: boolean | null
+  critical_conditions_met: boolean
+  source: string
+  calculation_method: string
+  basis: string
+  confidence: 'high' | 'medium' | 'low'
+  failed_route_count: number
+}
+
+export type GeoJsonFeature<TProperties extends Record<string, any> = Record<string, any>> = {
   type: 'Feature'
-  properties: Record<string, any>
+  properties: TProperties
   geometry: { type: string; coordinates: number[][][] }
 }
+
+export type ServiceAreaFeature = GeoJsonFeature<ServiceAreaProperties>
 
 export type Report = {
   schema_version: '2.0' | string
@@ -51,7 +83,8 @@ export type Report = {
   }
   isochrone: GeoJsonFeature
   pois: Poi[]
-  zones: { type: 'FeatureCollection'; features: GeoJsonFeature[] }
+  zones: { type: 'FeatureCollection'; features: ServiceAreaFeature[] }
+  service_areas: { type: 'FeatureCollection'; features: ServiceAreaFeature[] }
   summary: {
     score: number | null
     score_status: OverallScoring['status']

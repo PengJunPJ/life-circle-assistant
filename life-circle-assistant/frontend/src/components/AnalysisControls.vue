@@ -15,9 +15,11 @@
       <el-segmented :model-value="minutes" :options="[10, 15, 20]" size="small" @update:model-value="emit('update:minutes', $event as AnalysisMinutes)" />
     </div>
     <div class="panel-section">
-      <label>设施图层</label>
+      <label>设施与服务区域图层</label>
       <div class="facility-list"><button v-for="category in Object.keys(FACILITY_LABELS)" :key="category" :class="['facility-toggle', { selected: visibleCategories.includes(category) }]" @click="emit('toggle-category', category)"><span class="facility-icon" :style="{ background: categoryColor(category) }">{{ FACILITY_ICONS[category] }}</span><span>{{ FACILITY_LABELS[category] }}</span><span class="check">{{ visibleCategories.includes(category) ? '✓' : '' }}</span></button></div>
+      <div class="switch-line"><span>显示正常覆盖区</span><el-switch :model-value="showNormal" @update:model-value="emit('update:showNormal', $event)" /></div>
       <div class="switch-line"><span>显示设施稀疏区</span><el-switch :model-value="showSparse" @update:model-value="emit('update:showSparse', $event)" /></div>
+      <div class="switch-line"><span>显示重点服务盲区</span><el-switch :model-value="showCritical" @update:model-value="emit('update:showCritical', $event)" /></div>
     </div>
     <button class="primary-action" :disabled="loading" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : '开始体检' }}<span>↗</span></button>
     <div class="api-note"><span class="api-indicator" :class="{ real: source === 'baidu' }"></span><span>当前：{{ source === 'baidu' ? '百度地图真实数据' : '本地百度数据快照' }}</span></div>
@@ -29,12 +31,14 @@ import { Location, Refresh, Search } from '@element-plus/icons-vue'
 import { FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { AnalysisMode, AnalysisMinutes } from '../types/report'
 
-defineProps<{ address: string; mode: AnalysisMode; minutes: AnalysisMinutes; visibleCategories: string[]; showSparse: boolean; loading: boolean; source?: string }>()
+defineProps<{ address: string; mode: AnalysisMode; minutes: AnalysisMinutes; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; source?: string }>()
 const emit = defineEmits<{
   'update:address': [value: string]
   'update:mode': [value: AnalysisMode]
   'update:minutes': [value: AnalysisMinutes]
+  'update:showNormal': [value: boolean]
   'update:showSparse': [value: boolean]
+  'update:showCritical': [value: boolean]
   'toggle-category': [value: string]
   run: []
 }>()

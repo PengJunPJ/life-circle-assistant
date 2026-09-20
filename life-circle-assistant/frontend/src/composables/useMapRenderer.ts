@@ -2,19 +2,23 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { fetchMapConfig } from '../services/analysisApi'
-import type { Report } from '../types/report'
+import type { Report, ServiceAreaFeature } from '../types/report'
+import { isServiceAreaVisible, pointInPolygon } from '../utils/serviceAreaLayers'
 
 type MapRendererOptions = {
   report: Ref<Report | null>
   visibleCategories: Ref<string[]>
+  showNormal: Ref<boolean>
   showSparse: Ref<boolean>
+  showCritical: Ref<boolean>
 }
 
-export function useMapRenderer({ report, visibleCategories, showSparse }: MapRendererOptions) {
+export function useMapRenderer({ report, visibleCategories, showNormal, showSparse, showCritical }: MapRendererOptions) {
   const mapCanvas = ref<HTMLCanvasElement | null>(null)
   const mapContainer = ref<HTMLDivElement | null>(null)
   const realMapReady = ref(false)
   const mapLoadComplete = ref(false)
+  const selectedServiceArea = ref<ServiceAreaFeature | null>(null)
   let baiduMap: any = null
 
   function project(lng: number, lat: number, width: number, height: number) {
@@ -54,8 +58,10 @@ export function useMapRenderer({ report, visibleCategories, showSparse }: MapRen
       ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke()
     }
     drawPolygon(report.value.isochrone.geometry.coordinates[0], 'rgba(61, 155, 139, .22)', '#237866')
-    if (showSparse.value) report.value.zones.features.filter((zone) => zone.properties.kind === 'sparse').forEach((zone) => drawPolygon(zone.geometry.coordinates[0], 'rgba(216, 166, 78, .3)', '#c18b31'))
-    report.value.zones.features.filter((zone) => zone.properties.kind === 'critical').forEach((zone) => drawPolygon(zone.geometry.coordinates[0], 'rgba(199, 92, 67, .28)', '#b74a35'))
+    visibleServiceAreas().forEach((zone) => {
+      const style = serviceAreaStyle(zone)
+      drawPolygon(zone.geometry.coordinates[0], style.fill, style.stroke)
+    })
     report.value.pois.filter((poi) => visibleCategories.value.includes(poi.category)).forEach((poi) => {
       const point = project(poi.lng, poi.lat, w, h)
       ctx.beginPath(); ctx.arc(point.x, point.y, 12, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill()
@@ -74,6 +80,33 @@ export function useMapRenderer({ report, visibleCategories, showSparse }: MapRen
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(center.x - 5, center.y); ctx.lineTo(center.x + 5, center.y); ctx.moveTo(center.x, center.y - 5); ctx.lineTo(center.x, center.y + 5); ctx.stroke()
     ctx.font = '700 11px sans-serif'; ctx.fillStyle = '#17333d'; ctx.fillText(`${report.value.isochrone.properties.minutes}分钟步行起点`, center.x + 30, center.y - 2)
     ctx.font = '10px sans-serif'; ctx.fillStyle = '#59716d'; ctx.fillText('等时圈计算中心', center.x + 30, center.y + 13)
+  }
+
+  function visibility() {
+    return { normal: showNormal.value, sparse: showSparse.value, critical: showCritical.value }
+  }
+
+  function visibleServiceAreas() {
+    return (report.value?.service_areas.features || report.value?.zones.features || [])
+      .filter((feature) => isServiceAreaVisible(feature, visibleCategories.value, visibility()))
+  }
+
+  function serviceAreaStyle(feature: ServiceAreaFeature) {
+    if (feature.properties.kind === 'critical') return { fill: 'rgba(199, 92, 67, .28)', stroke: '#b74a35' }
+    if (feature.properties.kind === 'sparse') return { fill: 'rgba(216, 166, 78, .27)', stroke: '#c18b31' }
+    return { fill: 'rgba(79, 157, 127, .08)', stroke: '#6eac94' }
+  }
+
+  function handleCanvasClick(event: MouseEvent) {
+    const canvas = mapCanvas.value
+    if (!canvas || !report.value) return
+    const rect = canvas.getBoundingClientRect()
+    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    const hit = [...visibleServiceAreas()].reverse().find((feature) => {
+      const polygon = feature.geometry.coordinates[0].map(([lng, lat]) => project(lng, lat, rect.width, rect.height))
+      return pointInPolygon(point, polygon)
+    })
+    selectedServiceArea.value = hit || null
   }
 
   function loadScript(src: string) {
@@ -123,10 +156,12 @@ export function useMapRenderer({ report, visibleCategories, showSparse }: MapRen
     baiduMap.clearOverlays()
     const polygon = report.value.isochrone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
     baiduMap.addOverlay(new BMap.Polygon(polygon, { strokeColor: '#237866', strokeWeight: 4, strokeOpacity: .95, strokeStyle: 'dashed', fillColor: '#3d9b8b', fillOpacity: .2 }))
-    report.value.zones.features.forEach((zone) => {
-      if (zone.properties.kind === 'sparse' && !showSparse.value) return
+    visibleServiceAreas().forEach((zone) => {
       const points = zone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
-      baiduMap.addOverlay(new BMap.Polygon(points, { strokeColor: zone.properties.color, strokeWeight: 2, strokeOpacity: .9, fillColor: zone.properties.color, fillOpacity: .25 }))
+      const style = serviceAreaStyle(zone)
+      const polygon = new BMap.Polygon(points, { strokeColor: style.stroke, strokeWeight: 2, strokeOpacity: .9, fillColor: zone.properties.color, fillOpacity: zone.properties.kind === 'normal' ? .08 : .25 })
+      polygon.addEventListener('click', () => { selectedServiceArea.value = zone })
+      baiduMap.addOverlay(polygon)
     })
     report.value.pois.filter((poi) => visibleCategories.value.includes(poi.category)).forEach((poi) => {
       const point = new BMap.Point(poi.lng, poi.lat)
@@ -148,7 +183,10 @@ export function useMapRenderer({ report, visibleCategories, showSparse }: MapRen
     else drawMap()
   }
 
-  watch([report, visibleCategories, showSparse], async () => {
+  watch([report, visibleCategories, showNormal, showSparse, showCritical], async () => {
+    if (selectedServiceArea.value && !isServiceAreaVisible(selectedServiceArea.value, visibleCategories.value, visibility())) {
+      selectedServiceArea.value = null
+    }
     await nextTick()
     realMapReady.value ? renderBaiduMap() : drawMap()
   })
@@ -158,5 +196,15 @@ export function useMapRenderer({ report, visibleCategories, showSparse }: MapRen
   })
   onBeforeUnmount(() => window.removeEventListener('resize', resize))
 
-  return { mapCanvas, mapContainer, realMapReady, mapLoadComplete, drawMap, renderBaiduMap }
+  return {
+    mapCanvas,
+    mapContainer,
+    realMapReady,
+    mapLoadComplete,
+    selectedServiceArea,
+    handleCanvasClick,
+    closeServiceAreaEvidence: () => { selectedServiceArea.value = null },
+    drawMap,
+    renderBaiduMap,
+  }
 }
