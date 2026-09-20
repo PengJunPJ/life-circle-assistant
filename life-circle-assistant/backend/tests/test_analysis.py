@@ -148,9 +148,15 @@ class FixtureMapProvider:
 
 
 class PartialWalkingFixtureMapProvider(FixtureMapProvider):
+    def __init__(self):
+        super().__init__()
+        self.failed_pair = None
+
     async def walking_matrix(self, origins: list[tuple[float, float]], destinations: list[tuple[float, float]]):
         rows = await super().walking_matrix(origins, destinations)
-        if len(origins) > 1 and rows and rows[0]:
+        if len(origins) > 1 and rows and rows[0] and self.failed_pair is None:
+            self.failed_pair = (origins[0], destinations[0])
+        if rows and rows[0] and self.failed_pair == (origins[0], destinations[0]):
             rows[0][0] = WalkingResult(
                 origin=origins[0],
                 destination=destinations[0],
@@ -183,11 +189,9 @@ class LongWalkingFixtureMapProvider(FixtureMapProvider):
             ]
             for origin in origins
         ]
-
-
-def test_provider_can_be_replaced_without_real_baidu_requests():
+def test_provider_can_be_replaced_without_real_baidu_requests(tmp_path):
     provider = FixtureMapProvider()
-    fixture_client = TestClient(create_app(provider))
+    fixture_client = TestClient(create_app(provider, tmp_path / "replace-provider.db"))
 
     geocode = fixture_client.get("/api/geocode", params={"address": "测试地址"})
     assert geocode.status_code == 200
@@ -212,9 +216,9 @@ def test_provider_can_be_replaced_without_real_baidu_requests():
     assert "walking_matrix" in provider.calls
 
 
-def test_service_areas_are_complete_per_category_and_include_walking_evidence():
+def test_service_areas_are_complete_per_category_and_include_walking_evidence(tmp_path):
     provider = FixtureMapProvider()
-    fixture_client = TestClient(create_app(provider))
+    fixture_client = TestClient(create_app(provider, tmp_path / "service-areas.db"))
     response = fixture_client.post("/api/analyze", json={"minutes": 15, "categories": ["market", "school"]})
     report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
 
@@ -229,9 +233,9 @@ def test_service_areas_are_complete_per_category_and_include_walking_evidence():
     assert provider.calls.count("walking_matrix") >= 2
 
 
-def test_partial_grid_walking_result_is_disclosed_without_failing_whole_report():
+def test_partial_grid_walking_result_is_disclosed_without_failing_whole_report(tmp_path):
     provider = PartialWalkingFixtureMapProvider()
-    fixture_client = TestClient(create_app(provider))
+    fixture_client = TestClient(create_app(provider, tmp_path / "partial-grid.db"))
     response = fixture_client.post("/api/analyze", json={"categories": ["market"]})
     report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
 
@@ -244,11 +248,37 @@ def test_partial_grid_walking_result_is_disclosed_without_failing_whole_report()
     first_cell = report["service_areas"]["features"][0]["properties"]
     assert first_cell["failed_route_count"] == 1
     assert first_cell["confidence"] == "low"
+    assert report["category_scores"][0]["valid_for_overall"] is False
+    assert report["scoring"]["score"] is None
+    metrics = report["execution"]["metrics"]
+    assert metrics["walking_api_calls"] > 0
+    assert metrics["walking_failures"] > 0
 
 
-def test_category_failure_produces_partial_report_and_quality_event():
+def test_report_discloses_cache_hits_and_reuses_persisted_walking_results(tmp_path):
+    database_path = tmp_path / "analysis-walking-cache.db"
+    provider = FixtureMapProvider()
+    fixture_client = TestClient(create_app(provider, database_path))
+
+    first = fixture_client.post("/api/analyze", json={"categories": ["market"]}).json()
+    first_report = fixture_client.get(f"/api/report/{first['id']}").json()
+    provider_call_count = provider.calls.count("walking_matrix")
+    assert first_report["execution"]["metrics"]["walking_cache_misses"] > 0
+    assert first_report["execution"]["metrics"]["walking_api_calls"] > 0
+
+    second = fixture_client.post("/api/analyze", json={"categories": ["market"]}).json()
+    second_report = fixture_client.get(f"/api/report/{second['id']}").json()
+    assert provider.calls.count("walking_matrix") == provider_call_count
+    assert second_report["execution"]["metrics"]["walking_cache_hits"] > 0
+    assert second_report["execution"]["metrics"]["walking_api_calls"] == 0
+    assert any(item["source"] == "cache" for item in second_report["facilities"])
+    assert any(event["code"] == "walking_cache_used" for event in second_report["data_quality"]["events"])
+    assert any(source["kind"] == "cache" for source in second_report["data_quality"]["sources"])
+
+
+def test_category_failure_produces_partial_report_and_quality_event(tmp_path):
     provider = FixtureMapProvider(failing_category="school")
-    fixture_client = TestClient(create_app(provider))
+    fixture_client = TestClient(create_app(provider, tmp_path / "category-failure.db"))
     response = fixture_client.post("/api/analyze", json={"categories": ["market", "school"]})
     report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
 

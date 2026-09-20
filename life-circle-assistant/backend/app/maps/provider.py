@@ -8,7 +8,20 @@ DataSourceKind = Literal["real_api", "cache", "local_snapshot", "interpolation",
 
 
 class MapProviderError(RuntimeError):
-    """地图提供方无法完成请求时抛出的统一异常。"""
+    """地图提供方无法完成请求时抛出的、可供可靠调用层分类的异常。"""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str = "provider_error",
+        retryable: bool = False,
+        rate_limited: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.retryable = retryable
+        self.rate_limited = rate_limited
 
 
 @dataclass(frozen=True)
@@ -48,6 +61,9 @@ class WalkingResult:
     method: str
     error_code: str | None = None
     error_message: str | None = None
+    underlying_source: DataSourceKind | None = None
+    cached_at: str | None = None
+    expires_at: str | None = None
 
 
 class MapProvider(Protocol):

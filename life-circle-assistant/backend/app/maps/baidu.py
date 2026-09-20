@@ -26,6 +26,11 @@ class BaiduMapProvider:
         self.concurrency = concurrency
 
     @property
+    def supports_batch_walking(self) -> bool:
+        # 百度轻量步行路线接口一次只接受一个坐标对，由可靠调用层控制并发和 QPS。
+        return False
+
+    @property
     def descriptor(self) -> ProviderDescriptor:
         return ProviderDescriptor(
             id="baidu-web-service",
@@ -39,14 +44,14 @@ class BaiduMapProvider:
         try:
             result = await self.client.geocode(address, city)
         except BaiduMapError as exc:
-            raise MapProviderError(str(exc)) from exc
+            raise self._provider_error(exc) from exc
         return [LocationResult(lng=result["lng"], lat=result["lat"], address=result["address"])]
 
     async def reverse_geocode(self, lng: float, lat: float) -> LocationResult:
         try:
             result = await self.client.reverse_geocode(lng, lat)
         except BaiduMapError as exc:
-            raise MapProviderError(str(exc)) from exc
+            raise self._provider_error(exc) from exc
         return LocationResult(lng=result["lng"], lat=result["lat"], address=result["address"])
 
     async def search_places(
@@ -58,7 +63,7 @@ class BaiduMapProvider:
         try:
             results = await self.client.search_poi(query, center[0], center[1], radius_m)
         except BaiduMapError as exc:
-            raise MapProviderError(str(exc)) from exc
+            raise self._provider_error(exc) from exc
         return [self._normalize_place(item, "unknown") for item in results if self._has_location(item)]
 
     async def search_facilities(
@@ -73,7 +78,7 @@ class BaiduMapProvider:
         try:
             results = await self.client.search_poi(query, center[0], center[1], radius_m)
         except BaiduMapError as exc:
-            raise MapProviderError(str(exc)) from exc
+            raise self._provider_error(exc) from exc
         return [self._normalize_place(item, category) for item in results if self._has_location(item)]
 
     async def walking_matrix(
@@ -105,7 +110,7 @@ class BaiduMapProvider:
                         duration_s=None,
                         source="real_api",
                         method="baidu_walking_route",
-                        error_code="walking_request_failed",
+                        error_code=exc.code,
                         error_message=str(exc),
                     )
 
@@ -113,6 +118,15 @@ class BaiduMapProvider:
         for origin in origins:
             rows.append(await asyncio.gather(*(calculate(origin, destination) for destination in destinations)))
         return rows
+
+    @staticmethod
+    def _provider_error(exc: BaiduMapError) -> MapProviderError:
+        return MapProviderError(
+            str(exc),
+            code=exc.code,
+            retryable=exc.retryable,
+            rate_limited=exc.rate_limited,
+        )
 
     @staticmethod
     def _has_location(item: dict) -> bool:

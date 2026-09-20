@@ -9,6 +9,7 @@ from typing import Any, Callable
 
 from ..contracts.reports import build_quality_summary, create_report_skeleton, quality_event
 from ..maps.provider import MapProvider, MapProviderError, WalkingResult
+from ..maps.walking import WalkingService
 from ..mock_data import CATEGORIES, mock_isochrone
 from ..schemas import AnalyzeRequest
 from .recommendations import build_planning_recommendations
@@ -48,12 +49,20 @@ def interpolate_point(center: tuple[float, float], angle: float, radius_m: float
 class AnalysisApplicationService:
     """通过可替换地图提供方编排一次公开分析任务。"""
 
-    def __init__(self, provider: MapProvider, update_stage: StageUpdater | None = None) -> None:
+    def __init__(
+        self,
+        provider: MapProvider,
+        update_stage: StageUpdater | None = None,
+        walking_service: WalkingService | None = None,
+    ) -> None:
         self.provider = provider
+        self.walking_service = walking_service or WalkingService(provider)
         self.update_stage = update_stage or (lambda _code, _label, _progress: None)
         self.stage_history: list[dict[str, Any]] = []
 
     async def run(self, task_id: str, request: AnalyzeRequest) -> dict[str, Any]:
+        # 服务对象可被测试复用；每次运行仍必须报告本次分析而非累计指标。
+        self.walking_service.metrics = type(self.walking_service.metrics)()
         started_at = now()
         started_clock = time.perf_counter()
         events: list[dict[str, Any]] = []
@@ -87,13 +96,13 @@ class AnalysisApplicationService:
 
         self._stage("facility_discovery", 32)
         facilities: list[dict[str, Any]] = []
-        failed_categories: set[str] = set()
+        facility_search_failed_categories: set[str] = set()
         for category in request.categories:
             try:
                 results = await self.provider.search_facilities(category, center, radius_m=3_000)
                 facilities.extend(asdict(item) for item in results)
             except MapProviderError as exc:
-                failed_categories.add(category)
+                facility_search_failed_categories.add(category)
                 partial_failures.append({"scope": "category", "category": category, "code": "facility_search_failed", "message": str(exc)})
                 events.append(
                     quality_event(
@@ -113,18 +122,33 @@ class AnalysisApplicationService:
 
         self._stage("region_classification", 72)
         zones, zone_events, zone_failures = await build_category_service_areas(
-            self.provider,
+            self.walking_service,
             center,
             list(request.categories),
             facilities,
             request.minutes,
-            failed_categories=failed_categories,
+            failed_categories=facility_search_failed_categories,
         )
         events.extend(zone_events)
         partial_failures.extend(zone_failures)
 
         self._stage("scoring", 86)
-        scoring = score_report(request.categories, facilities, center, failed_categories)
+        walking_failed_categories = {
+            category
+            for category in request.categories
+            if any(
+                failure.get("category") == category
+                and failure.get("code") == "walking_category_incomplete"
+                for failure in partial_failures
+            )
+        }
+        scoring = score_report(
+            request.categories,
+            facilities,
+            center,
+            facility_search_failed_categories,
+            calculation_failed_categories=walking_failed_categories,
+        )
         stats = scoring["category_scores"]
         overall_scoring = scoring["overall"]
         critical = sum(item["properties"]["kind"] == "critical" for item in zones["features"])
@@ -132,6 +156,50 @@ class AnalysisApplicationService:
         recommendation_result = build_planning_recommendations(stats, zones)
 
         self._stage("report_assembly", 95)
+        if self.walking_service.metrics.cache_hits:
+            events.append(
+                quality_event(
+                    "walking_cache_used",
+                    "info",
+                    "task",
+                    f"本次分析复用了 {self.walking_service.metrics.cache_hits} 个有效步行缓存结果。",
+                    "cache",
+                    "walking_cache",
+                )
+            )
+        if self.walking_service.metrics.rate_limits:
+            events.append(
+                quality_event(
+                    "walking_rate_limited",
+                    "warning",
+                    "task",
+                    f"步行接口发生 {self.walking_service.metrics.rate_limits} 次限流，已按有限退避规则重试或记录失败。",
+                    descriptor.source,
+                    "reliable_walking_service",
+                )
+            )
+        if self.walking_service.metrics.timeouts:
+            events.append(
+                quality_event(
+                    "walking_timeout",
+                    "warning",
+                    "task",
+                    f"步行接口发生 {self.walking_service.metrics.timeouts} 次超时，已按有限退避规则重试或记录失败。",
+                    descriptor.source,
+                    "reliable_walking_service",
+                )
+            )
+        if self.walking_service.metrics.format_errors:
+            events.append(
+                quality_event(
+                    "walking_format_error",
+                    "warning",
+                    "task",
+                    f"步行接口发生 {self.walking_service.metrics.format_errors} 次返回格式错误，相关坐标对已标记失败。",
+                    descriptor.source,
+                    "reliable_walking_service",
+                )
+            )
         data_quality = build_quality_summary(descriptor, events, partial_failures)
         completed_at = now()
         completeness = "partial" if partial_failures else "complete"
@@ -144,6 +212,7 @@ class AnalysisApplicationService:
                 "facility_count": len(facilities),
                 "quality_event_count": len(events),
                 "partial_failure_count": len(partial_failures),
+                **self.walking_service.metrics.report_values(),
             },
         }
         report = create_report_skeleton(
@@ -207,11 +276,12 @@ class AnalysisApplicationService:
             return
         destinations = [(item["lng"], item["lat"]) for item in facilities]
         try:
-            rows = await self.provider.walking_matrix([center], destinations)
+            rows = await self.walking_service.walking_matrix([center], destinations)
         except MapProviderError as exc:
             rows = [[]]
             partial_failures.append({"scope": "walking", "code": "walking_matrix_failed", "message": str(exc)})
         routes = rows[0] if rows else []
+        walking_failures_by_category: dict[str, int] = {}
         for index, item in enumerate(facilities):
             route = routes[index] if index < len(routes) else None
             if not route or not route.success:
@@ -231,12 +301,23 @@ class AnalysisApplicationService:
                         object_ref=item["id"],
                     )
                 )
+                walking_failures_by_category[item["category"]] = walking_failures_by_category.get(item["category"], 0) + 1
                 continue
             item["walk_minutes"] = round((route.duration_s or 0) / 60, 1)
             item["walk_distance_m"] = round(route.distance_m or 0)
             item["source"] = route.source
             item["calculation_method"] = route.method
             self._record_degraded_route(route, events, item["category"], item["id"])
+        for category, failure_count in walking_failures_by_category.items():
+            partial_failures.append(
+                {
+                    "scope": "category",
+                    "category": category,
+                    "code": "walking_category_incomplete",
+                    "failed_count": failure_count,
+                    "message": f"{CATEGORIES[category]['label']}有 {failure_count} 个设施缺少有效步行结果，该类别排除综合评分。",
+                }
+            )
 
     async def _build_isochrone(
         self,
@@ -341,7 +422,7 @@ class AnalysisApplicationService:
 
     async def _single_route(self, origin: tuple[float, float], destination: tuple[float, float]) -> WalkingResult | None:
         try:
-            rows = await self.provider.walking_matrix([origin], [destination])
+            rows = await self.walking_service.walking_matrix([origin], [destination])
         except MapProviderError:
             return None
         return rows[0][0] if rows and rows[0] else None
@@ -353,9 +434,10 @@ class AnalysisApplicationService:
         category: str | None = None,
         object_ref: str | None = None,
     ) -> None:
-        if route.source not in {"interpolation", "degraded_estimate"}:
+        effective_source = route.underlying_source or route.source
+        if effective_source not in {"interpolation", "degraded_estimate"}:
             return
-        key = (route.source, route.method, category, object_ref)
+        key = (effective_source, route.method, category, object_ref)
         if any((event["source"], event["method"], event["category"], event["object_ref"]) == key for event in events):
             return
         events.append(
@@ -364,7 +446,7 @@ class AnalysisApplicationService:
                 "warning",
                 "coordinate_pair",
                 "该坐标对缺少快照路线，使用明确标记的步行估算，不代表真实 API 测算。",
-                route.source,
+                effective_source,
                 route.method,
                 category=category,
                 object_ref=object_ref,

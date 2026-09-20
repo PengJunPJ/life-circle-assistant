@@ -17,16 +17,19 @@ def score_report(
     facilities: list[dict[str, Any]],
     center: tuple[float, float],
     failed_categories: set[str] | None = None,
+    calculation_failed_categories: set[str] | None = None,
 ) -> dict[str, Any]:
     """生成类别评分及只基于有效类别的综合评分。"""
 
     failed = failed_categories or set()
+    calculation_failed = calculation_failed_categories or set()
     category_scores = [
         score_category(
             category,
             [facility for facility in facilities if facility["category"] == category],
             center,
             facility_search_failed=category in failed,
+            calculation_failed=category in calculation_failed,
         )
         for category in selected_categories
     ]
@@ -89,6 +92,7 @@ def score_category(
     center: tuple[float, float],
     *,
     facility_search_failed: bool = False,
+    calculation_failed: bool = False,
 ) -> dict[str, Any]:
     category_config = CATEGORIES[category]
     count = len(facilities)
@@ -104,6 +108,11 @@ def score_category(
         status = "data_unavailable"
         status_label = "数据不可用"
         status_explanation = "设施检索失败，不能把未知数量解释为真实零设施。"
+        valid_for_overall = False
+    elif calculation_failed:
+        status = "calculation_incomplete"
+        status_label = "计算不完整"
+        status_explanation = "该类别存在步行超时、限流、格式错误或部分网格失败，不纳入综合分。"
         valid_for_overall = False
     elif count == 0:
         status = "poor_coverage"
@@ -126,7 +135,7 @@ def score_category(
 
     components = [
         _quantity_component(count, facility_search_failed),
-        _walking_component(count, walking_values, facility_search_failed),
+        _walking_component(count, walking_values, facility_search_failed, calculation_failed),
         _distribution_component(facilities, center, facility_search_failed),
     ]
     component_scores = [component["score"] for component in components]
@@ -176,7 +185,12 @@ def _quantity_component(count: int, unavailable: bool) -> dict[str, Any]:
     return _component("quantity", "设施数量", score, score * COMPONENT_WEIGHTS["quantity"], reason, count, "个")
 
 
-def _walking_component(count: int, walking_values: list[float], unavailable: bool) -> dict[str, Any]:
+def _walking_component(
+    count: int,
+    walking_values: list[float],
+    unavailable: bool,
+    calculation_failed: bool = False,
+) -> dict[str, Any]:
     if unavailable:
         return _component(
             "walking_time",
@@ -185,6 +199,16 @@ def _walking_component(count: int, walking_values: list[float], unavailable: boo
             None,
             "设施检索失败，无法计算最近步行时间。",
             None,
+            "分钟",
+        )
+    if calculation_failed:
+        return _component(
+            "walking_time",
+            "最近步行时间",
+            None,
+            None,
+            "步行结果不完整，该类别不生成可用于综合分的步行子分。",
+            min(walking_values, default=None),
             "分钟",
         )
     if count == 0:

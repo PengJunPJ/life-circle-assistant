@@ -83,6 +83,14 @@ npm run dev
 - `POST /api/reports/{report_id}/rerun`：复制原请求参数创建新的任务和报告；
 - 原有 `GET /api/report/{task_id}` 保持兼容。
 
+## 步行计算缓存与可靠调用
+
+步行坐标对结果保存在同一 SQLite 数据库的 `walking_cache` 表中，缓存键包含提供方、有方向的起终点、步行方式和规范化坐标。只有成功结果会写入缓存，并保存原始数据来源、创建时间和过期时间；过期记录不会作为有效结果复用。
+
+真实地图模式优先使用提供方的批量步行矩阵能力；提供方不支持批量时，系统按 `WALKING_MAX_CONCURRENCY` 和 `WALKING_QPS` 执行受控并发。超时、最大重试次数、指数退避基数和缓存有效期分别由 `WALKING_TIMEOUT_SECONDS`、`WALKING_MAX_RETRIES`、`WALKING_RETRY_BASE_SECONDS` 和 `WALKING_CACHE_TTL_SECONDS` 配置。部分坐标对失败不会使整份报告失败，但报告会标记为部分结果，受影响类别不会纳入综合评分。
+
+V2 报告的 `execution.metrics` 记录步行提供方调用量、真实 API 调用量、批量调用量、缓存命中/未命中/过期量、重试、限流、超时、格式错误、最终失败、降级结果和步行计算耗时；`data_quality` 同时披露缓存、限流、超时和格式错误事件。
+
 ## 测试
 
 完成后端与前端依赖安装后，在应用目录执行统一质量检查：

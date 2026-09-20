@@ -125,6 +125,37 @@ async def build_category_service_areas(
             for cell in cells
         ]
         routes_by_cell = await _walking_results_by_cell(provider, cells, candidates_by_cell)
+        category_failed_count = sum(
+            1
+            for row_index, candidates in enumerate(candidates_by_cell)
+            for facility in candidates
+            if (
+                routes_by_cell[row_index].get(facility["id"]) is None
+                or not routes_by_cell[row_index][facility["id"]].success
+            )
+        )
+        if category_failed_count:
+            partial_failures.append(
+                {
+                    "scope": "category",
+                    "category": category,
+                    "code": "walking_category_incomplete",
+                    "failed_count": category_failed_count,
+                    "message": f"{CATEGORIES[category]['label']}共有 {category_failed_count} 个网格步行坐标对失败，该类别排除综合评分。",
+                }
+            )
+            quality_events.append(
+                {
+                    "code": "walking_category_incomplete",
+                    "severity": "warning",
+                    "scope": "category",
+                    "category": category,
+                    "object_ref": None,
+                    "source": provider.descriptor.source,
+                    "method": "provider_walking_matrix",
+                    "message": partial_failures[-1]["message"],
+                }
+            )
         for row_index, cell in enumerate(cells):
             candidates = candidates_by_cell[row_index]
             nearby_count = sum(

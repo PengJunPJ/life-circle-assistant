@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
+from typing import AsyncIterator
 
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
@@ -11,9 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from .analysis import AnalysisApplicationService
 from .maps import MapProvider, MapProviderError, create_map_provider
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
+from .maps.walking import WalkingService, WalkingSettings
 from .mock_data import CATEGORIES, CENTER
 from .schemas import AnalyzeRequest
-from .storage import Database, ReportRepository, TaskRepository
+from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
 
 
 load_dotenv()
@@ -39,7 +42,12 @@ async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: An
     def update_stage(code: str, label: str, progress: int) -> None:
         task_repository.update_stage(task_id, code, label, progress)
 
-    service = AnalysisApplicationService(app.state.map_provider, update_stage)
+    walking_service = WalkingService(
+        app.state.map_provider,
+        app.state.walking_cache_repository,
+        app.state.walking_settings,
+    )
+    service = AnalysisApplicationService(app.state.map_provider, update_stage, walking_service)
     try:
         report = await service.run(task_id, analysis_request)
         report_repository.save_for_task(task_id, report)
@@ -48,13 +56,27 @@ async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: An
 
 
 def create_app(provider: MapProvider | None = None, database_path: str | Path | None = None) -> FastAPI:
-    app = FastAPI(title="15分钟生活圈智能体检与规划助手", version="0.3.0")
+    resolved_provider = provider or create_map_provider()
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        try:
+            yield
+        finally:
+            client = getattr(resolved_provider, "client", None)
+            close = getattr(client, "aclose", None)
+            if close is not None:
+                await close()
+
+    app = FastAPI(title="15分钟生活圈智能体检与规划助手", version="0.3.0", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-    app.state.map_provider = provider or create_map_provider()
+    app.state.map_provider = resolved_provider
     app.state.database = Database(database_path)
     app.state.database.migrate()
     app.state.task_repository = TaskRepository(app.state.database)
     app.state.report_repository = ReportRepository(app.state.database)
+    app.state.walking_cache_repository = WalkingCacheRepository(app.state.database)
+    app.state.walking_settings = WalkingSettings.from_env()
     app.state.recovered_task_count = app.state.task_repository.recover_interrupted()
 
     @app.get("/api/health")
