@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants/facilities'
+import type { ReportHistoryResponse } from '../types/history'
 import type { AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, Report } from '../types/report'
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -35,6 +36,22 @@ export async function createAnalysis(params: {
 
 export async function getAnalysisTask(taskId: string) {
   return parseResponse<AnalysisTask>(await fetch(`${API_BASE_URL}/api/analyze/${taskId}`))
+}
+
+export async function fetchReportHistory(limit = 20, offset = 0) {
+  return parseResponse<ReportHistoryResponse>(
+    await fetch(`${API_BASE_URL}/api/reports/history?limit=${limit}&offset=${offset}`),
+  )
+}
+
+export async function getHistoricalReport(reportId: string) {
+  return parseResponse<Report>(await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}`))
+}
+
+export async function rerunHistoricalReport(reportId: string) {
+  return parseResponse<AnalysisTask>(
+    await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/rerun`, { method: 'POST' }),
+  )
 }
 
 export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number) => void) {

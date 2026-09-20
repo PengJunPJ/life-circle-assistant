@@ -1,67 +1,60 @@
 from __future__ import annotations
 
 import os
-import uuid
 from dataclasses import asdict
-from datetime import datetime, timezone
-from typing import Any
+from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService
 from .maps import MapProvider, MapProviderError, create_map_provider
 from .mock_data import CATEGORIES, CENTER
 from .schemas import AnalyzeRequest
+from .storage import Database, ReportRepository, TaskRepository
 
 
 load_dotenv()
-
-
-def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def get_map_provider(request: Request) -> MapProvider:
     return request.app.state.map_provider
 
 
-def get_tasks(request: Request) -> dict[str, dict[str, Any]]:
-    return request.app.state.tasks
+def get_task_repository(request: Request) -> TaskRepository:
+    return request.app.state.task_repository
+
+
+def get_report_repository(request: Request) -> ReportRepository:
+    return request.app.state.report_repository
 
 
 async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: AnalyzeRequest) -> None:
-    tasks: dict[str, dict[str, Any]] = app.state.tasks
-    task = tasks[task_id]
-    task["status"] = "running"
+    task_repository: TaskRepository = app.state.task_repository
+    report_repository: ReportRepository = app.state.report_repository
+    task_repository.mark_running(task_id)
 
     def update_stage(code: str, label: str, progress: int) -> None:
-        task["stage"] = code
-        task["stage_label"] = label
-        task["progress"] = progress
+        task_repository.update_stage(task_id, code, label, progress)
 
     service = AnalysisApplicationService(app.state.map_provider, update_stage)
     try:
-        task["result"] = await service.run(task_id, analysis_request)
-        task["report_id"] = task["result"]["report_id"]
-        task["status"] = "completed"
-        task["stage"] = "completed"
-        task["stage_label"] = "分析完成"
-        task["progress"] = 100
+        report = await service.run(task_id, analysis_request)
+        report_repository.save_for_task(task_id, report)
     except Exception as exc:
-        task["status"] = "failed"
-        task["stage"] = "failed"
-        task["stage_label"] = "分析失败"
-        task["progress"] = 100
-        task["error"] = str(exc)
+        task_repository.fail(task_id, str(exc))
 
 
-def create_app(provider: MapProvider | None = None) -> FastAPI:
+def create_app(provider: MapProvider | None = None, database_path: str | Path | None = None) -> FastAPI:
     app = FastAPI(title="15分钟生活圈智能体检与规划助手", version="0.3.0")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
     app.state.map_provider = provider or create_map_provider()
-    app.state.tasks = {}
+    app.state.database = Database(database_path)
+    app.state.database.migrate()
+    app.state.task_repository = TaskRepository(app.state.database)
+    app.state.report_repository = ReportRepository(app.state.database)
+    app.state.recovered_task_count = app.state.task_repository.recover_interrupted()
 
     @app.get("/api/health")
     def health(map_provider: MapProvider = Depends(get_map_provider)):
@@ -140,38 +133,73 @@ def create_app(provider: MapProvider | None = None) -> FastAPI:
         analysis_request: AnalyzeRequest,
         background_tasks: BackgroundTasks,
         request: Request,
-        tasks: dict[str, dict[str, Any]] = Depends(get_tasks),
+        task_repository: TaskRepository = Depends(get_task_repository),
     ):
-        task_id = str(uuid.uuid4())
-        tasks[task_id] = {
-            "id": task_id,
-            "status": "queued",
-            "stage": "request_validation",
-            "stage_label": "请求校验",
-            "progress": 12,
-            "created_at": now(),
-            "result": None,
-        }
-        background_tasks.add_task(execute_analysis_task, request.app, task_id, analysis_request)
-        return tasks[task_id]
+        task = task_repository.create(analysis_request.model_dump())
+        background_tasks.add_task(execute_analysis_task, request.app, task["id"], analysis_request)
+        return task
 
     @app.get("/api/analyze/{task_id}")
-    def get_analysis(task_id: str, tasks: dict[str, dict[str, Any]] = Depends(get_tasks)):
-        task = tasks.get(task_id)
+    def get_analysis(
+        task_id: str,
+        task_repository: TaskRepository = Depends(get_task_repository),
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        task = task_repository.get(task_id)
         if not task:
             raise HTTPException(status_code=404, detail="体检任务不存在")
+        if task["status"] == "completed" and task.get("report_id"):
+            task["result"] = report_repository.get(task["report_id"])
         return task
 
     @app.get("/api/report/{task_id}")
-    def get_report(task_id: str, tasks: dict[str, dict[str, Any]] = Depends(get_tasks)):
-        task = tasks.get(task_id)
+    def get_report(
+        task_id: str,
+        task_repository: TaskRepository = Depends(get_task_repository),
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        task = task_repository.get(task_id)
         if not task:
             raise HTTPException(status_code=404, detail="体检任务不存在")
         if task.get("status") == "failed":
             raise HTTPException(status_code=502, detail=task.get("error", "地图分析失败"))
         if task.get("status") != "completed":
             raise HTTPException(status_code=404, detail="体检报告尚未生成")
-        return task["result"]
+        report = report_repository.get_by_task_id(task_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="体检报告不存在")
+        return report
+
+    @app.get("/api/reports/history")
+    def list_report_history(
+        limit: int = Query(default=20, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        return report_repository.list_history(limit=limit, offset=offset)
+
+    @app.get("/api/reports/{report_id}")
+    def get_report_by_id(report_id: str, report_repository: ReportRepository = Depends(get_report_repository)):
+        report = report_repository.get(report_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="历史报告不存在")
+        return report
+
+    @app.post("/api/reports/{report_id}/rerun")
+    def rerun_report(
+        report_id: str,
+        background_tasks: BackgroundTasks,
+        request: Request,
+        task_repository: TaskRepository = Depends(get_task_repository),
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        report = report_repository.get(report_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="历史报告不存在")
+        analysis_request = AnalyzeRequest.model_validate(report["request"])
+        task = task_repository.create(analysis_request.model_dump(), rerun_of_report_id=report_id)
+        background_tasks.add_task(execute_analysis_task, request.app, task["id"], analysis_request)
+        return task
 
     return app
 

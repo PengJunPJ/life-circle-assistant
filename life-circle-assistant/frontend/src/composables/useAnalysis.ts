@@ -17,6 +17,16 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
   const report = ref<Report | null>(null)
   const centerPoint = ref({ ...DEFAULT_CENTER })
 
+  function applyReport(selected: Report) {
+    report.value = selected
+    centerPoint.value = { lng: selected.center.lng, lat: selected.center.lat }
+    address.value = selected.center.address
+    mode.value = selected.parameters.mode
+    minutes.value = selected.parameters.minutes
+    visibleCategories.value = [...selected.parameters.categories]
+    progress.value = 100
+  }
+
   async function runAnalysis() {
     if (loading.value) return
     loading.value = true
@@ -35,9 +45,10 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
         categories: visibleCategories.value,
       })
       progress.value = 52
-      report.value = await waitForAnalysis(task, (value) => { progress.value = value })
+      const completedReport = await waitForAnalysis(task, (value) => { progress.value = value })
+      applyReport(completedReport)
       progress.value = 100
-      ElMessage.success(report.value.source === 'baidu' ? '百度地图真实体检报告已生成' : '本地快照体检报告已生成')
+      ElMessage.success(completedReport.source === 'baidu' ? '百度地图真实体检报告已生成' : '本地快照体检报告已生成')
     } catch (error: any) {
       ElMessage.error(error?.message || '服务暂不可用，请检查后端是否启动')
     } finally {
@@ -51,5 +62,19 @@ export function useAnalysis(realMapReady: Ref<boolean>) {
       : [...visibleCategories.value, category]
   }
 
-  return { address, mode, minutes, visibleCategories, showNormal, showSparse, showCritical, loading, progress, report, runAnalysis, toggleCategory }
+  return {
+    address,
+    mode,
+    minutes,
+    visibleCategories,
+    showNormal,
+    showSparse,
+    showCritical,
+    loading,
+    progress,
+    report,
+    runAnalysis,
+    toggleCategory,
+    applyReport,
+  }
 }

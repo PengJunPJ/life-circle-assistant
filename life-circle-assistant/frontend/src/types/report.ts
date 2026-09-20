@@ -117,6 +117,10 @@ export type AnalysisTask = {
   report_id?: string
   result?: Report
   error?: string
+  request?: Report['parameters']
+  rerun_of_report_id?: string | null
+  created_at?: string
+  completed_at?: string | null
 }
 
 export type MapConfig = { mode: string; browser_ak: string }

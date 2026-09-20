@@ -1,7 +1,11 @@
+import sqlite3
+
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app, create_app
 from app.maps.provider import FacilityResult, LocationResult, MapProviderError, ProviderDescriptor, WalkingResult
+from app.storage import Database, TaskRepository
 
 client = TestClient(app)
 
@@ -211,3 +215,66 @@ def test_analysis_request_rejects_empty_unknown_categories_and_invalid_coordinat
     assert client.post("/api/analyze", json={"categories": []}).status_code == 422
     assert client.post("/api/analyze", json={"categories": ["park"]}).status_code == 422
     assert client.post("/api/analyze", json={"lng": 181}).status_code == 422
+
+
+def test_tasks_reports_history_and_rerun_survive_storage_reinitialization(tmp_path):
+    database_path = tmp_path / "analysis-history.db"
+    provider = FixtureMapProvider()
+
+    first_client = TestClient(create_app(provider, database_path))
+    created = first_client.post(
+        "/api/analyze",
+        json={"lng": 113.51, "lat": 23.12, "minutes": 20, "mode": "analysis", "categories": ["market", "school"]},
+    ).json()
+    original_task = first_client.get(f"/api/analyze/{created['id']}").json()
+    assert original_task["status"] == "completed"
+    original_report_id = original_task["report_id"]
+
+    # 用同一数据库重新创建应用，模拟服务进程重启和存储层重新初始化。
+    restarted_client = TestClient(create_app(provider, database_path))
+    persisted_task = restarted_client.get(f"/api/analyze/{created['id']}")
+    assert persisted_task.status_code == 200
+    assert persisted_task.json()["request"]["minutes"] == 20
+    assert persisted_task.json()["result"]["report_id"] == original_report_id
+
+    history = restarted_client.get("/api/reports/history").json()
+    assert history["total"] == 1
+    assert history["items"][0]["report_id"] == original_report_id
+    assert history["items"][0]["center"]["lng"] == 113.51
+    opened = restarted_client.get(f"/api/reports/{original_report_id}").json()
+    assert opened["isochrone"]["geometry"]["type"] == "Polygon"
+    assert opened["request"]["categories"] == ["market", "school"]
+
+    rerun = restarted_client.post(f"/api/reports/{original_report_id}/rerun").json()
+    rerun_task = restarted_client.get(f"/api/analyze/{rerun['id']}").json()
+    assert rerun_task["status"] == "completed"
+    assert rerun_task["rerun_of_report_id"] == original_report_id
+    assert rerun_task["report_id"] != original_report_id
+    assert rerun_task["request"] == original_task["request"]
+
+    history_after_rerun = restarted_client.get("/api/reports/history").json()
+    assert history_after_rerun["total"] == 2
+    assert history_after_rerun["items"][0]["report_id"] == rerun_task["report_id"]
+
+    database = Database(database_path)
+    with database.connect() as connection, pytest.raises(sqlite3.IntegrityError, match="immutable"):
+        connection.execute(
+            "UPDATE analysis_reports SET center_address = ? WHERE id = ?",
+            ("不应被修改", original_report_id),
+        )
+
+
+def test_running_task_is_marked_failed_after_restart(tmp_path):
+    database_path = tmp_path / "interrupted.db"
+    database = Database(database_path)
+    database.migrate()
+    repository = TaskRepository(database)
+    task = repository.create({"lng": 113.4872, "lat": 23.1068, "minutes": 15, "mode": "demo", "categories": ["market"]})
+    repository.mark_running(task["id"])
+
+    restarted_client = TestClient(create_app(FixtureMapProvider(), database_path))
+    recovered = restarted_client.get(f"/api/analyze/{task['id']}")
+    assert recovered.status_code == 200
+    assert recovered.json()["status"] == "failed"
+    assert recovered.json()["stage_label"] == "服务重启已中断"
+    assert "重新运行" in recovered.json()["error"]

@@ -1,6 +1,17 @@
 <template>
   <aside class="report-panel">
-    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2>萝岗街道样例社区</h2></div><button class="download-btn" title="导出 JSON 报告" @click="emit('export')"><Download /></button></div>
+    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2>{{ report?.center.address || '分析报告' }}</h2></div><button class="download-btn" title="导出 JSON 报告" :disabled="!report" @click="emit('export')"><Download /></button></div>
+    <ReportHistory
+      :items="historyItems"
+      :total="historyTotal"
+      :loading="historyLoading"
+      :error="historyError"
+      :opening-report-id="openingReportId"
+      :rerunning-report-id="rerunningReportId"
+      @refresh="emit('refresh-history')"
+      @open="emit('open-history', $event)"
+      @rerun="emit('rerun-history', $event)"
+    />
     <div v-if="report" class="report-content">
       <div class="quality-banner">
         <CircleCheck />
@@ -29,12 +40,27 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { CircleCheck, Download, TrendCharts, Warning } from '@element-plus/icons-vue'
+import type { HistoryReportItem } from '../types/history'
 import type { Report } from '../types/report'
 import DataQualityDetails from './DataQualityDetails.vue'
 import ScoreBreakdown from './ScoreBreakdown.vue'
+import ReportHistory from './ReportHistory.vue'
 
-const props = defineProps<{ report: Report | null }>()
-const emit = defineEmits<{ export: [] }>()
+const props = defineProps<{
+  report: Report | null
+  historyItems: HistoryReportItem[]
+  historyTotal: number
+  historyLoading: boolean
+  historyError: string
+  openingReportId: string
+  rerunningReportId: string
+}>()
+const emit = defineEmits<{
+  export: []
+  'refresh-history': []
+  'open-history': [reportId: string]
+  'rerun-history': [reportId: string]
+}>()
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)
 let chart: echarts.ECharts | null = null

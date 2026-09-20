@@ -70,6 +70,19 @@ npm run dev
 
 地图能力通过统一提供方边界接入。默认离线演示使用本地快照提供方；测试可通过 `create_app(provider=...)` 注入确定性提供方，测试套件不会访问真实百度地图服务。本地快照或降级估算会明确显示“非实时数据”，不会被描述为最新真实地图测算。
 
+## 任务与历史报告持久化
+
+分析任务、请求参数、错误信息和完成报告保存在 SQLite。默认开发数据库位于 `backend/data/runtime/life-circle.db`，也可通过 `LIFE_CIRCLE_DATABASE_PATH` 指定；Docker Compose 使用 `analysis-data` 命名卷，因此 API 容器重建后历史报告仍可恢复。
+
+数据库启动时会按 `backend/app/storage/migrations/` 中的版本文件顺序执行迁移。每次仓储操作使用独立连接并开启外键、WAL 和忙等待；已完成报告由数据库触发器保持不可变。服务启动时遗留的排队中或运行中任务会转换为“已失败”，并显示可重新运行的中断说明。
+
+历史接口：
+
+- `GET /api/reports/history`：分页获取按完成时间倒序排列的报告摘要，不加载报告正文；
+- `GET /api/reports/{report_id}`：按稳定报告标识打开完整报告；
+- `POST /api/reports/{report_id}/rerun`：复制原请求参数创建新的任务和报告；
+- 原有 `GET /api/report/{task_id}` 保持兼容。
+
 ## 测试
 
 完成后端与前端依赖安装后，在应用目录执行统一质量检查：

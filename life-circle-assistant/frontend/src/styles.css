@@ -49,3 +49,20 @@ button { border: 0; cursor: pointer; }
 .score-value.unavailable { color: #8c9b97; letter-spacing: 0; }
 .score-ring.unavailable { background: #e3e9e5; }
 .score-trend { max-width: 210px; line-height: 1.45; }
+.download-btn:disabled { cursor: not-allowed; opacity: .45; }
+.history-section { padding: 14px 0; border-bottom: 1px solid #e2e9e4; }
+.history-title { align-items: center; }
+.history-title button { padding: 2px 0; background: transparent; color: #4c7d72; font-size: 9px; }
+.history-title button:disabled { cursor: wait; opacity: .6; }
+.history-state { margin-top: 9px; padding: 9px; border-radius: 4px; background: #f0f4f1; color: #84938f; font-size: 9px; line-height: 1.5; }
+.history-state.error { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f7e9e5; color: #9f523f; }
+.history-state button { flex: 0 0 auto; padding: 3px 6px; border-radius: 3px; background: #fff; color: #9f523f; font-size: 9px; }
+.history-list { display: grid; gap: 6px; max-height: 156px; margin-top: 9px; overflow: auto; }
+.history-item { display: flex; align-items: stretch; border: 1px solid #dce6e0; border-radius: 4px; background: #fff; }
+.history-open { min-width: 0; flex: 1; padding: 8px; background: transparent; color: #36564f; text-align: left; }
+.history-open strong, .history-open span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-open strong { font-size: 10px; }
+.history-open span { margin-top: 3px; color: #8a9894; font-size: 8px; }
+.history-rerun { flex: 0 0 42px; border-left: 1px solid #e2e9e4; background: #f4f8f5; color: #4d7d72; font-size: 9px; }
+.history-open:hover, .history-rerun:hover { background: #edf6f1; }
+.history-open:disabled, .history-rerun:disabled { cursor: wait; opacity: .58; }
