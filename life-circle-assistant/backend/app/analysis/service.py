@@ -12,6 +12,7 @@ from ..contracts.reports import build_quality_summary, create_report_skeleton, q
 from ..maps.provider import MapProvider, MapProviderError, WalkingResult
 from ..mock_data import CATEGORIES, mock_isochrone
 from ..schemas import AnalyzeRequest
+from .scoring import score_report
 
 
 StageUpdater = Callable[[str, str, int], None]
@@ -33,23 +34,6 @@ def now() -> str:
 
 def polygon_feature(coords: list[list[float]], properties: dict[str, Any]) -> dict[str, Any]:
     return {"type": "Feature", "properties": properties, "geometry": {"type": "Polygon", "coordinates": [coords]}}
-
-
-def score_category(category: str, pois: list[dict[str, Any]]) -> dict[str, Any]:
-    count = len(pois)
-    nearest = min((item.get("walk_minutes") for item in pois if item.get("walk_minutes") is not None), default=None)
-    quantity_score = min(100, count * 35)
-    time_score = 100 if nearest is None else max(0, round((1 - nearest / 20) * 100))
-    distribution_score = min(100, 45 + count * 20)
-    score = round(quantity_score * 0.4 + time_score * 0.4 + distribution_score * 0.2)
-    return {
-        "category": category,
-        "label": CATEGORIES[category]["label"],
-        "count": count,
-        "nearest_walk_minutes": nearest,
-        "score": score,
-        "color": CATEGORIES[category]["color"],
-    }
 
 
 def interpolate_point(center: tuple[float, float], angle: float, radius_m: float) -> tuple[float, float]:
@@ -130,7 +114,9 @@ class AnalysisApplicationService:
         zones = self._build_zones(center, facilities, descriptor.label)
 
         self._stage("scoring", 86)
-        stats = [score_category(category, [item for item in facilities if item["category"] == category]) for category in request.categories]
+        scoring = score_report(request.categories, facilities, center, failed_categories)
+        stats = scoring["category_scores"]
+        overall_scoring = scoring["overall"]
         critical = sum(item["properties"]["kind"] == "critical" for item in zones["features"])
         sparse = sum(item["properties"]["kind"] == "sparse" for item in zones["features"])
         recommendations = [
@@ -180,7 +166,9 @@ class AnalysisApplicationService:
                 "zones": zones,
                 "service_areas": zones,
                 "summary": {
-                    "score": round(sum(item["score"] for item in stats) / max(1, len(stats))),
+                    "score": overall_scoring["score"],
+                    "score_status": overall_scoring["status"],
+                    "score_explanation": overall_scoring["explanation"],
                     "area_sqm": isochrone["properties"]["area_sqm"],
                     "poi_count": len(facilities),
                     "critical_zone_count": critical,
@@ -188,6 +176,7 @@ class AnalysisApplicationService:
                 },
                 "categories": stats,
                 "category_scores": stats,
+                "scoring": overall_scoring,
                 "recommendations": recommendations,
             }
         )

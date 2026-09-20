@@ -122,6 +122,7 @@ def create_report_skeleton(
         "summary": {},
         "categories": [],
         "category_scores": [],
+        "scoring": {},
         "recommendations": [],
         "simulations": [],
         "exports": {},

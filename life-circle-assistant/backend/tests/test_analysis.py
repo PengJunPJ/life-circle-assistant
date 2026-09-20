@@ -125,6 +125,10 @@ def test_provider_can_be_replaced_without_real_baidu_requests():
     assert report["completeness"] == "complete"
     assert report["calculation_mode"]["provider_mode"] == "fixture"
     assert report["data_quality"]["sources"][0]["provider"] == "deterministic-test-provider"
+    assert report["scoring"]["status"] == "complete"
+    assert report["scoring"]["valid_category_count"] == 2
+    assert all(len(item["components"]) == 3 for item in report["category_scores"])
+    assert all(sum(component["weight"] for component in item["components"]) == 1 for item in report["category_scores"])
     assert provider.calls.count("geocode") == 1
     assert "search_facilities:market" in provider.calls
     assert "search_facilities:school" in provider.calls
@@ -142,6 +146,13 @@ def test_category_failure_produces_partial_report_and_quality_event():
     assert report["data_quality"]["overall_status"] == "partial"
     assert report["data_quality"]["partial_failures"][0]["category"] == "school"
     assert any(event["code"] == "category_partial" for event in report["data_quality"]["events"])
+    scores = {item["category"]: item for item in report["category_scores"]}
+    assert scores["school"]["status"] == "data_unavailable"
+    assert scores["school"]["score"] is None
+    assert scores["school"]["valid_for_overall"] is False
+    assert scores["market"]["applied_weight"] == 1
+    assert report["scoring"]["status"] == "partial"
+    assert report["summary"]["score"] == scores["market"]["score"]
 
 
 def test_analysis_request_rejects_empty_unknown_categories_and_invalid_coordinates():

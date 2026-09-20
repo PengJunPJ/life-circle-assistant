@@ -1,16 +1,10 @@
 import type { DataQuality } from './quality'
+import type { CategoryScore, OverallScoring } from './scoring'
 
 export type AnalysisMode = 'demo' | 'analysis'
 export type AnalysisMinutes = 10 | 15 | 20
 
-export type Category = {
-  category: string
-  label: string
-  count: number
-  nearest_walk_minutes: number | null
-  score: number
-  color: string
-}
+export type Category = CategoryScore
 
 export type Poi = {
   id: string
@@ -59,13 +53,17 @@ export type Report = {
   pois: Poi[]
   zones: { type: 'FeatureCollection'; features: GeoJsonFeature[] }
   summary: {
-    score: number
+    score: number | null
+    score_status: OverallScoring['status']
+    score_explanation: string
     area_sqm: number
     poi_count: number
     critical_zone_count: number
     sparse_zone_count: number
   }
   categories: Category[]
+  category_scores: CategoryScore[]
+  scoring: OverallScoring
   recommendations: { priority: string; title: string; body: string; category: string }[]
   center: { lng: number; lat: number; address: string }
   parameters: {

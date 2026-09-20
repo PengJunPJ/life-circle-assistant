@@ -36,3 +36,6 @@ button { border: 0; cursor: pointer; }
 .event-level { display: inline-block; margin-right: 4px; color: #567d73; }
 .event-level.warning { color: #a16f27; }
 .event-level.error { color: #a84d3a; }
+.score-value.unavailable { color: #8c9b97; letter-spacing: 0; }
+.score-ring.unavailable { background: #e3e9e5; }
+.score-trend { max-width: 210px; line-height: 1.45; }
