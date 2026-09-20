@@ -67,20 +67,32 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     ctx.lineWidth = 3
     for (let i = -h; i < w + h; i += 160) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke() }
 
-    const drawPolygon = (coordinates: number[][], fill: string, stroke: string, lineWidth = 2) => {
+    const drawPolygon = (coordinates: number[][], fill: string, stroke: string, lineWidth = 2, marker = '') => {
       ctx.beginPath()
       coordinates.forEach(([lng, lat], index) => {
         const point = project(lng, lat, w, h)
         index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)
       })
-      ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth; ctx.stroke()
+      ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth
+      ctx.setLineDash(marker === '!' ? [3, 3] : marker === '△' ? [9, 4] : [])
+      ctx.stroke()
+      ctx.setLineDash([])
+      if (marker) {
+        const points = coordinates.slice(0, -1).map(([lng, lat]) => project(lng, lat, w, h))
+        const center = points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }), { x: 0, y: 0 })
+        center.x /= Math.max(points.length, 1)
+        center.y /= Math.max(points.length, 1)
+        ctx.beginPath(); ctx.arc(center.x, center.y, 8, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.86)'; ctx.fill()
+        ctx.fillStyle = stroke; ctx.font = '800 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(marker, center.x, center.y + .5)
+      }
     }
     const currentReport = report.value
     if (currentReport) {
       drawPolygon(currentReport.isochrone.geometry.coordinates[0], 'rgba(61, 155, 139, .22)', '#237866')
       visibleServiceAreas().forEach((zone) => {
         const style = serviceAreaStyle(zone, isFocusedRegion(zone.properties.grid_id))
-        drawPolygon(zone.geometry.coordinates[0], style.fill, style.stroke, style.strokeWeight)
+        const marker = zone.properties.kind === 'critical' ? '!' : zone.properties.kind === 'sparse' ? '△' : ''
+        drawPolygon(zone.geometry.coordinates[0], style.fill, style.stroke, style.strokeWeight, marker)
       })
       simulationAreas().forEach((zone) => {
         drawPolygon(zone.geometry.coordinates[0], 'rgba(51, 126, 184, .18)', '#2f70a5', 3)
@@ -252,7 +264,14 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         const points = zone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
         const focused = isFocusedRegion(zone.properties.grid_id)
         const style = serviceAreaStyle(zone, focused)
-        const areaPolygon = new BMap.Polygon(points, { strokeColor: style.stroke, strokeWeight: style.strokeWeight, strokeOpacity: 1, fillColor: focused ? '#b1412a' : zone.properties.color, fillOpacity: focused ? .42 : zone.properties.kind === 'normal' ? .08 : .25 })
+        const areaPolygon = new BMap.Polygon(points, {
+          strokeColor: style.stroke,
+          strokeWeight: style.strokeWeight,
+          strokeOpacity: 1,
+          strokeStyle: zone.properties.kind === 'normal' ? 'solid' : 'dashed',
+          fillColor: focused ? '#b1412a' : zone.properties.color,
+          fillOpacity: focused ? .42 : zone.properties.kind === 'normal' ? .08 : .25,
+        })
         areaPolygon.addEventListener('click', (event: any) => {
           selectedServiceArea.value = zone
           event?.domEvent?.stopPropagation?.()
