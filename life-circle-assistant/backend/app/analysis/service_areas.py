@@ -9,7 +9,8 @@ from ..maps.provider import MapProvider, MapProviderError, WalkingResult
 from ..mock_data import CATEGORIES
 
 
-AreaKind = Literal["normal", "sparse", "critical"]
+AreaKind = Literal["normal", "sparse", "critical", "unknown"]
+ClassificationStatus = Literal["valid", "calculation_incomplete"]
 
 GRID_SIZE = 4
 GRID_SPAN_M = 1_000
@@ -32,6 +33,7 @@ class CellClassification:
     kind: AreaKind
     confidence: Literal["high", "medium", "low"]
     basis: str
+    status: ClassificationStatus = "valid"
 
 
 def classify_service_area_cell(evidence: CellEvidence, threshold_minutes: int) -> CellClassification:
@@ -41,23 +43,26 @@ def classify_service_area_cell(evidence: CellEvidence, threshold_minutes: int) -
 
     if not evidence.facility_discovery_succeeded:
         return CellClassification(
-            kind="sparse",
+            kind="unknown",
             confidence="low",
-            basis="同类设施检索失败，缺少可靠输入；为避免误报重点盲区，暂归为设施稀疏区。",
+            basis="同类设施检索失败，缺少可靠输入，无法判断该网格的服务区域类型。",
+            status="calculation_incomplete",
         )
 
     if evidence.candidate_facility_count == 0:
         return CellClassification(
-            kind="critical",
-            confidence="high",
-            basis=f"候选预筛选范围内无同类设施，且周边{NEARBY_RADIUS_M}米内无同类设施。",
+            kind="unknown",
+            confidence="low",
+            basis="候选预筛选范围内无同类设施，缺少步行路线证据，不能据此推断已超过步行阈值。",
+            status="calculation_incomplete",
         )
 
     if route is None:
         return CellClassification(
-            kind="sparse",
+            kind="unknown",
             confidence="low",
-            basis="存在同类候选设施，但步行结果全部失败；为避免误报重点盲区，暂归为设施稀疏区。",
+            basis="存在同类候选设施，但步行结果全部失败，无法判断该网格的服务区域类型。",
+            status="calculation_incomplete",
         )
 
     walk_minutes = (route.duration_s or 0) / 60
@@ -114,6 +119,7 @@ async def build_category_service_areas(
     failed_categories = failed_categories or set()
 
     for category in categories:
+        incomplete_grid_ids: list[str] = []
         category_facilities = [item for item in facilities if item["category"] == category]
         candidates_by_cell = [
             [
@@ -183,6 +189,8 @@ async def build_category_service_areas(
             )
             classification = classify_service_area_cell(evidence, threshold_minutes)
             grid_id = f"{category}-{cell['id']}"
+            if classification.status == "calculation_incomplete":
+                incomplete_grid_ids.append(grid_id)
             if failed_count:
                 failure = {
                     "scope": "service_area_grid",
@@ -214,6 +222,40 @@ async def build_category_service_areas(
                     classification,
                     provider.descriptor.source,
                 )
+            )
+
+        if incomplete_grid_ids:
+            category_grid_count = len(cells)
+            excludes_category = len(incomplete_grid_ids) == category_grid_count
+            failure = {
+                "scope": "category",
+                "category": category,
+                "code": "service_area_calculation_incomplete",
+                "failed_count": len(incomplete_grid_ids),
+                "object_refs": incomplete_grid_ids,
+                "valid_grid_count": category_grid_count - len(incomplete_grid_ids),
+                "excludes_category": excludes_category,
+                "message": (
+                    f"{CATEGORIES[category]['label']}有 {len(incomplete_grid_ids)} 个网格缺少可核验的步行路线证据，"
+                    + (
+                        "全部网格均标记为计算不完整，该类别排除综合评分与规划建议。"
+                        if excludes_category
+                        else "这些网格标记为计算不完整，不纳入有效服务区域分类。"
+                    )
+                ),
+            }
+            partial_failures.append(failure)
+            quality_events.append(
+                {
+                    "code": "service_area_calculation_incomplete",
+                    "severity": "warning",
+                    "scope": "category",
+                    "category": category,
+                    "object_ref": None,
+                    "source": provider.descriptor.source,
+                    "method": "provider_walking_matrix",
+                    "message": failure["message"],
+                }
             )
 
     return {"type": "FeatureCollection", "features": features}, quality_events, partial_failures
@@ -298,11 +340,22 @@ def _feature(
     route = evidence.nearest_route
     facility = evidence.nearest_facility
     walk_threshold_exceeded = None if route is None else (route.duration_s or 0) > threshold_minutes * 60
-    if evidence.candidate_facility_count == 0 and evidence.facility_discovery_succeeded:
-        walk_threshold_exceeded = True
     lacks_nearby_facility = evidence.nearby_facility_count == 0
-    labels = {"normal": "正常覆盖区", "sparse": "设施稀疏区", "critical": "重点服务盲区"}
-    colors = {"normal": "#4f9d7f", "sparse": "#d8a64e", "critical": "#c75c43"}
+    labels = {
+        "normal": "正常覆盖区",
+        "sparse": "设施稀疏区",
+        "critical": "重点服务盲区",
+        "unknown": "计算不完整",
+    }
+    colors = {"normal": "#4f9d7f", "sparse": "#d8a64e", "critical": "#c75c43", "unknown": "#7b8790"}
+    if route is not None:
+        calculation_method = route.method
+    elif evidence.candidate_facility_count == 0:
+        calculation_method = "not_calculated_no_candidate"
+    elif not evidence.facility_discovery_succeeded:
+        calculation_method = "not_calculated_facility_discovery_failed"
+    else:
+        calculation_method = "walking_result_unavailable"
     return {
         "type": "Feature",
         "properties": {
@@ -326,8 +379,9 @@ def _feature(
             "nearest_walk_distance_m": round(route.distance_m or 0) if route else None,
             "walk_threshold_exceeded": walk_threshold_exceeded,
             "critical_conditions_met": walk_threshold_exceeded is True and lacks_nearby_facility,
+            "classification_status": classification.status,
             "source": route.source if route else provider_source,
-            "calculation_method": route.method if route else "facility_absence_or_failed_walking_matrix",
+            "calculation_method": calculation_method,
             "basis": classification.basis,
             "confidence": classification.confidence,
             "failed_route_count": evidence.failed_route_count,

@@ -7,7 +7,8 @@ export function isServiceAreaVisible(
   categories: string[],
   visibility: ServiceAreaVisibility,
 ) {
-  return categories.includes(feature.properties.category) && visibility[feature.properties.kind]
+  return categories.includes(feature.properties.category)
+    && (feature.properties.kind === 'unknown' || visibility[feature.properties.kind])
 }
 
 export function pointInPolygon(point: { x: number; y: number }, polygon: { x: number; y: number }[]) {

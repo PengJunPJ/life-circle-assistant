@@ -14,15 +14,16 @@ const feature = {
     nearest_walk_distance_m: null, walk_threshold_exceeded: true, critical_conditions_met: true,
     source: 'real_api', calculation_method: 'fixture',
     basis: '测试依据', confidence: 'high', failed_route_count: 0,
+    classification_status: 'valid',
   },
   geometry: { type: 'Polygon', coordinates: [[]] },
 } satisfies ServiceAreaFeature
 
 describe('服务区域图层', () => {
   it('同时按设施类别和区域类型过滤', () => {
-    expect(isServiceAreaVisible(feature, ['school'], { normal: false, sparse: false, critical: true })).toBe(true)
-    expect(isServiceAreaVisible(feature, ['market'], { normal: false, sparse: false, critical: true })).toBe(false)
-    expect(isServiceAreaVisible(feature, ['school'], { normal: false, sparse: false, critical: false })).toBe(false)
+    expect(isServiceAreaVisible(feature, ['school'], { normal: false, sparse: false, critical: true, unknown: true })).toBe(true)
+    expect(isServiceAreaVisible(feature, ['market'], { normal: false, sparse: false, critical: true, unknown: true })).toBe(false)
+    expect(isServiceAreaVisible(feature, ['school'], { normal: false, sparse: false, critical: false, unknown: true })).toBe(false)
   })
 
   it('识别 Canvas 点击是否落在区域内', () => {

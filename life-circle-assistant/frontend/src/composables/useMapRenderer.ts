@@ -131,7 +131,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   }
 
   function visibility() {
-    return { normal: showNormal.value, sparse: showSparse.value, critical: showCritical.value }
+    return { normal: showNormal.value, sparse: showSparse.value, critical: showCritical.value, unknown: true }
   }
 
   function visibleServiceAreas() {
@@ -143,6 +143,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     if (focused) return { fill: 'rgba(177, 65, 42, .42)', stroke: '#7f2f20', strokeWeight: 4 }
     if (feature.properties.kind === 'critical') return { fill: 'rgba(199, 92, 67, .28)', stroke: '#b74a35', strokeWeight: 2 }
     if (feature.properties.kind === 'sparse') return { fill: 'rgba(216, 166, 78, .27)', stroke: '#c18b31', strokeWeight: 2 }
+    if (feature.properties.kind === 'unknown') return { fill: 'rgba(123, 135, 144, .18)', stroke: '#69757d', strokeWeight: 2 }
     return { fill: 'rgba(79, 157, 127, .08)', stroke: '#6eac94', strokeWeight: 2 }
   }
 
@@ -350,6 +351,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     realMapReady,
     mapLoadComplete,
     selectedServiceArea,
+    visibleServiceAreas,
+    selectServiceArea: (feature: ServiceAreaFeature) => { selectedServiceArea.value = feature },
     handleCanvasClick,
     closeServiceAreaEvidence: () => { selectedServiceArea.value = null },
     drawMap,

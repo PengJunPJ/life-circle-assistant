@@ -52,9 +52,12 @@ async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: An
     service = AnalysisApplicationService(app.state.map_provider, update_stage, walking_service)
     try:
         report = await service.run(task_id, analysis_request)
+        task_repository.update_request(task_id, report["request"])
         report_repository.save_for_task(task_id, report)
     except Exception as exc:
-        task_repository.fail(task_id, str(exc))
+        task = task_repository.get(task_id) or {}
+        active_stage_label = task.get("stage_label") or "分析"
+        task_repository.fail(task_id, str(exc), stage_label=f"{active_stage_label}失败")
 
 
 def create_app(provider: MapProvider | None = None, database_path: str | Path | None = None) -> FastAPI:
@@ -201,14 +204,6 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             require_supported_huangpu_area(analysis_request.lng, analysis_request.lat)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"分析中心点不可用：{exc}") from exc
-        try:
-            resolved_center = await map_provider.reverse_geocode(analysis_request.lng, analysis_request.lat)
-        except MapProviderError as exc:
-            status_code = 422 if map_provider.descriptor.mode == "snapshot" else 502
-            raise HTTPException(status_code=status_code, detail=f"分析中心点不可用：{exc}") from exc
-        analysis_request = analysis_request.model_copy(
-            update={"center_address": analysis_request.center_address.strip() or resolved_center.address}
-        )
         task = task_repository.create(analysis_request.model_dump())
         background_tasks.add_task(execute_analysis_task, request.app, task["id"], analysis_request)
         return task

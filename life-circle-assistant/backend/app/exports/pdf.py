@@ -27,6 +27,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from ..contracts.sources import source_label
+
 from .structured import ExportArtifact, _filename
 
 
@@ -853,13 +855,7 @@ def _mode_label(mode: Any) -> str:
 
 
 def _source_label(source: Any) -> str:
-    return {
-        "real_api": "真实 API",
-        "cache": "有效缓存",
-        "local_snapshot": "本地快照",
-        "interpolation": "空间插值",
-        "degraded_estimate": "降级估算",
-    }.get(str(source), str(source or "未提供"))
+    return source_label(source)
 
 
 def _format_datetime(value: Any) -> str:

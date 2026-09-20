@@ -1,7 +1,7 @@
 export type RecommendationPriority = 'high' | 'medium'
 
 export type RecommendationSummary = {
-  status: 'needs_action' | 'no_shortage'
+  status: 'needs_action' | 'no_shortage' | 'calculation_incomplete'
   message: string
   recommendation_count: number
   target_region_count: number

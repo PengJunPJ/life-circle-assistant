@@ -27,6 +27,17 @@
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
     <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>正在计算真实步行可达性… {{ progress }}%</span></div>
     <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
+    <div v-if="keyboardServiceAreas.length" class="service-area-keyboard-list" role="group" aria-label="可查看判定证据的服务区域">
+      <span class="sr-only">使用 Tab 移动到区域按钮，按回车或空格查看判定依据。</span>
+      <button
+        v-for="area in keyboardServiceAreas"
+        :key="area.properties.grid_id"
+        type="button"
+        :aria-pressed="selectedServiceArea?.properties.grid_id === area.properties.grid_id"
+        :aria-label="`${area.properties.category_label}${area.properties.label} ${area.properties.grid_id}，查看判定依据`"
+        @click="selectServiceArea(area)"
+      >{{ area.properties.category_label }} · {{ area.properties.grid_id }} · {{ area.properties.label }}</button>
+    </div>
     <article v-if="selectedServiceArea" ref="evidenceRef" class="service-area-evidence" tabindex="-1" aria-label="区域判定依据" aria-live="polite">
       <button class="evidence-close" aria-label="关闭区域判定依据" @click="closeServiceAreaEvidence">×</button>
       <div class="evidence-kicker">{{ selectedServiceArea.properties.category_label }} · {{ selectedServiceArea.properties.label }}</div>
@@ -42,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, toRef, watch } from 'vue'
+import { computed, nextTick, ref, toRef, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
@@ -63,7 +74,7 @@ const simulation = toRef(props, 'simulation')
 const simulationPicking = toRef(props, 'simulationPicking')
 const showMobileLegend = ref(false)
 const evidenceRef = ref<HTMLElement | null>(null)
-const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, handleCanvasClick, closeServiceAreaEvidence } = useMapRenderer({
+const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, visibleServiceAreas, selectServiceArea, handleCanvasClick, closeServiceAreaEvidence } = useMapRenderer({
   report,
   analysisCenter,
   visibleCategories,
@@ -76,6 +87,7 @@ const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceA
   onSelectCenter: (lng, lat) => emit('select-center', lng, lat),
   onSelectSimulationLocation: (lng, lat) => emit('select-simulation-location', lng, lat),
 })
+const keyboardServiceAreas = computed(() => visibleServiceAreas())
 
 function formatMetric(value: number | null, unit: string) {
   return value === null ? '无有效结果' : `${value}${unit}`

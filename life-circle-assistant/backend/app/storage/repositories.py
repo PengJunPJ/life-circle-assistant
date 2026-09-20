@@ -66,6 +66,19 @@ class TaskRepository:
             )
             connection.commit()
 
+    def update_request(self, task_id: str, request_parameters: dict[str, Any]) -> None:
+        """保存任务执行期间补全的规范化请求参数，例如中心点反查地址。"""
+        with self.database.connect() as connection:
+            connection.execute(
+                """
+                UPDATE analysis_tasks
+                SET request_json = ?, updated_at = ?
+                WHERE id = ? AND status IN ('queued', 'running')
+                """,
+                (_dump(request_parameters), now(), task_id),
+            )
+            connection.commit()
+
     def fail(self, task_id: str, error: str, *, stage_label: str = "分析失败") -> None:
         timestamp = now()
         with self.database.connect() as connection:

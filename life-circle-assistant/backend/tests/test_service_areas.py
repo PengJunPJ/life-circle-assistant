@@ -21,10 +21,11 @@ def evidence(*, nearby: int, candidates: int, walking: WalkingResult | None, fai
     return CellEvidence(nearby, candidates, facility, walking, failures)
 
 
-def test_no_same_category_facility_is_critical():
+def test_no_same_category_candidate_is_unknown_without_walking_evidence():
     result = classify_service_area_cell(evidence(nearby=0, candidates=0, walking=None), 15)
-    assert result.kind == "critical"
-    assert "无同类设施" in result.basis
+    assert result.kind == "unknown"
+    assert result.status == "calculation_incomplete"
+    assert "不能据此推断" in result.basis
 
 
 def test_facility_within_one_kilometer_but_over_time_is_sparse_not_critical():
@@ -52,14 +53,16 @@ def test_partial_walking_failure_keeps_classification_and_reduces_confidence():
 
 def test_all_walking_results_failed_does_not_claim_critical_blind_spot():
     result = classify_service_area_cell(evidence(nearby=0, candidates=1, walking=None, failures=1), 15)
-    assert result.kind == "sparse"
+    assert result.kind == "unknown"
+    assert result.status == "calculation_incomplete"
     assert result.confidence == "low"
 
 
 def test_facility_discovery_failure_does_not_claim_no_facility_critical_blind_spot():
     failed = CellEvidence(0, 0, None, None, facility_discovery_succeeded=False)
     result = classify_service_area_cell(failed, 15)
-    assert result.kind == "sparse"
+    assert result.kind == "unknown"
+    assert result.status == "calculation_incomplete"
     assert result.confidence == "low"
 
 
@@ -93,3 +96,26 @@ def test_straight_line_distance_only_prefilters_external_walking_candidates():
 
     assert provider.destinations == [(113.49, 23.10)]
     assert areas["features"][0]["properties"]["nearest_facility_id"] == "near"
+
+
+def test_no_candidate_feature_does_not_fabricate_threshold_evidence():
+    class EmptyProvider:
+        @property
+        def descriptor(self):
+            return ProviderDescriptor("fixture", "fixture", "real_api", "测试", True)
+
+        async def walking_matrix(self, origins, destinations):
+            raise AssertionError("无候选设施时不应调用步行矩阵")
+
+    areas, events, failures = asyncio.run(
+        build_category_service_areas(EmptyProvider(), (113.48, 23.10), ["school"], [], 15, grid_size=1, grid_span_m=0)
+    )
+
+    properties = areas["features"][0]["properties"]
+    assert properties["kind"] == "unknown"
+    assert properties["classification_status"] == "calculation_incomplete"
+    assert properties["walk_threshold_exceeded"] is None
+    assert properties["critical_conditions_met"] is False
+    assert properties["calculation_method"] == "not_calculated_no_candidate"
+    assert events[0]["code"] == "service_area_calculation_incomplete"
+    assert failures[0]["code"] == "service_area_calculation_incomplete"

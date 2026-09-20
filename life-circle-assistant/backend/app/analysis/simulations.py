@@ -195,7 +195,11 @@ class ReportSimulationService:
         features = service_areas.get("features", [])
         critical = [item for item in features if item.get("properties", {}).get("kind") == "critical"]
         sparse = [item for item in features if item.get("properties", {}).get("kind") == "sparse"]
-        covered = [item for item in features if item.get("properties", {}).get("kind") != "critical"]
+        covered = [
+            item
+            for item in features
+            if item.get("properties", {}).get("kind") in {"normal", "sparse"}
+        ]
         return {
             "category_score": category_score.get("score"),
             "overall_score": overall_score,

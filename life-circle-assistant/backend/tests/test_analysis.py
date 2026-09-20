@@ -59,12 +59,17 @@ def test_create_and_get_analysis():
     assert body["execution"]["current_stage"] == "completed"
     assert body["execution"]["total_duration_ms"] >= 0
     assert body["execution"]["stage_durations_ms"]["walking_calculation"] >= 0
+    assert body["execution"]["stage_durations_ms"]["center_resolution"] >= 0
     assert body["execution"]["cache"]["hits"] == body["execution"]["metrics"]["walking_cache_hits"]
     assert body["execution"]["api_calls"] == (
         body["execution"]["metrics"]["facility_api_calls"]
         + body["execution"]["metrics"]["walking_api_calls"]
     )
     assert all("duration_ms" in stage for stage in body["execution"]["stages"])
+    assert [stage["code"] for stage in body["execution"]["stages"][:2]] == [
+        "request_validation",
+        "center_resolution",
+    ]
     assert body["data_quality"]["overall_status"] == "limited"
     assert "不代表最新真实地图测算" in body["data_quality"]["summary"]
     assert body["center"] == {
@@ -77,10 +82,13 @@ def test_create_and_get_analysis():
     }
 
 
-def test_analysis_rejects_center_outside_snapshot_supported_area():
+def test_analysis_tracks_center_resolution_failure_inside_task():
     response = client.post("/api/analyze", json={"lng": 113.6, "lat": 23.2})
-    assert response.status_code == 422
-    assert "分析中心点不可用" in response.json()["detail"]
+    assert response.status_code == 200
+    task = client.get(f"/api/analyze/{response.json()['id']}").json()
+    assert task["status"] == "failed"
+    assert task["stage_label"] == "中心点解析失败"
+    assert "超出本地快照支持范围" in task["error"]
 
 
 def test_location_endpoints_reject_points_outside_huangpu_delivery_scope():
@@ -197,6 +205,12 @@ class LongWalkingFixtureMapProvider(FixtureMapProvider):
             ]
             for origin in origins
         ]
+
+
+class EmptyFacilityFixtureMapProvider(FixtureMapProvider):
+    async def search_facilities(self, category: str, center: tuple[float, float], radius_m: int = 1000):
+        self.calls.append(f"search_facilities:{category}")
+        return []
 def test_provider_can_be_replaced_without_real_baidu_requests(tmp_path):
     provider = FixtureMapProvider()
     fixture_client = TestClient(create_app(provider, tmp_path / "replace-provider.db"))
@@ -239,6 +253,28 @@ def test_service_areas_are_complete_per_category_and_include_walking_evidence(tm
     assert all("nearest_walk_minutes" in feature["properties"] for feature in features)
     assert all("nearest_walk_distance_m" in feature["properties"] for feature in features)
     assert provider.calls.count("walking_matrix") >= 2
+
+
+def test_public_report_marks_missing_route_evidence_incomplete_without_blind_spot(tmp_path):
+    provider = EmptyFacilityFixtureMapProvider()
+    fixture_client = TestClient(create_app(provider, tmp_path / "empty-facilities.db"))
+    response = fixture_client.post("/api/analyze", json={"minutes": 15, "categories": ["school"]})
+    report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
+
+    properties = report["service_areas"]["features"][0]["properties"]
+    assert properties["kind"] == "unknown"
+    assert properties["walk_threshold_exceeded"] is None
+    assert properties["critical_conditions_met"] is False
+    assert report["summary"]["critical_zone_count"] == 0
+    assert report["category_scores"][0]["status"] == "calculation_incomplete"
+    assert report["category_scores"][0]["valid_for_overall"] is False
+    assert report["scoring"]["score"] is None
+    assert report["recommendations"] == []
+    assert report["recommendation_summary"]["status"] == "calculation_incomplete"
+    assert any(
+        event["code"] == "service_area_calculation_incomplete"
+        for event in report["data_quality"]["events"]
+    )
 
 
 def test_partial_grid_walking_result_is_disclosed_without_failing_whole_report(tmp_path):

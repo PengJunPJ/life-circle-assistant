@@ -176,6 +176,9 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
 }
 .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 .mobile-panel-heading, .mobile-workspace-actions, .mobile-panel-backdrop, .mobile-legend-toggle, .mobile-map-legend { display: none; }
+.service-area-keyboard-list { position: absolute; z-index: 2; left: 20px; bottom: 74px; display: flex; max-width: min(560px, calc(100% - 380px)); gap: 6px; overflow-x: auto; padding: 6px; border: 1px solid #d4e0da; border-radius: 5px; background: rgba(249,252,248,.94); box-shadow: 0 3px 10px rgba(36,70,66,.08); }
+.service-area-keyboard-list button { flex: 0 0 auto; padding: 6px 8px; border: 1px solid #cbd9d3; border-radius: 4px; background: #fff; color: #395b56; font-size: 9px; }
+.service-area-keyboard-list button:hover, .service-area-keyboard-list button:focus-visible, .service-area-keyboard-list button[aria-pressed="true"] { border-color: #2f8f80; outline: 2px solid rgba(47,143,128,.25); background: #edf6f2; }
 .status-symbol { width: 18px; height: 18px; display: inline-grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 900; line-height: 1; }
 .status-symbol.critical { background: repeating-linear-gradient(135deg, #b84e39 0, #b84e39 3px, #d98370 3px, #d98370 6px); }
 .status-symbol.sparse { background: repeating-linear-gradient(45deg, #b98327 0, #b98327 3px, #e1b967 3px, #e1b967 6px); }
@@ -302,6 +305,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
   .map-caption > span:last-child { display: none; }
   .map-scale { display: none; }
   .service-area-evidence { left: 8px; right: 8px; bottom: calc(124px + env(safe-area-inset-bottom)); width: auto; max-height: 38dvh; overflow: auto; }
+  .service-area-keyboard-list { left: 8px; right: 8px; bottom: calc(109px + env(safe-area-inset-bottom)); max-width: none; }
   .map-loading { padding-bottom: 62px; }
   .export-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

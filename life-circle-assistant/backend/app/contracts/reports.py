@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..maps.provider import ProviderDescriptor
+from .sources import source_label
 
 
 REPORT_SCHEMA_VERSION = "2.0"
@@ -44,7 +45,7 @@ def build_quality_summary(
         overall_status = "limited"
     else:
         overall_status = "good"
-    source_label = descriptor.label
+    primary_source_label = descriptor.label
     disclosure = (
         "当前结果包含本地快照、插值或降级估算，不代表最新真实地图测算。"
         if used_degraded
@@ -54,7 +55,7 @@ def build_quality_summary(
         {
             "kind": descriptor.source,
             "provider": descriptor.id,
-            "label": source_label,
+            "label": primary_source_label,
             "usage": "分析主要数据来源",
             "is_latest_real_measurement": descriptor.is_latest_real_measurement,
         }
@@ -65,7 +66,7 @@ def build_quality_summary(
                 {
                     "kind": event["source"],
                     "provider": descriptor.id,
-                    "label": _source_label(event["source"]),
+                    "label": source_label(event["source"]),
                     "usage": event["scope"],
                     "is_latest_real_measurement": event["source"] == "real_api",
                 }
@@ -140,13 +141,3 @@ def create_report_skeleton(
             "message": data_quality["summary"],
         },
     }
-
-
-def _source_label(source: str) -> str:
-    return {
-        "real_api": "真实 API",
-        "cache": "有效缓存",
-        "local_snapshot": "本地快照",
-        "interpolation": "空间插值",
-        "degraded_estimate": "降级估算",
-    }.get(source, source)

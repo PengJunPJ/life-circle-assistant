@@ -21,6 +21,7 @@ StageUpdater = Callable[[str, str, int], None]
 
 STAGES = {
     "request_validation": "请求校验",
+    "center_resolution": "中心点解析",
     "facility_discovery": "设施发现",
     "walking_calculation": "步行计算",
     "region_classification": "区域分类",
@@ -77,7 +78,14 @@ class AnalysisApplicationService:
         descriptor = self.provider.descriptor
         center = (request.lng, request.lat)
 
-        self._stage("request_validation", 16)
+        self._stage("request_validation", 8)
+        self._stage("center_resolution", 18)
+        resolved_center = await self.provider.reverse_geocode(request.lng, request.lat)
+        request = request.model_copy(
+            update={"center_address": request.center_address.strip() or resolved_center.address}
+        )
+        center = (request.lng, request.lat)
+
         if descriptor.source == "real_api":
             events.append(
                 quality_event(
@@ -101,7 +109,7 @@ class AnalysisApplicationService:
                 )
             )
 
-        self._stage("facility_discovery", 32)
+        self._stage("facility_discovery", 34)
         facilities: list[dict[str, Any]] = []
         facility_search_failed_categories: set[str] = set()
         facility_provider_calls = 0
@@ -131,7 +139,7 @@ class AnalysisApplicationService:
         if isinstance(facility_request_start, int) and isinstance(facility_request_end, int):
             facility_api_calls = max(0, facility_request_end - facility_request_start)
 
-        self._stage("walking_calculation", 54)
+        self._stage("walking_calculation", 56)
         await self._attach_walking_results(center, facilities, events, partial_failures)
         isochrone = await self._build_isochrone(center, request, events, partial_failures)
 
@@ -153,7 +161,13 @@ class AnalysisApplicationService:
             for category in request.categories
             if any(
                 failure.get("category") == category
-                and failure.get("code") == "walking_category_incomplete"
+                and (
+                    failure.get("code") == "walking_category_incomplete"
+                    or (
+                        failure.get("code") == "service_area_calculation_incomplete"
+                        and failure.get("excludes_category") is True
+                    )
+                )
                 for failure in partial_failures
             )
         }

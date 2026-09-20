@@ -40,6 +40,13 @@ def build_planning_recommendations(
             "recommendation_count": len(recommendations),
             "target_region_count": sum(len(item["target_region_ids"]) for item in recommendations),
         }
+    elif any(score.get("valid_for_overall") is False for score in category_scores):
+        summary = {
+            "status": "calculation_incomplete",
+            "message": "部分所选类别缺少可核验的服务区域证据，暂不据此生成补充设施建议。",
+            "recommendation_count": 0,
+            "target_region_count": 0,
+        }
     else:
         summary = {
             "status": "no_shortage",

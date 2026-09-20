@@ -20,7 +20,7 @@ export type Poi = {
   calculation_method?: string
 }
 
-export type ServiceAreaKind = 'normal' | 'sparse' | 'critical'
+export type ServiceAreaKind = 'normal' | 'sparse' | 'critical' | 'unknown'
 
 export type ServiceAreaProperties = {
   grid_id: string
@@ -43,6 +43,7 @@ export type ServiceAreaProperties = {
   nearest_walk_distance_m: number | null
   walk_threshold_exceeded: boolean | null
   critical_conditions_met: boolean
+  classification_status: 'valid' | 'calculation_incomplete'
   source: string
   calculation_method: string
   basis: string
