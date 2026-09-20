@@ -80,9 +80,11 @@ def test_json_csv_and_geojson_exports_are_consistent_with_the_same_persisted_rep
 def test_exports_only_allow_existing_completed_reports(tmp_path):
     client = TestClient(create_app(database_path=tmp_path / "missing-export.db"))
     missing = client.get("/api/reports/not-found/exports/json")
-    invalid = client.get("/api/reports/not-found/exports/pdf")
+    missing_pdf = client.get("/api/reports/not-found/exports/pdf")
+    invalid = client.get("/api/reports/not-found/exports/xlsx")
 
     assert missing.status_code == 404
+    assert missing_pdf.status_code == 404
     assert invalid.status_code == 422
 
 

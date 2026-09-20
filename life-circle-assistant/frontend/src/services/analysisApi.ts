@@ -6,7 +6,7 @@ import type { AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, Report } f
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
 import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
 
-export type ReportExportFormat = 'json' | 'csv' | 'geojson'
+export type ReportExportFormat = 'json' | 'csv' | 'geojson' | 'pdf'
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = await response.json()

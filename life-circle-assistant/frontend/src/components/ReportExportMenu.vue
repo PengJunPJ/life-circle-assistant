@@ -13,14 +13,15 @@
         @click="download(option.format)"
       >
         <Download />
-        <strong>{{ option.label }}</strong>
-        <small>{{ option.description }}</small>
+        <strong>{{ exportingFormat === option.format ? option.loadingLabel : option.label }}</strong>
+        <small>{{ exportingFormat === option.format ? option.loadingDescription : option.description }}</small>
       </button>
     </div>
     <p
       v-if="feedback"
       :class="['export-feedback', feedbackKind]"
       :role="feedbackKind === 'error' ? 'alert' : 'status'"
+      aria-live="polite"
     >{{ feedback }}</p>
   </section>
 </template>
@@ -34,10 +35,11 @@ const props = defineProps<{ reportId: string }>()
 const exportingFormat = ref<ReportExportFormat | ''>('')
 const feedback = ref('')
 const feedbackKind = ref<'success' | 'error'>('success')
-const options: { format: ReportExportFormat; label: string; description: string }[] = [
-  { format: 'json', label: 'JSON', description: '完整报告' },
-  { format: 'csv', label: 'CSV', description: '指标与设施表' },
-  { format: 'geojson', label: 'GeoJSON', description: '空间图层' },
+const options: { format: ReportExportFormat; label: string; description: string; loadingLabel: string; loadingDescription: string }[] = [
+  { format: 'json', label: 'JSON', description: '完整报告', loadingLabel: '正在导出', loadingDescription: '准备完整报告' },
+  { format: 'csv', label: 'CSV', description: '指标与设施表', loadingLabel: '正在导出', loadingDescription: '准备表格数据' },
+  { format: 'geojson', label: 'GeoJSON', description: '空间图层', loadingLabel: '正在导出', loadingDescription: '准备空间图层' },
+  { format: 'pdf', label: 'PDF', description: '评审与汇报版', loadingLabel: '正在生成', loadingDescription: '排版报告与地图' },
 ]
 
 async function download(format: ReportExportFormat) {

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
-from .exports import build_csv_export, build_geojson_export, build_json_export
+from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
 from .maps import MapProvider, MapProviderError, create_map_provider
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService, WalkingSettings
@@ -309,7 +309,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
     @app.get("/api/reports/{report_id}/exports/{export_format}")
     def export_completed_report(
         report_id: str,
-        export_format: Literal["json", "csv", "geojson"],
+        export_format: Literal["json", "csv", "geojson", "pdf"],
         report_repository: ReportRepository = Depends(get_report_repository),
     ):
         report = report_repository.get(report_id)
@@ -319,6 +319,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             "json": build_json_export,
             "csv": build_csv_export,
             "geojson": build_geojson_export,
+            "pdf": build_pdf_export,
         }
         artifact = builders[export_format](report)
         return Response(

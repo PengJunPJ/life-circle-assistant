@@ -16,6 +16,11 @@ def request_json(url: str, method: str = "GET", payload: dict | None = None) -> 
         return json.load(response)
 
 
+def request_bytes(url: str) -> tuple[bytes, str]:
+    with urllib.request.urlopen(url, timeout=15) as response:
+        return response.read(), response.headers.get_content_type()
+
+
 def wait_for_report(task_id: str) -> dict:
     deadline = time.monotonic() + 15
     while time.monotonic() < deadline:
@@ -43,13 +48,18 @@ def main() -> None:
         raise RuntimeError(f"冒烟报告未使用本地快照：{report.get('source')}")
     if report.get("isochrone", {}).get("geometry", {}).get("type") != "Polygon":
         raise RuntimeError("冒烟报告缺少有效等时圈")
+    pdf, content_type = request_bytes(
+        f"http://localhost:8000/api/reports/{report['report_id']}/exports/pdf"
+    )
+    if content_type != "application/pdf" or not pdf.startswith(b"%PDF-"):
+        raise RuntimeError("容器无法从持久化报告生成有效 PDF")
 
     with urllib.request.urlopen("http://localhost:5173", timeout=5) as response:
         page = response.read().decode("utf-8")
     if response.status != 200 or '<div id="app"></div>' not in page:
         raise RuntimeError("前端容器未返回应用入口页面")
 
-    print("容器冒烟验证通过：前端可访问，后端健康，演示模式报告使用本地快照。")
+    print("容器冒烟验证通过：前端可访问，后端健康，演示模式报告可生成 PDF。")
 
 
 if __name__ == "__main__":
