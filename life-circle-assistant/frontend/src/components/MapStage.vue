@@ -1,12 +1,33 @@
 <template>
-  <section class="map-stage">
-    <div class="map-toolbar"><div class="layer-status"><span class="legend-item"><span class="legend-origin"></span>起点</span><span class="legend-item"><span class="legend-isochrone"></span>{{ minutes }}分钟等时圈</span><span class="legend-item"><span class="status-dot red"></span>重点盲区</span><span class="legend-item"><span class="status-dot amber"></span>稀疏区</span></div><button class="icon-btn" title="刷新分析" @click="emit('refresh')"><Refresh /></button></div>
-    <div class="facility-legend"><span v-for="category in Object.keys(FACILITY_LABELS)" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span><span v-if="report?.recommendations.length" class="facility-legend-item candidate-legend"><b>候</b>规划候选点</span><span v-if="simulation" class="facility-legend-item simulation-legend"><b>拟</b>假设设施/模拟区域</span></div>
-    <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking }"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking }" @click="handleCanvasClick"></canvas>
+  <section class="map-stage" aria-label="生活圈分析地图">
+    <p class="sr-only">地图是主要工作区域。键盘用户可在分析参数面板中通过地址候选或经纬度完成选点。</p>
+    <div class="map-toolbar">
+      <div class="layer-status" aria-label="地图核心图例">
+        <span class="legend-item"><span class="legend-origin" aria-hidden="true"></span>起点</span>
+        <span class="legend-item"><span class="legend-isochrone" aria-hidden="true"></span>{{ minutes }}分钟等时圈</span>
+        <span class="legend-item risk-legend"><span class="status-symbol critical" aria-hidden="true">!</span>重点盲区</span>
+        <span class="legend-item risk-legend"><span class="status-symbol sparse" aria-hidden="true">△</span>设施稀疏区</span>
+      </div>
+      <div class="map-toolbar-actions">
+        <button class="mobile-legend-toggle" type="button" aria-controls="mobile-map-legend" :aria-expanded="showMobileLegend" @click="showMobileLegend = !showMobileLegend">图例</button>
+        <button class="icon-btn" type="button" aria-label="重新运行当前分析" :disabled="loading" @click="emit('refresh')"><Refresh /></button>
+      </div>
+    </div>
+    <div class="facility-legend" aria-label="设施类别图例"><span v-for="category in Object.keys(FACILITY_LABELS)" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span><span v-if="report?.recommendations.length" class="facility-legend-item candidate-legend"><b aria-hidden="true">候</b>规划候选点</span><span v-if="simulation" class="facility-legend-item simulation-legend"><b aria-hidden="true">拟</b>假设设施/模拟区域</span></div>
+    <div v-if="showMobileLegend" id="mobile-map-legend" class="mobile-map-legend" role="region" aria-label="地图完整图例">
+      <button type="button" aria-label="关闭地图图例" @click="showMobileLegend = false">×</button>
+      <strong>地图图例</strong>
+      <span><b class="status-symbol critical" aria-hidden="true">!</b>重点服务盲区：红色网纹与感叹号</span>
+      <span><b class="status-symbol sparse" aria-hidden="true">△</b>设施稀疏区：黄色斜纹与三角形</span>
+      <span v-for="category in Object.keys(FACILITY_LABELS)" :key="`mobile-${category}`"><b class="category-symbol" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
+      <span v-if="report?.recommendations.length"><b class="category-symbol candidate-legend" aria-hidden="true">候</b>规划候选点</span>
+      <span v-if="simulation"><b class="category-symbol simulation-legend" aria-hidden="true">拟</b>假设设施和模拟区域</span>
+    </div>
+    <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking }" role="region" aria-label="百度地图生活圈分析区域"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking }" role="img" aria-label="生活圈分析地图画布" @click="handleCanvasClick"></canvas>
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
-    <div v-if="loading" class="map-loading"><div class="loader-ring"></div><strong>正在生成生活圈体检</strong><span>正在计算真实步行可达性… {{ progress }}%</span></div>
+    <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>正在计算真实步行可达性… {{ progress }}%</span></div>
     <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
-    <article v-if="selectedServiceArea" class="service-area-evidence" aria-live="polite">
+    <article v-if="selectedServiceArea" ref="evidenceRef" class="service-area-evidence" tabindex="-1" aria-label="区域判定依据" aria-live="polite">
       <button class="evidence-close" aria-label="关闭区域判定依据" @click="closeServiceAreaEvidence">×</button>
       <div class="evidence-kicker">{{ selectedServiceArea.properties.category_label }} · {{ selectedServiceArea.properties.label }}</div>
       <strong>{{ selectedServiceArea.properties.nearest_facility_name || '候选范围内无同类设施' }}</strong>
@@ -21,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRef, watch } from 'vue'
+import { nextTick, ref, toRef, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
@@ -40,6 +61,8 @@ const showCritical = toRef(props, 'showCritical')
 const focusRecommendationId = toRef(props, 'focusRecommendationId')
 const simulation = toRef(props, 'simulation')
 const simulationPicking = toRef(props, 'simulationPicking')
+const showMobileLegend = ref(false)
+const evidenceRef = ref<HTMLElement | null>(null)
 const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, handleCanvasClick, closeServiceAreaEvidence } = useMapRenderer({
   report,
   analysisCenter,
@@ -71,5 +94,11 @@ function sourceLabel(value: string) {
 }
 
 watch(mapLoadComplete, (value) => { if (value) emit('map-ready', realMapReady.value) }, { immediate: true })
-watch(selectedServiceArea, (value) => emit('service-area-select', value?.properties.grid_id || null))
+watch(selectedServiceArea, async (value) => {
+  emit('service-area-select', value?.properties.grid_id || null)
+  if (value) {
+    await nextTick()
+    evidenceRef.value?.focus({ preventScroll: true })
+  }
+})
 </script>

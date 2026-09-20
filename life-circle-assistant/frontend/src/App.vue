@@ -1,8 +1,13 @@
 <template>
   <main class="app-shell">
     <AppHeader :has-report="Boolean(report)" />
-    <section class="workspace">
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ accessibilityStatus }}</p>
+    <p v-if="analysisError" class="sr-only" role="alert">分析失败：{{ analysisError }}</p>
+    <section ref="workspaceRef" class="workspace">
       <AnalysisControls
+        id="analysis-controls-panel"
+        :class="{ 'mobile-open': activeMobilePanel === 'controls' }"
+        :mobile-open="activeMobilePanel === 'controls'"
         :center="center"
         :address-query="addressQuery"
         :candidates="candidates"
@@ -32,6 +37,7 @@
         @apply-coordinates="applyCoordinateInput"
         @toggle-category="toggleCategory"
         @run="startAnalysis"
+        @close-mobile="closeMobilePanel('controls')"
       />
       <MapStage
         :report="report"
@@ -53,6 +59,9 @@
         @service-area-select="handleServiceAreaSelect"
       />
       <ReportPanel
+        id="analysis-report-panel"
+        :class="{ 'mobile-open': activeMobilePanel === 'report' }"
+        :mobile-open="activeMobilePanel === 'report'"
         :report="report"
         :selected-recommendation-id="selectedRecommendationId"
         :history-items="historyItems"
@@ -81,7 +90,30 @@
         @pick-simulation-location="beginSimulationMapPick"
         @run-simulation="runSimulation"
         @clear-simulation="clearSimulation"
+        @close-mobile="closeMobilePanel('report')"
       />
+      <button
+        v-if="activeMobilePanel"
+        class="mobile-panel-backdrop"
+        aria-label="关闭当前面板并返回地图"
+        @click="closeMobilePanel(activeMobilePanel)"
+      ></button>
+      <nav class="mobile-workspace-actions" aria-label="移动端工作台">
+        <button
+          ref="controlsTrigger"
+          type="button"
+          aria-controls="analysis-controls-panel"
+          :aria-expanded="activeMobilePanel === 'controls'"
+          @click="toggleMobilePanel('controls')"
+        ><span aria-hidden="true">☰</span><strong>分析参数</strong></button>
+        <button
+          ref="reportTrigger"
+          type="button"
+          aria-controls="analysis-report-panel"
+          :aria-expanded="activeMobilePanel === 'report'"
+          @click="toggleMobilePanel('report')"
+        ><span aria-hidden="true">▤</span><strong>体检报告</strong><em v-if="report" aria-label="报告已生成">已完成</em></button>
+      </nav>
     </section>
     <ReportComparisonPanel
       v-if="comparison"
@@ -93,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
@@ -108,6 +140,10 @@ import ReportComparisonPanel from './components/ReportComparisonPanel.vue'
 
 const analysisStarted = ref(false)
 const selectedRecommendationId = ref<string | null>(null)
+const activeMobilePanel = ref<'controls' | 'report' | null>(null)
+const controlsTrigger = ref<HTMLButtonElement | null>(null)
+const reportTrigger = ref<HTMLButtonElement | null>(null)
+const workspaceRef = ref<HTMLElement | null>(null)
 const {
   center,
   addressQuery,
@@ -133,6 +169,7 @@ const {
   loading,
   progress,
   report,
+  error: analysisError,
   runAnalysis,
   toggleCategory,
   applyReport,
@@ -171,6 +208,53 @@ const {
   compareSelection,
   closeComparison,
 } = useReportComparison()
+
+const accessibilityStatus = computed(() => {
+  if (locationError.value) return `分析中心点需要处理：${locationError.value}`
+  if (analysisError.value) return `分析失败：${analysisError.value}`
+  if (loading.value) return `分析进行中，当前进度 ${progress.value}%`
+  if (report.value) {
+    return report.value.completeness === 'partial'
+      ? '分析已完成，但部分数据不可用。请打开体检报告查看数据质量说明。'
+      : '分析已完成。可以打开体检报告查看评分、服务区域和规划建议。'
+  }
+  return '尚未生成分析报告。'
+})
+
+async function toggleMobilePanel(panel: 'controls' | 'report') {
+  if (activeMobilePanel.value === panel) {
+    closeMobilePanel(panel)
+    return
+  }
+  activeMobilePanel.value = panel
+  await nextTick()
+  document.querySelector<HTMLElement>(`#analysis-${panel === 'controls' ? 'controls' : 'report'}-panel .mobile-panel-close`)?.focus({ preventScroll: true })
+  keepWorkspaceAtOrigin()
+  window.requestAnimationFrame(keepWorkspaceAtOrigin)
+}
+
+function closeMobilePanel(panel: 'controls' | 'report') {
+  activeMobilePanel.value = null
+  nextTick(() => {
+    const trigger = panel === 'controls' ? controlsTrigger.value : reportTrigger.value
+    trigger?.focus({ preventScroll: true })
+    keepWorkspaceAtOrigin()
+  })
+}
+
+function keepWorkspaceAtOrigin() {
+  if (!workspaceRef.value) return
+  workspaceRef.value.scrollTop = 0
+  workspaceRef.value.scrollLeft = 0
+}
+
+function handleWorkspaceKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && activeMobilePanel.value) {
+    const panel = activeMobilePanel.value
+    event.preventDefault()
+    closeMobilePanel(panel)
+  }
+}
 
 async function startAnalysis() {
   selectedRecommendationId.value = null
@@ -231,5 +315,9 @@ function handleServiceAreaSelect(serviceAreaId: string | null) {
   selectedRecommendationId.value = recommendation?.id || null
 }
 
-onMounted(loadHistory)
+onMounted(() => {
+  loadHistory()
+  window.addEventListener('keydown', handleWorkspaceKeydown)
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', handleWorkspaceKeydown))
 </script>

@@ -15,6 +15,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
   const loading = ref(false)
   const progress = ref(0)
   const report = ref<Report | null>(null)
+  const error = ref('')
 
   watch(center, (nextCenter) => {
     if (report.value
@@ -27,6 +28,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
   })
 
   function applyReport(selected: Report) {
+    error.value = ''
     report.value = selected
     center.value = {
       lng: selected.center.lng,
@@ -45,6 +47,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
   async function runAnalysis() {
     if (loading.value) return
     loading.value = true
+    error.value = ''
     progress.value = 18
     report.value = null
     try {
@@ -64,8 +67,11 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
       applyReport(completedReport)
       progress.value = 100
       ElMessage.success(completedReport.source === 'baidu' ? '百度地图真实体检报告已生成' : '本地快照体检报告已生成')
-    } catch (error: any) {
-      ElMessage.error(error?.message || '服务暂不可用，请检查后端是否启动')
+    } catch (caught: any) {
+      const message = caught?.message || '服务暂不可用，请检查后端是否启动'
+      ElMessage.error(message)
+      // 除视觉 Toast 外保留可观察状态，供页面 live region 向辅助技术播报失败原因。
+      error.value = message
     } finally {
       loading.value = false
     }
@@ -87,6 +93,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     loading,
     progress,
     report,
+    error,
     runAnalysis,
     toggleCategory,
     applyReport,

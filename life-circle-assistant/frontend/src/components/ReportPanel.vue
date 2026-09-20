@@ -1,6 +1,10 @@
 <template>
-  <aside class="report-panel">
-    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2>{{ report?.center.address || '分析报告' }}</h2></div></div>
+  <aside class="report-panel" aria-labelledby="report-panel-title">
+    <div class="mobile-panel-heading">
+      <div><div class="eyebrow">社区体检报告</div><strong>{{ report ? '查看完整报告' : '等待分析结果' }}</strong></div>
+      <button class="mobile-panel-close" type="button" aria-label="关闭体检报告面板并返回地图" @click="emit('close-mobile')">×</button>
+    </div>
+    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div></div>
     <ReportHistory
       :items="historyItems"
       :total="historyTotal"
@@ -18,7 +22,7 @@
       @compare="emit('compare-history')"
     />
     <div v-if="report" class="report-content">
-      <div class="quality-banner">
+      <div class="quality-banner" role="status">
         <CircleCheck />
         <span>{{ report.quality.mode }} · {{ report.completeness === 'partial' ? '部分结果' : '结果已完成' }}</span>
         <button
@@ -89,6 +93,7 @@ const props = defineProps<{
   simulationLoading: boolean
   simulationPicking: boolean
   simulationError: string
+  mobileOpen: boolean
 }>()
 const emit = defineEmits<{
   'refresh-history': []
@@ -102,6 +107,7 @@ const emit = defineEmits<{
   'pick-simulation-location': []
   'run-simulation': []
   'clear-simulation': []
+  'close-mobile': []
 }>()
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)
