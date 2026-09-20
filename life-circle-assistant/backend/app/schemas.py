@@ -19,3 +19,17 @@ class AnalyzeRequest(BaseModel):
     @classmethod
     def deduplicate_categories(cls, categories: list[CoreCategory]) -> list[CoreCategory]:
         return list(dict.fromkeys(categories))
+
+
+class ReportComparisonRequest(BaseModel):
+    report_ids: list[str] = Field(min_length=2, max_length=2)
+
+    @field_validator("report_ids")
+    @classmethod
+    def require_distinct_reports(cls, report_ids: list[str]) -> list[str]:
+        normalized = [report_id.strip() for report_id in report_ids]
+        if any(not report_id for report_id in normalized):
+            raise ValueError("报告标识不能为空")
+        if len(set(normalized)) != 2:
+            raise ValueError("请选择两份不同的报告")
+        return normalized

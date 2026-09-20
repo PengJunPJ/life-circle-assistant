@@ -10,12 +10,12 @@ from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from .analysis import AnalysisApplicationService
+from .analysis import AnalysisApplicationService, compare_reports
 from .maps import MapProvider, MapProviderError, create_map_provider
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService, WalkingSettings
 from .mock_data import CATEGORIES, CENTER
-from .schemas import AnalyzeRequest
+from .schemas import AnalyzeRequest, ReportComparisonRequest
 from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
 
 
@@ -243,6 +243,19 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         report_repository: ReportRepository = Depends(get_report_repository),
     ):
         return report_repository.list_history(limit=limit, offset=offset)
+
+    @app.post("/api/reports/compare")
+    def compare_completed_reports(
+        comparison_request: ReportComparisonRequest,
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        reports: list[dict] = []
+        for report_id in comparison_request.report_ids:
+            report = report_repository.get(report_id)
+            if not report or report.get("status") != "completed":
+                raise HTTPException(status_code=404, detail=f"报告 {report_id} 不存在或尚未完成")
+            reports.append(report)
+        return compare_reports(reports[0], reports[1])
 
     @app.get("/api/reports/{report_id}")
     def get_report_by_id(report_id: str, report_repository: ReportRepository = Depends(get_report_repository)):

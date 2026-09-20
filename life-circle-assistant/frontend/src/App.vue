@@ -58,13 +58,24 @@
         :history-error="historyError"
         :opening-report-id="openingReportId"
         :rerunning-report-id="rerunningReportId"
+        :selected-report-ids="selectedReportIds"
+        :comparison-loading="comparisonLoading"
+        :comparison-error="comparisonError"
         @export="exportReport(report)"
         @locate-recommendation="selectedRecommendationId = $event"
         @refresh-history="loadHistory"
         @open-history="handleOpenHistory"
         @rerun-history="handleRerunHistory"
+        @toggle-comparison="toggleComparisonReport"
+        @compare-history="compareSelection"
       />
     </section>
+    <ReportComparisonPanel
+      v-if="comparison"
+      :comparison="comparison"
+      @close="closeComparison"
+      @open-report="handleOpenComparisonReport"
+    />
   </main>
 </template>
 
@@ -73,12 +84,14 @@ import { onMounted, ref } from 'vue'
 import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
+import { useReportComparison } from './composables/useReportComparison'
 import { exportReport } from './utils/report'
 import { recommendationForServiceArea } from './utils/recommendationLinks'
 import AppHeader from './components/AppHeader.vue'
 import AnalysisControls from './components/AnalysisControls.vue'
 import MapStage from './components/MapStage.vue'
 import ReportPanel from './components/ReportPanel.vue'
+import ReportComparisonPanel from './components/ReportComparisonPanel.vue'
 
 const analysisStarted = ref(false)
 const selectedRecommendationId = ref<string | null>(null)
@@ -122,6 +135,15 @@ const {
   openHistory,
   rerunHistory,
 } = useReportHistory()
+const {
+  selectedReportIds,
+  comparison,
+  loading: comparisonLoading,
+  error: comparisonError,
+  toggleReport: toggleComparisonReport,
+  compareSelection,
+  closeComparison,
+} = useReportComparison()
 
 async function startAnalysis() {
   selectedRecommendationId.value = null
@@ -142,6 +164,14 @@ async function handleRerunHistory(reportId: string) {
     if (selected) applySelectedReport(selected)
   } finally {
     loading.value = false
+  }
+}
+
+async function handleOpenComparisonReport(reportId: string) {
+  const selected = await openHistory(reportId)
+  if (selected) {
+    applySelectedReport(selected)
+    closeComparison()
   }
 }
 

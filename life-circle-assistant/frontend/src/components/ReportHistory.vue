@@ -11,6 +11,13 @@
     <div v-else-if="!items.length" class="history-state">尚无历史报告，完成一次分析后会显示在这里。</div>
     <div v-else class="history-list">
       <article v-for="item in items" :key="item.report_id" class="history-item">
+        <button
+          class="history-select"
+          :class="{ active: selectedReportIds.includes(item.report_id) }"
+          :aria-pressed="selectedReportIds.includes(item.report_id)"
+          :aria-label="`${selectedReportIds.includes(item.report_id) ? '取消选择' : '选择'} ${item.center.address} 用于比较`"
+          @click="emit('toggle-comparison', item.report_id)"
+        >{{ selectedReportIds.includes(item.report_id) ? '✓' : '+' }}</button>
         <button class="history-open" :disabled="Boolean(openingReportId || rerunningReportId)" @click="emit('open', item.report_id)">
           <strong>{{ item.center.address }}</strong>
           <span>{{ formatTime(item.completed_at) }} · {{ item.minutes }} 分钟 · {{ item.mode === 'analysis' ? '分析模式' : '演示模式' }}</span>
@@ -23,6 +30,13 @@
         >{{ rerunningReportId === item.report_id ? '运行中' : '重跑' }}</button>
       </article>
     </div>
+    <div v-if="items.length" class="history-compare-actions">
+      <span>已选 {{ selectedReportIds.length }}/2</span>
+      <button :disabled="comparisonLoading || selectedReportIds.length !== 2" @click="emit('compare')">
+        {{ comparisonLoading ? '比较中…' : '比较已选报告' }}
+      </button>
+    </div>
+    <p v-if="comparisonError" class="history-comparison-error" role="alert">{{ comparisonError }}</p>
   </section>
 </template>
 
@@ -36,12 +50,17 @@ defineProps<{
   error: string
   openingReportId: string
   rerunningReportId: string
+  selectedReportIds: string[]
+  comparisonLoading: boolean
+  comparisonError: string
 }>()
 
 const emit = defineEmits<{
   refresh: []
   open: [reportId: string]
   rerun: [reportId: string]
+  'toggle-comparison': [reportId: string]
+  compare: []
 }>()
 
 function formatTime(value: string) {

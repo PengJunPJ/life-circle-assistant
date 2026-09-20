@@ -8,9 +8,14 @@
       :error="historyError"
       :opening-report-id="openingReportId"
       :rerunning-report-id="rerunningReportId"
+      :selected-report-ids="selectedReportIds"
+      :comparison-loading="comparisonLoading"
+      :comparison-error="comparisonError"
       @refresh="emit('refresh-history')"
       @open="emit('open-history', $event)"
       @rerun="emit('rerun-history', $event)"
+      @toggle-comparison="emit('toggle-comparison', $event)"
+      @compare="emit('compare-history')"
     />
     <div v-if="report" class="report-content">
       <div class="quality-banner">
@@ -56,6 +61,9 @@ const props = defineProps<{
   historyError: string
   openingReportId: string
   rerunningReportId: string
+  selectedReportIds: string[]
+  comparisonLoading: boolean
+  comparisonError: string
 }>()
 const emit = defineEmits<{
   export: []
@@ -63,6 +71,8 @@ const emit = defineEmits<{
   'open-history': [reportId: string]
   'rerun-history': [reportId: string]
   'locate-recommendation': [recommendationId: string]
+  'toggle-comparison': [reportId: string]
+  'compare-history': []
 }>()
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)

@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants/facilities'
+import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
 import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, Report } from '../types/report'
@@ -69,6 +70,16 @@ export async function getHistoricalReport(reportId: string) {
 export async function rerunHistoricalReport(reportId: string) {
   return parseResponse<AnalysisTask>(
     await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/rerun`, { method: 'POST' }),
+  )
+}
+
+export async function compareHistoricalReports(reportIds: [string, string]) {
+  return parseResponse<ReportComparison>(
+    await fetch(`${API_BASE_URL}/api/reports/compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report_ids: reportIds }),
+    }),
   )
 }
 
