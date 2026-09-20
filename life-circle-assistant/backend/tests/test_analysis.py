@@ -244,6 +244,11 @@ def test_tasks_reports_history_and_rerun_survive_storage_reinitialization(tmp_pa
     opened = restarted_client.get(f"/api/reports/{original_report_id}").json()
     assert opened["isochrone"]["geometry"]["type"] == "Polygon"
     assert opened["request"]["categories"] == ["market", "school"]
+    assert {item["category"] for item in opened["category_scores"]} == {"market", "school"}
+    assert {feature["properties"]["category"] for feature in opened["service_areas"]["features"]} == {
+        "market",
+        "school",
+    }
 
     rerun = restarted_client.post(f"/api/reports/{original_report_id}/rerun").json()
     rerun_task = restarted_client.get(f"/api/analyze/{rerun['id']}").json()
@@ -251,6 +256,11 @@ def test_tasks_reports_history_and_rerun_survive_storage_reinitialization(tmp_pa
     assert rerun_task["rerun_of_report_id"] == original_report_id
     assert rerun_task["report_id"] != original_report_id
     assert rerun_task["request"] == original_task["request"]
+    assert {item["category"] for item in rerun_task["result"]["category_scores"]} == {"market", "school"}
+    assert {feature["properties"]["category"] for feature in rerun_task["result"]["service_areas"]["features"]} == {
+        "market",
+        "school",
+    }
 
     history_after_rerun = restarted_client.get("/api/reports/history").json()
     assert history_after_rerun["total"] == 2
