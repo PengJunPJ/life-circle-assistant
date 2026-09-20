@@ -53,6 +53,18 @@ class BaiduMapClient:
             raise BaiduMapError("地址没有解析出有效坐标")
         return {"lng": float(location["lng"]), "lat": float(location["lat"]), "address": result.get("formatted_address") or address}
 
+    async def reverse_geocode(self, lng: float, lat: float) -> dict[str, Any]:
+        payload = await self._request("/reverse_geocoding/v3/", {"location": f"{lat},{lng}", "extensions_poi": 0})
+        result = payload.get("result") or {}
+        location = result.get("location") or {}
+        if "lng" not in location or "lat" not in location:
+            raise BaiduMapError("坐标没有解析出有效地址")
+        return {
+            "lng": float(location["lng"]),
+            "lat": float(location["lat"]),
+            "address": result.get("formatted_address") or f"{lng:.6f}, {lat:.6f}",
+        }
+
     async def search_poi(self, query: str, lng: float, lat: float, radius: int = 1000) -> list[dict[str, Any]]:
         payload = await self._request("/place/v2/search", {"query": query, "location": f"{lat},{lng}", "radius": radius, "scope": 2, "page_size": 20})
         return payload.get("results") or []

@@ -2,7 +2,19 @@
   <aside class="report-panel">
     <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2>萝岗街道样例社区</h2></div><button class="download-btn" title="导出 JSON 报告" @click="emit('export')"><Download /></button></div>
     <div v-if="report" class="report-content">
-      <div class="quality-banner"><CircleCheck /><span>{{ report.quality.mode }} · 置信度 {{ Math.round(report.quality.confidence * 100) }}%</span><button title="查看数据说明">i</button></div>
+      <div class="quality-banner">
+        <CircleCheck />
+        <span>{{ report.quality.mode }} · {{ report.completeness === 'partial' ? '部分结果' : '结果已完成' }}</span>
+        <button
+          title="查看数据说明"
+          aria-controls="quality-details"
+          :aria-expanded="showQualityDetails"
+          @click="showQualityDetails = !showQualityDetails"
+        >i</button>
+      </div>
+      <div v-if="showQualityDetails" id="quality-details">
+        <DataQualityDetails :quality="report.data_quality" />
+      </div>
       <div class="score-block"><div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ report.summary.score }}<small>/100</small></div><span class="score-trend"><TrendCharts /> 基于四类核心设施</span></div><div class="score-ring" :style="{ '--score': `${report.summary.score * 3.6}deg` }"><b>{{ report.summary.score }}</b><span>健康度</span></div></div>
       <div class="stat-grid"><div><strong>{{ report.summary.poi_count }}</strong><span>设施点位</span></div><div><strong>{{ report.summary.area_sqm.toLocaleString() }}</strong><span>可达面积 m²</span></div><div class="danger"><strong>{{ report.summary.critical_zone_count }}</strong><span>重点盲区</span></div><div class="amber"><strong>{{ report.summary.sparse_zone_count }}</strong><span>设施稀疏区</span></div></div>
       <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>满分 100</small></div><div ref="chartRef" class="chart"></div></div>
@@ -18,10 +30,12 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { CircleCheck, Download, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { Report } from '../types/report'
+import DataQualityDetails from './DataQualityDetails.vue'
 
 const props = defineProps<{ report: Report | null }>()
 const emit = defineEmits<{ export: [] }>()
 const chartRef = ref<HTMLDivElement | null>(null)
+const showQualityDetails = ref(false)
 let chart: echarts.ECharts | null = null
 const scoreTone = computed(() => (props.report?.summary.score || 0) >= 80 ? 'good' : (props.report?.summary.score || 0) >= 60 ? 'fair' : 'risk')
 

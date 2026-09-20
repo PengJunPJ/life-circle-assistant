@@ -58,6 +58,18 @@ npm run dev
 
 真实模式需要同时满足：百度 Web 服务 AK 已开通地理编码、地点检索和步行路线权限；浏览器端 AK 已将 `localhost` 或实际访问域名加入域名白名单。`BAIDU_MAP_SECRET` 只在后端使用，不会返回给浏览器。
 
+## V2 报告契约兼容说明
+
+公开分析流程仍保持 `POST /api/analyze`、`GET /api/analyze/{task_id}` 和 `GET /api/report/{task_id}`，原有 `source`、`quality`、`pois`、`zones`、`categories` 等字段继续保留。V2 报告新增以下稳定字段：
+
+- `schema_version`、`report_id`、`task_id` 和 `completeness`；
+- `calculation_mode`，记录分析档位、地图提供方模式、坐标系和步行计算方法；
+- `execution`，记录具名任务阶段和执行指标；
+- `data_quality`，结构化记录真实 API、缓存、本地快照、插值、降级估算和部分失败；
+- `facilities`、`service_areas`、`category_scores`、`simulations` 和 `exports` 等后续功能章节。
+
+地图能力通过统一提供方边界接入。默认离线演示使用本地快照提供方；测试可通过 `create_app(provider=...)` 注入确定性提供方，测试套件不会访问真实百度地图服务。本地快照或降级估算会明确显示“非实时数据”，不会被描述为最新真实地图测算。
+
 ## 测试
 
 完成后端与前端依赖安装后，在应用目录执行统一质量检查：

@@ -2,18 +2,25 @@
 
 import asyncio
 import json
+import uuid
 
-from app.baidu import BaiduMapError
+from app.analysis import AnalysisApplicationService
+from app.baidu import BaiduMapClient
 from app.local_snapshot import SNAPSHOT_PATH
-from app.main import build_report
+from app.maps.baidu import BaiduMapProvider
 from app.schemas import AnalyzeRequest
 
 
 async def main() -> None:
+    client = BaiduMapClient()
+    if not client.real_available:
+        raise SystemExit("百度数据抓取失败，未启用真实模式或缺少 BAIDU_MAP_AK；旧快照保持不变")
     try:
-        report = await build_report(AnalyzeRequest())
-    except BaiduMapError as exc:
+        report = await AnalysisApplicationService(BaiduMapProvider(client)).run(str(uuid.uuid4()), AnalyzeRequest())
+    except Exception as exc:
         raise SystemExit(f"百度数据抓取失败，未覆盖旧快照：{exc}") from exc
+    if report["completeness"] != "complete" or report["source"] != "baidu":
+        raise SystemExit("百度数据抓取返回部分结果或非实时来源，未覆盖旧快照")
     SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
     snapshot = {key: report[key] for key in ("center", "isochrone", "pois", "zones")}
     snapshot.update({"schema_version": 1, "source": "baidu_web_service", "captured_at": report["created_at"]})
