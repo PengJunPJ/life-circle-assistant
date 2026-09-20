@@ -1,6 +1,6 @@
 <template>
   <aside class="report-panel">
-    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2>{{ report?.center.address || '分析报告' }}</h2></div><button class="download-btn" title="导出 JSON 报告" :disabled="!report" @click="emit('export')"><Download /></button></div>
+    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2>{{ report?.center.address || '分析报告' }}</h2></div></div>
     <ReportHistory
       :items="historyItems"
       :total="historyTotal"
@@ -50,7 +50,7 @@
           @clear="emit('clear-simulation')"
         />
       </div>
-      <button class="export-action" @click="emit('export')"><Download />导出体检数据 <span>JSON</span></button>
+      <ReportExportMenu :report-id="report.report_id" />
     </div>
     <div v-else class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span></div>
   </aside>
@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import * as echarts from 'echarts'
-import { CircleCheck, Download, TrendCharts, Warning } from '@element-plus/icons-vue'
+import { CircleCheck, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { HistoryReportItem } from '../types/history'
 import type { RecommendationCandidate } from '../types/recommendations'
 import type { Report } from '../types/report'
@@ -69,6 +69,7 @@ import ScoreBreakdown from './ScoreBreakdown.vue'
 import ReportHistory from './ReportHistory.vue'
 import RecommendationList from './RecommendationList.vue'
 import SimulationPanel from './SimulationPanel.vue'
+import ReportExportMenu from './ReportExportMenu.vue'
 
 const props = defineProps<{
   report: Report | null
@@ -90,7 +91,6 @@ const props = defineProps<{
   simulationError: string
 }>()
 const emit = defineEmits<{
-  export: []
   'refresh-history': []
   'open-history': [reportId: string]
   'rerun-history': [reportId: string]

@@ -4,14 +4,15 @@ import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
-from typing import AsyncIterator
+from typing import AsyncIterator, Literal
 
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
+from .exports import build_csv_export, build_geojson_export, build_json_export
 from .maps import MapProvider, MapProviderError, create_map_provider
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService, WalkingSettings
@@ -70,7 +71,13 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
                 await close()
 
     app = FastAPI(title="15分钟生活圈智能体检与规划助手", version="0.3.0", lifespan=lifespan)
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["Content-Disposition", "X-Report-Id", "X-Coordinate-System"],
+    )
     app.state.map_provider = resolved_provider
     app.state.database = Database(database_path)
     app.state.database.migrate()
@@ -298,6 +305,31 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"假设设施位置不可用：{exc}") from exc
+
+    @app.get("/api/reports/{report_id}/exports/{export_format}")
+    def export_completed_report(
+        report_id: str,
+        export_format: Literal["json", "csv", "geojson"],
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        report = report_repository.get(report_id)
+        if not report or report.get("status") != "completed":
+            raise HTTPException(status_code=404, detail="历史报告不存在或尚未完成")
+        builders = {
+            "json": build_json_export,
+            "csv": build_csv_export,
+            "geojson": build_geojson_export,
+        }
+        artifact = builders[export_format](report)
+        return Response(
+            content=artifact.content,
+            media_type=artifact.media_type,
+            headers={
+                "Content-Disposition": artifact.content_disposition,
+                "X-Report-Id": report_id,
+                "X-Coordinate-System": "BD-09",
+            },
+        )
 
     return app
 

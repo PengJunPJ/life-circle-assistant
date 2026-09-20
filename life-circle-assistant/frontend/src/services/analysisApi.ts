@@ -4,6 +4,9 @@ import type { ReportHistoryResponse } from '../types/history'
 import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, Report } from '../types/report'
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
+import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
+
+export type ReportExportFormat = 'json' | 'csv' | 'geojson'
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = await response.json()
@@ -98,6 +101,28 @@ export async function simulateFacility(reportId: string, params: {
       body: JSON.stringify(params),
     }),
   )
+}
+
+export async function downloadReportExport(reportId: string, format: ReportExportFormat) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/exports/${format}`,
+  )
+  if (!response.ok) {
+    let message = '报告导出失败'
+    try {
+      const payload = await response.json()
+      message = payload.detail || payload.error || message
+    } catch {
+      // 非 JSON 错误响应使用统一提示，避免下载失败时再抛解析异常。
+    }
+    throw new Error(message)
+  }
+  const filename = getDownloadFilename(
+    response.headers.get('Content-Disposition'),
+    `生活圈体检-${reportId.slice(0, 8)}.${format}`,
+  )
+  triggerBlobDownload(await response.blob(), filename)
+  return filename
 }
 
 export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number) => void) {

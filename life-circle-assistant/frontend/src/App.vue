@@ -70,7 +70,6 @@
         :simulation-loading="simulationLoading"
         :simulation-picking="simulationPicking"
         :simulation-error="simulationError"
-        @export="exportReport(report)"
         @locate-recommendation="selectedRecommendationId = $event"
         @refresh-history="loadHistory"
         @open-history="handleOpenHistory"
@@ -100,7 +99,6 @@ import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
 import { useReportComparison } from './composables/useReportComparison'
 import { useSimulation } from './composables/useSimulation'
-import { exportReport } from './utils/report'
 import { recommendationForServiceArea } from './utils/recommendationLinks'
 import AppHeader from './components/AppHeader.vue'
 import AnalysisControls from './components/AnalysisControls.vue'
