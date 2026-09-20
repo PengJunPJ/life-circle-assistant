@@ -3,6 +3,7 @@ import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
 import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, Report } from '../types/report'
+import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = await response.json()
@@ -79,6 +80,22 @@ export async function compareHistoricalReports(reportIds: [string, string]) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ report_ids: reportIds }),
+    }),
+  )
+}
+
+export async function simulateFacility(reportId: string, params: {
+  category: string
+  lng: number
+  lat: number
+  selection_method: SimulationSelectionMethod
+  candidate_id?: string
+}) {
+  return parseResponse<SimulationResult>(
+    await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/simulations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
     }),
   )
 }

@@ -44,8 +44,11 @@
         :loading="loading"
         :progress="progress"
         :focus-recommendation-id="selectedRecommendationId"
+        :simulation="simulationResult"
+        :simulation-picking="simulationPicking"
         @map-ready="handleMapReady"
         @select-center="selectMapPoint"
+        @select-simulation-location="selectSimulationMapLocation"
         @refresh="startAnalysis"
         @service-area-select="handleServiceAreaSelect"
       />
@@ -61,6 +64,12 @@
         :selected-report-ids="selectedReportIds"
         :comparison-loading="comparisonLoading"
         :comparison-error="comparisonError"
+        :simulation-category="simulationCategory"
+        :simulation-location="simulationLocation"
+        :simulation-result="simulationResult"
+        :simulation-loading="simulationLoading"
+        :simulation-picking="simulationPicking"
+        :simulation-error="simulationError"
         @export="exportReport(report)"
         @locate-recommendation="selectedRecommendationId = $event"
         @refresh-history="loadHistory"
@@ -68,6 +77,11 @@
         @rerun-history="handleRerunHistory"
         @toggle-comparison="toggleComparisonReport"
         @compare-history="compareSelection"
+        @simulate-candidate="simulateRecommendationCandidate"
+        @update:simulation-category="selectSimulationCategory"
+        @pick-simulation-location="beginSimulationMapPick"
+        @run-simulation="runSimulation"
+        @clear-simulation="clearSimulation"
       />
     </section>
     <ReportComparisonPanel
@@ -85,6 +99,7 @@ import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
 import { useReportComparison } from './composables/useReportComparison'
+import { useSimulation } from './composables/useSimulation'
 import { exportReport } from './utils/report'
 import { recommendationForServiceArea } from './utils/recommendationLinks'
 import AppHeader from './components/AppHeader.vue'
@@ -124,6 +139,20 @@ const {
   toggleCategory,
   applyReport,
 } = useAnalysis(center)
+const {
+  category: simulationCategory,
+  location: simulationLocation,
+  result: simulationResult,
+  loading: simulationLoading,
+  picking: simulationPicking,
+  error: simulationError,
+  selectCategory: selectSimulationCategory,
+  beginMapPick: beginSimulationMapPick,
+  selectMapLocation: selectSimulationMapLocation,
+  simulateCandidate: simulateRecommendationCandidate,
+  run: runSimulation,
+  clear: clearSimulation,
+} = useSimulation(report)
 const {
   items: historyItems,
   total: historyTotal,

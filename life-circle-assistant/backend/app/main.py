@@ -11,11 +11,12 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Req
 from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService, compare_reports
+from .analysis.simulations import ReportSimulationService, SimulationValidationError
 from .maps import MapProvider, MapProviderError, create_map_provider
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService, WalkingSettings
 from .mock_data import CATEGORIES, CENTER
-from .schemas import AnalyzeRequest, ReportComparisonRequest
+from .schemas import AnalyzeRequest, ReportComparisonRequest, SimulationRequest
 from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
 
 
@@ -279,6 +280,24 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         task = task_repository.create(analysis_request.model_dump(), rerun_of_report_id=report_id)
         background_tasks.add_task(execute_analysis_task, request.app, task["id"], analysis_request)
         return task
+
+    @app.post("/api/reports/{report_id}/simulations")
+    async def simulate_report_facility(
+        report_id: str,
+        simulation_request: SimulationRequest,
+        map_provider: MapProvider = Depends(get_map_provider),
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        report = report_repository.get(report_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="来源体检报告不存在")
+        try:
+            require_supported_huangpu_area(simulation_request.lng, simulation_request.lat)
+            return await ReportSimulationService(map_provider).run(report, simulation_request)
+        except SimulationValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=f"假设设施位置不可用：{exc}") from exc
 
     return app
 

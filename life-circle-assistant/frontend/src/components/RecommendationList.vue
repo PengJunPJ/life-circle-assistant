@@ -18,17 +18,19 @@
         <div><dt>目标改善</dt><dd>{{ item.target_improvement.description }}</dd></div>
       </dl>
       <div class="candidate-list">
-        <button
+        <div
           v-for="candidate in item.candidate_locations"
           :key="candidate.id"
-          type="button"
-          @click="emit('locate', item.id)"
+          class="candidate-item"
         >
-          <span>候选点</span>
-          <strong>{{ candidate.region_id }}</strong>
-          <small>{{ candidate.lng.toFixed(5) }}, {{ candidate.lat.toFixed(5) }}</small>
-          <em>{{ candidate.reason }}</em>
-        </button>
+          <button type="button" class="candidate-locate" @click="emit('locate', item.id)">
+            <span>候选点</span>
+            <strong>{{ candidate.region_id }}</strong>
+            <small>{{ candidate.lng.toFixed(5) }}, {{ candidate.lat.toFixed(5) }}</small>
+            <em>{{ candidate.reason }}</em>
+          </button>
+          <button type="button" class="candidate-simulate" @click="emit('simulate', item.category, candidate)">模拟此点</button>
+        </div>
       </div>
     </article>
   </div>
@@ -40,14 +42,17 @@
 
 <script setup lang="ts">
 import { nextTick, watch } from 'vue'
-import type { PlanningRecommendation, RecommendationSummary } from '../types/recommendations'
+import type { PlanningRecommendation, RecommendationCandidate, RecommendationSummary } from '../types/recommendations'
 
 const props = defineProps<{
   recommendations: PlanningRecommendation[]
   summary: RecommendationSummary
   selectedId: string | null
 }>()
-const emit = defineEmits<{ locate: [recommendationId: string] }>()
+const emit = defineEmits<{
+  locate: [recommendationId: string]
+  simulate: [category: string, candidate: RecommendationCandidate]
+}>()
 
 function nearestFacilityText(item: PlanningRecommendation) {
   const nearest = item.nearest_facility
@@ -80,11 +85,14 @@ watch(() => props.selectedId, async (id) => {
 .recommendation-evidence dt { color: #4d786f; font-size: 9px; font-weight: 700; }
 .recommendation-evidence dd { margin: 3px 0 0; color: #7d8c88; font-size: 9px; line-height: 1.5; }
 .candidate-list { display: grid; gap: 6px; margin-top: 9px; }
-.candidate-list button { display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; padding: 7px 8px; border: 1px dashed #b9d3c8; border-radius: 4px; background: #f5faf7; text-align: left; }
-.candidate-list span { grid-row: span 2; align-self: center; padding: 3px 5px; border-radius: 9px; background: #dceee6; color: #347465; font-size: 8px; }
-.candidate-list strong { color: #31564f; font-size: 9px; }
-.candidate-list small { color: #80918c; font-size: 8px; }
-.candidate-list em { grid-column: 1 / -1; margin-top: 3px; color: #73847f; font-size: 8px; font-style: normal; line-height: 1.4; }
+.candidate-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px dashed #b9d3c8; border-radius: 4px; background: #f5faf7; overflow: hidden; }
+.candidate-locate { display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; padding: 7px 8px; background: transparent; text-align: left; }
+.candidate-locate span { grid-row: span 2; align-self: center; padding: 3px 5px; border-radius: 9px; background: #dceee6; color: #347465; font-size: 8px; }
+.candidate-locate strong { color: #31564f; font-size: 9px; }
+.candidate-locate small { color: #80918c; font-size: 8px; }
+.candidate-locate em { grid-column: 1 / -1; margin-top: 3px; color: #73847f; font-size: 8px; font-style: normal; line-height: 1.4; }
+.candidate-simulate { padding: 0 8px; border-left: 1px solid #cfe0d8; background: #e9f4ef; color: #2e7567; font-size: 9px; font-weight: 700; white-space: nowrap; }
+.candidate-simulate:hover, .candidate-simulate:focus-visible { background: #dceee6; outline: 0; }
 .recommendation-empty { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding: 13px; border: 1px solid #d6e6de; border-radius: 5px; background: #f1f8f4; }
 .recommendation-empty strong { color: #377364; font-size: 11px; }
 .recommendation-empty span { color: #71857f; font-size: 9px; line-height: 1.5; }

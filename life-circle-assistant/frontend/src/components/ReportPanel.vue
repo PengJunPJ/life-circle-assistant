@@ -34,7 +34,22 @@
       <div class="score-block"><div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ scoreText }}<small v-if="overallScore !== null">/100</small></div><span class="score-trend"><TrendCharts /> {{ report.scoring.explanation }}</span></div><div class="score-ring" :class="{ unavailable: overallScore === null }" :style="scoreRingStyle"><b>{{ scoreText }}</b><span>{{ overallScore === null ? '暂不展示' : '健康度' }}</span></div></div>
       <div class="stat-grid"><div><strong>{{ report.summary.poi_count }}</strong><span>设施点位</span></div><div><strong>{{ report.summary.area_sqm.toLocaleString() }}</strong><span>可达面积 m²</span></div><div class="danger"><strong>{{ report.summary.critical_zone_count }}</strong><span>重点盲区</span></div><div class="amber"><strong>{{ report.summary.sparse_zone_count }}</strong><span>设施稀疏区</span></div></div>
       <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>可展开核验计算过程</small></div><div ref="chartRef" class="chart"></div><ScoreBreakdown :scores="report.category_scores" /></div>
-      <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" @locate="emit('locate-recommendation', $event)" /></div>
+      <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" @locate="emit('locate-recommendation', $event)" @simulate="(category, candidate) => emit('simulate-candidate', category, candidate)" /></div>
+      <div class="report-section">
+        <SimulationPanel
+          :report="report"
+          :category="simulationCategory"
+          :location="simulationLocation"
+          :result="simulationResult"
+          :loading="simulationLoading"
+          :picking="simulationPicking"
+          :error="simulationError"
+          @update:category="emit('update:simulation-category', $event)"
+          @pick-map="emit('pick-simulation-location')"
+          @run="emit('run-simulation')"
+          @clear="emit('clear-simulation')"
+        />
+      </div>
       <button class="export-action" @click="emit('export')"><Download />导出体检数据 <span>JSON</span></button>
     </div>
     <div v-else class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span></div>
@@ -46,11 +61,14 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { CircleCheck, Download, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { HistoryReportItem } from '../types/history'
+import type { RecommendationCandidate } from '../types/recommendations'
 import type { Report } from '../types/report'
+import type { SimulationLocation, SimulationResult } from '../types/simulation'
 import DataQualityDetails from './DataQualityDetails.vue'
 import ScoreBreakdown from './ScoreBreakdown.vue'
 import ReportHistory from './ReportHistory.vue'
 import RecommendationList from './RecommendationList.vue'
+import SimulationPanel from './SimulationPanel.vue'
 
 const props = defineProps<{
   report: Report | null
@@ -64,6 +82,12 @@ const props = defineProps<{
   selectedReportIds: string[]
   comparisonLoading: boolean
   comparisonError: string
+  simulationCategory: string
+  simulationLocation: SimulationLocation | null
+  simulationResult: SimulationResult | null
+  simulationLoading: boolean
+  simulationPicking: boolean
+  simulationError: string
 }>()
 const emit = defineEmits<{
   export: []
@@ -73,6 +97,11 @@ const emit = defineEmits<{
   'locate-recommendation': [recommendationId: string]
   'toggle-comparison': [reportId: string]
   'compare-history': []
+  'simulate-candidate': [category: string, candidate: RecommendationCandidate]
+  'update:simulation-category': [category: string]
+  'pick-simulation-location': []
+  'run-simulation': []
+  'clear-simulation': []
 }>()
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)

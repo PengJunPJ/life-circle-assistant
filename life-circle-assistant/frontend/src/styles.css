@@ -30,6 +30,10 @@ button { border: 0; cursor: pointer; }
 .candidate-map-label b { width: 21px; height: 21px; display: grid; place-items: center; border-radius: 50%; background: #2f8f80; color: #fff; font-size: 9px; }
 .candidate-map-label.focused { border-color: #17333d; box-shadow: 0 0 0 2px rgba(23,51,61,.16), 0 3px 9px rgba(28,55,57,.24); color: #17333d; }
 .candidate-map-label.focused b { background: #17333d; }
+.simulation-legend b { background: #2f70a5; }
+.simulation-map-label { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px 2px 2px; border: 1px solid rgba(47,112,165,.45); border-radius: 13px; background: rgba(255,255,255,.97); box-shadow: 0 2px 8px rgba(35,78,112,.22); color: #214e73; font: 700 10px/1.2 Inter, "PingFang SC", sans-serif; }
+.simulation-map-label b { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #2f70a5; color: #fff; font-size: 9px; }
+.map-container.picking, .map-canvas.picking { cursor: copy; }
 .quality-details { margin: -8px 0 16px; padding: 12px; border: 1px solid #d7e5de; border-radius: 5px; background: #f4f8f5; color: #536a65; font-size: 10px; }
 .quality-details-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .quality-details-heading strong { display: block; color: #2f514a; font-size: 11px; }

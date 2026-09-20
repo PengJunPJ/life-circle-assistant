@@ -33,6 +33,17 @@ def score_report(
         )
         for category in selected_categories
     ]
+    overall = aggregate_overall_score(category_scores)
+
+    return {
+        "overall": overall,
+        "category_scores": category_scores,
+    }
+
+
+def aggregate_overall_score(category_scores: list[dict[str, Any]]) -> dict[str, Any]:
+    """按当前有效类别重新归一化权重，供完整分析和单类别模拟共同使用。"""
+
     valid_scores = [item for item in category_scores if item["valid_for_overall"]]
     configured_total = sum(item["configured_weight"] for item in valid_scores)
 
@@ -60,29 +71,26 @@ def score_report(
             )
 
     return {
-        "overall": {
-            "score": overall_score,
-            "status": status,
-            "selected_category_count": len(category_scores),
-            "valid_category_count": len(valid_scores),
-            "component_weights": {
-                key: {"weight": weight, "weight_percent": round(weight * 100)}
-                for key, weight in COMPONENT_WEIGHTS.items()
-            },
-            "category_weights": [
-                {
-                    "category": item["category"],
-                    "label": item["label"],
-                    "configured_weight": item["configured_weight"],
-                    "applied_weight": item["applied_weight"],
-                    "included": item["valid_for_overall"],
-                    "reason": item["status_explanation"],
-                }
-                for item in category_scores
-            ],
-            "explanation": explanation,
+        "score": overall_score,
+        "status": status,
+        "selected_category_count": len(category_scores),
+        "valid_category_count": len(valid_scores),
+        "component_weights": {
+            key: {"weight": weight, "weight_percent": round(weight * 100)}
+            for key, weight in COMPONENT_WEIGHTS.items()
         },
-        "category_scores": category_scores,
+        "category_weights": [
+            {
+                "category": item["category"],
+                "label": item["label"],
+                "configured_weight": item["configured_weight"],
+                "applied_weight": item["applied_weight"],
+                "included": item["valid_for_overall"],
+                "reason": item["status_explanation"],
+            }
+            for item in category_scores
+        ],
+        "explanation": explanation,
     }
 
 

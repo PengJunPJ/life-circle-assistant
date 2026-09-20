@@ -6,6 +6,7 @@ import { fetchMapConfig } from '../services/analysisApi'
 import type { AnalysisCenter } from '../types/location'
 import type { Report, ServiceAreaFeature } from '../types/report'
 import type { PlanningRecommendation } from '../types/recommendations'
+import type { SimulationResult } from '../types/simulation'
 import { isServiceAreaVisible, pointInPolygon } from '../utils/serviceAreaLayers'
 
 type MapRendererOptions = {
@@ -16,10 +17,13 @@ type MapRendererOptions = {
   showSparse: Ref<boolean>
   showCritical: Ref<boolean>
   focusRecommendationId: Ref<string | null>
+  simulation: Ref<SimulationResult | null>
+  simulationPicking: Ref<boolean>
   onSelectCenter: (lng: number, lat: number) => void
+  onSelectSimulationLocation: (lng: number, lat: number) => void
 }
 
-export function useMapRenderer({ report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, onSelectCenter }: MapRendererOptions) {
+export function useMapRenderer({ report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, onSelectCenter, onSelectSimulationLocation }: MapRendererOptions) {
   const mapCanvas = ref<HTMLCanvasElement | null>(null)
   const mapContainer = ref<HTMLDivElement | null>(null)
   const realMapReady = ref(false)
@@ -78,6 +82,9 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         const style = serviceAreaStyle(zone, isFocusedRegion(zone.properties.grid_id))
         drawPolygon(zone.geometry.coordinates[0], style.fill, style.stroke, style.strokeWeight)
       })
+      simulationAreas().forEach((zone) => {
+        drawPolygon(zone.geometry.coordinates[0], 'rgba(51, 126, 184, .18)', '#2f70a5', 3)
+      })
       currentReport.pois.filter((poi) => visibleCategories.value.includes(poi.category)).forEach((poi) => {
         const point = project(poi.lng, poi.lat, w, h)
         ctx.beginPath(); ctx.arc(point.x, point.y, 12, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill()
@@ -99,6 +106,14 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         ctx.fillStyle = focused ? '#17333d' : '#2f8f80'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke()
         ctx.font = '700 9px sans-serif'; ctx.fillStyle = '#17333d'; ctx.textAlign = 'left'; ctx.fillText(`${recommendation.category_label}候选点`, point.x + 12, point.y + 3)
       })
+      if (simulation.value) {
+        const facility = simulation.value.hypothetical_facility
+        const point = project(facility.lng, facility.lat, w, h)
+        ctx.beginPath(); ctx.arc(point.x, point.y, 15, 0, Math.PI * 2); ctx.fillStyle = 'rgba(47, 112, 165, .2)'; ctx.fill()
+        ctx.beginPath(); ctx.moveTo(point.x, point.y - 10); ctx.lineTo(point.x + 10, point.y); ctx.lineTo(point.x, point.y + 10); ctx.lineTo(point.x - 10, point.y); ctx.closePath()
+        ctx.fillStyle = '#2f70a5'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke()
+        ctx.font = '700 10px sans-serif'; ctx.fillStyle = '#214e73'; ctx.textAlign = 'left'; ctx.fillText(`假设${simulation.value.category_label}`, point.x + 15, point.y + 4)
+      }
     }
     drawCanvasAnalysisCenter(ctx, analysisCenter.value, (lng, lat) => project(lng, lat, w, h), currentReport?.isochrone.properties.minutes || 15)
   }
@@ -133,11 +148,20 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       .flatMap((recommendation) => recommendation.candidate_locations.map((candidate) => ({ candidate, recommendation })))
   }
 
+  function simulationAreas() {
+    return simulation.value?.after.service_areas.features || []
+  }
+
   function handleCanvasClick(event: MouseEvent) {
     const canvas = mapCanvas.value
     if (!canvas || realMapReady.value) return
     const rect = canvas.getBoundingClientRect()
     const point = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    if (simulationPicking.value) {
+      const location = unproject(point.x, point.y, rect.width, rect.height)
+      onSelectSimulationLocation(location.lng, location.lat)
+      return
+    }
     const candidateHit = [...visibleCandidates()].reverse().find(({ candidate }) => {
       const projected = project(candidate.lng, candidate.lat, rect.width, rect.height)
       return Math.hypot(point.x - projected.x, point.y - projected.y) <= 14
@@ -206,13 +230,19 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       baiduMap.addControl(new BMap.ScaleControl({ anchor: (window as any).BMAP_ANCHOR_BOTTOM_LEFT }))
     }
     if (!baiduClickBound) {
-      baiduMap.addEventListener('click', (event: any) => onSelectCenter(event.point.lng, event.point.lat))
+      baiduMap.addEventListener('click', (event: any) => {
+        if (simulationPicking.value) onSelectSimulationLocation(event.point.lng, event.point.lat)
+        else onSelectCenter(event.point.lng, event.point.lat)
+      })
       baiduClickBound = true
     }
     const center = new BMap.Point(analysisCenter.value.lng, analysisCenter.value.lat)
     const focusedCandidate = focusedRecommendation()?.candidate_locations[0]
-    const viewCenter = focusedCandidate ? new BMap.Point(focusedCandidate.lng, focusedCandidate.lat) : center
-    baiduMap.centerAndZoom(viewCenter, focusedCandidate ? 17 : 16)
+    const hypothetical = simulation.value?.hypothetical_facility
+    const viewCenter = hypothetical
+      ? new BMap.Point(hypothetical.lng, hypothetical.lat)
+      : focusedCandidate ? new BMap.Point(focusedCandidate.lng, focusedCandidate.lat) : center
+    baiduMap.centerAndZoom(viewCenter, hypothetical || focusedCandidate ? 17 : 16)
     baiduMap.clearOverlays()
     const currentReport = report.value
     if (currentReport) {
@@ -228,6 +258,10 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(areaPolygon)
+      })
+      simulationAreas().forEach((zone) => {
+        const points = zone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
+        baiduMap.addOverlay(new BMap.Polygon(points, { strokeColor: '#2f70a5', strokeWeight: 3, strokeOpacity: 1, fillColor: '#6aa2cc', fillOpacity: .18 }))
       })
       currentReport.pois.filter((poi) => visibleCategories.value.includes(poi.category)).forEach((poi) => {
         const point = new BMap.Point(poi.lng, poi.lat)
@@ -252,6 +286,16 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         label.setStyle({ border: '0', background: 'transparent', padding: '0', whiteSpace: 'nowrap', zIndex: focused ? '35' : '24' })
         baiduMap.addOverlay(label)
       })
+      if (simulation.value) {
+        const facility = simulation.value.hypothetical_facility
+        const point = new BMap.Point(facility.lng, facility.lat)
+        const marker = new BMap.Marker(point)
+        marker.setTitle(`假设${simulation.value.category_label}`)
+        baiduMap.addOverlay(marker)
+        const label = new BMap.Label(`<span class="simulation-map-label"><b>拟</b><span>假设${simulation.value.category_label}</span></span>`, { position: point, offset: new BMap.Size(14, -11) })
+        label.setStyle({ border: '0', background: 'transparent', padding: '0', whiteSpace: 'nowrap', zIndex: '40' })
+        baiduMap.addOverlay(label)
+      }
     }
     renderBaiduAnalysisCenter(baiduMap, BMap, analysisCenter.value, currentReport?.isochrone.properties.minutes || 15)
   }
@@ -261,7 +305,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     else drawMap()
   }
 
-  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId], async () => {
+  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking], async () => {
     if (selectedServiceArea.value && !isServiceAreaVisible(selectedServiceArea.value, visibleCategories.value, visibility())) {
       selectedServiceArea.value = null
     }

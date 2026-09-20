@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 CoreCategory = Literal["market", "pharmacy", "school", "medical"]
 CenterSelectionMethod = Literal["default", "address", "map", "coordinates"]
+SimulationSelectionMethod = Literal["recommendation", "map"]
 
 class AnalyzeRequest(BaseModel):
     lng: float = Field(default=113.4872, ge=-180, le=180)
@@ -33,3 +34,11 @@ class ReportComparisonRequest(BaseModel):
         if len(set(normalized)) != 2:
             raise ValueError("请选择两份不同的报告")
         return normalized
+
+
+class SimulationRequest(BaseModel):
+    category: CoreCategory
+    lng: float = Field(ge=-180, le=180)
+    lat: float = Field(ge=-90, le=90)
+    selection_method: SimulationSelectionMethod
+    candidate_id: str | None = Field(default=None, max_length=120)
