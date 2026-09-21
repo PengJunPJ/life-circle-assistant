@@ -11,6 +11,9 @@ export type Category = CategoryScore
 export type Poi = {
   id: string
   name: string
+  canonical_name?: string
+  semantic_type?: string
+  semantic_type_label?: string
   category: string
   lng: number
   lat: number
@@ -18,6 +21,14 @@ export type Poi = {
   walk_distance_m?: number | null
   source?: string
   calculation_method?: string
+  normalization?: {
+    rules_version: string
+    method: string
+    confidence: 'high' | 'medium' | 'low'
+    aliases: string[]
+    merged_facility_ids: string[]
+    source_record_count: number
+  }
 }
 
 export type ServiceAreaKind = 'normal' | 'sparse' | 'critical' | 'unknown'
@@ -89,6 +100,20 @@ export type Report = {
   }
   isochrone: GeoJsonFeature
   pois: Poi[]
+  facility_normalization?: {
+    rules_version: string
+    same_site_distance_m: number
+    input_count: number
+    output_count: number
+    merged_count: number
+    merged_group_count: number
+    by_category: Record<string, {
+      input_count: number
+      output_count: number
+      merged_count: number
+      semantic_types: Record<string, number>
+    }>
+  }
   zones: { type: 'FeatureCollection'; features: ServiceAreaFeature[] }
   service_areas: { type: 'FeatureCollection'; features: ServiceAreaFeature[] }
   summary: {
