@@ -104,7 +104,7 @@ function formatParameter(field: ParameterDifference['field'], value: unknown) {
   }
   if (field === 'completed_at' && typeof value === 'string') return formatTime(value)
   if (field === 'minutes') return `${value} 分钟`
-  if (field === 'mode') return value === 'analysis' ? '分析模式' : '演示模式'
+  if (field === 'mode') return value === 'analysis' ? '正式分析' : '快速分析'
   if (field === 'categories' && Array.isArray(value)) return categoryNames(value)
   return String(value ?? '—')
 }

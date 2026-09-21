@@ -159,7 +159,7 @@ make quality
 - 前端 TypeScript/Vue 类型检查；
 - 前端单元测试；
 - 前端生产构建；
-- 前后端容器构建、健康检查和演示模式体检报告冒烟验证。
+- 前后端容器构建、健康检查和快速分析体检报告冒烟验证。
 
 也可以分别执行 `make backend-check`、`make frontend-check` 或 `make container-check`。
 

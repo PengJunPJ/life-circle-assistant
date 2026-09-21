@@ -851,7 +851,7 @@ def _quality_status_label(status: Any) -> str:
 
 
 def _mode_label(mode: Any) -> str:
-    return {"demo": "演示模式", "analysis": "分析模式", "snapshot": "本地快照模式", "real": "真实地图模式"}.get(str(mode), str(mode or "未提供"))
+    return {"demo": "快速分析", "analysis": "正式分析", "snapshot": "本地快照模式", "real": "真实地图模式"}.get(str(mode), str(mode or "未提供"))
 
 
 def _source_label(source: Any) -> str:

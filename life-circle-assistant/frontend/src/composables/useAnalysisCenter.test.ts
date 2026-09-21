@@ -58,6 +58,7 @@ describe('统一分析中心选点流程', () => {
     expect(result.submitted).toMatchObject({
       lng: 113.502,
       lat: 23.112,
+      mode: 'analysis',
       center_address: '广州市黄埔区候选二',
       center_selection_method: 'address',
     })

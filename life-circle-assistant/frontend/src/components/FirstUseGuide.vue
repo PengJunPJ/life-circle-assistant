@@ -32,7 +32,7 @@
     <el-tour-step
       target="[data-guide='analysis-parameters']"
       title="设置体检参数"
-      description="首次测试建议选择“演示模式”和 15 分钟，并保留四类设施；分析模式会产生更多真实步行路线调用。"
+      description="页面已默认选择“正式分析”和 15 分钟，并保留四类设施；正式分析会向百度发起更多步行路线请求。"
       placement="right"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"
@@ -40,7 +40,7 @@
     <el-tour-step
       target="[data-guide='run-analysis']"
       title="手动开始体检"
-      description="确认页面显示真实服务就绪后再点击。正式分析可能需要等待，请不要连续重复提交。"
+      description="确认页面显示真实服务就绪后点击“开始真实分析”。正式分析可能需要等待，请不要连续重复提交。"
       placement="right-end"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"

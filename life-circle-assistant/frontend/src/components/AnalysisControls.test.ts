@@ -35,6 +35,8 @@ describe('地图测试就绪状态', () => {
     expect(wrapper.get('.map-readiness').text()).toContain('正式百度地图已就绪')
     expect(wrapper.get('.map-readiness').text()).toContain('Web 服务已连接')
     expect(wrapper.get('.map-readiness').text()).toContain('百度底图已加载')
+    expect(wrapper.get('.primary-action').text()).toContain('开始真实分析')
+    expect(wrapper.get('.mode-note').text()).toContain('两种精度都会请求百度')
 
     await wrapper.get('.map-readiness button').trigger('click')
     expect(wrapper.emitted('refresh-map-status')).toHaveLength(1)

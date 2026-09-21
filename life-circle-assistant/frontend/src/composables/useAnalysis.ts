@@ -6,7 +6,8 @@ import type { AnalysisCenter } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, Report } from '../types/report'
 
 export function useAnalysis(center: Ref<AnalysisCenter>) {
-  const mode = ref<AnalysisMode>('demo')
+  // 页面默认采用正式分析密度；地图数据是否实时由后端 provider 决定。
+  const mode = ref<AnalysisMode>('analysis')
   const minutes = ref<AnalysisMinutes>(15)
   const visibleCategories = ref([...DEFAULT_CATEGORIES])
   const showNormal = ref(false)

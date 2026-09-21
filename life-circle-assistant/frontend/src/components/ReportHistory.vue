@@ -20,7 +20,7 @@
         >{{ selectedReportIds.includes(item.report_id) ? '✓' : '+' }}</button>
         <button class="history-open" :disabled="Boolean(openingReportId || rerunningReportId)" @click="emit('open', item.report_id)">
           <strong>{{ item.center.address }}</strong>
-          <span>{{ formatTime(item.completed_at) }} · {{ item.minutes }} 分钟 · {{ item.mode === 'analysis' ? '分析模式' : '演示模式' }}</span>
+          <span>{{ formatTime(item.completed_at) }} · {{ item.minutes }} 分钟 · {{ item.mode === 'analysis' ? '正式分析' : '快速分析' }}</span>
         </button>
         <button
           class="history-rerun"
