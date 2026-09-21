@@ -2,6 +2,8 @@
 
 面向广州市黄埔区社区规划场景的开源空间分析工具。系统基于真实步行可达性，生成 15 分钟等时圈，统计菜市场、药店、小学和医疗服务覆盖情况，并识别重点服务盲区与设施稀疏区。
 
+当前赛事交付版本为 `2.0.0`，定位为“可信、可解释的生活圈分析”功能型 Beta。版本范围、验证记录和已知限制见 [V2.0.0 发布说明](docs/releases/v2.0.0.md)，版本变化见 [更新日志](CHANGELOG.md)。离线样例适合演示和复现，不应被解读为正式规划审批结论。
+
 ## 快速运行
 
 ```bash
@@ -149,6 +151,8 @@ make quality
 - 前端生产构建；
 - 前后端容器构建、健康检查和演示模式体检报告冒烟验证。
 
-也可以分别执行 `make backend-check`、`make frontend-check` 或 `make container-check`。GitHub Actions 会在推送和拉取请求中运行同一组质量门禁，任一检查失败都会阻止流程通过。
+也可以分别执行 `make backend-check`、`make frontend-check` 或 `make container-check`。
+
+仓库保留 `.github/workflows/quality.yml`，供 GitHub 镜像仓库在推送和 Pull Request 中运行同一组检查；当前主远端位于 Gitee，因此该 GitHub Actions 配置不会因 Gitee 提交自动执行。Gitee Go 的运行时版本、Docker Compose 支持和保护分支关联方案见 [Gitee Go 质量门禁落地调研](docs/research/gitee-go-quality-gate.md)。在 Gitee Go 完成开通、实跑和保护分支绑定前，`make quality` 仍是发布前的权威验收命令。
 
 项目文档、领域术语和架构决策位于上级 `docs/` 目录。
