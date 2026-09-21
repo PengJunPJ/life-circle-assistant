@@ -23,6 +23,8 @@ from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRep
 
 load_dotenv()
 
+APP_VERSION = "2.0.0"
+
 
 def get_map_provider(request: Request) -> MapProvider:
     return request.app.state.map_provider
@@ -73,7 +75,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             if close is not None:
                 await close()
 
-    app = FastAPI(title="15分钟生活圈智能体检与规划助手", version="0.3.0", lifespan=lifespan)
+    app = FastAPI(title="15分钟生活圈智能体检与规划助手", version=APP_VERSION, lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -95,6 +97,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         descriptor = map_provider.descriptor
         return {
             "status": "ok",
+            "version": APP_VERSION,
             "mode": "real" if descriptor.mode == "real" else "mock",
             "provider_mode": descriptor.mode,
             "real_api_available": descriptor.source == "real_api",
