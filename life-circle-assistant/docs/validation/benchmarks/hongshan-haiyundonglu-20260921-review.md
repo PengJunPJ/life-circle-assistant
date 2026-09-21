@@ -25,7 +25,15 @@
 
 ## 填写方式
 
-在待标注 JSON 中逐项填写：
+推荐从仓库根目录运行人工核查向导：
+
+```bash
+./.scratch/v2.1-hongshan-benchmark/review-wizard.sh
+```
+
+向导会按菜市场、药店、小学和医疗服务依次打开独立地图核查入口，每完成一格立即保存。可输入 `q` 中途退出，重新运行后会跳过已完成网格。64 项全部完成并经确认后，向导才会将基准改为 `verified` 并生成评估结果。
+
+也可直接在待标注 JSON 中逐项填写：
 
 ```json
 {
@@ -66,4 +74,3 @@ python3 backend/scripts/evaluate_benchmark.py evaluate \
 - 路线缓存命中：1002，新增真实步行调用：150
 - 完整性：`complete`，无部分失败
 - 凭证检查：报告与盲审材料不包含百度 AK、Secret 或浏览器 AK
-
