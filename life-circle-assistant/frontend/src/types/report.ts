@@ -165,3 +165,14 @@ export type AnalysisTask = {
 }
 
 export type MapConfig = { mode: string; provider_mode: 'real' | 'snapshot' | 'fixture'; browser_ak: string }
+
+export type MapStatus = {
+  mode: 'real' | 'mock'
+  provider_mode: 'real' | 'snapshot' | 'fixture'
+  provider: string
+  source: string
+  real_api_available: boolean
+  mock_available: boolean
+  snapshot_available: boolean
+  message: string
+}

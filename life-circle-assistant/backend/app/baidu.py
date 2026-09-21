@@ -1,9 +1,14 @@
 import asyncio
 import math
 import os
-from typing import Any, Iterable
+import time
+from typing import Any, Awaitable, Callable, Iterable
 
 import httpx
+
+
+Sleep = Callable[[float], Awaitable[None]]
+Monotonic = Callable[[], float]
 
 
 class BaiduMapError(RuntimeError):
@@ -26,12 +31,17 @@ class BaiduMapClient:
 
     base_url = "https://api.map.baidu.com"
 
-    def __init__(self) -> None:
+    def __init__(self, *, sleep: Sleep = asyncio.sleep, monotonic: Monotonic = time.monotonic) -> None:
         self.ak = os.getenv("BAIDU_MAP_AK", "").strip()
         self.secret = os.getenv("BAIDU_MAP_SECRET", "").strip()
         configured_mode = os.getenv("BAIDU_MAP_MODE", "").strip().lower()
         self.mode = configured_mode or ("real" if self.ak else "mock")
+        self.qps = max(0.0, float(os.getenv("BAIDU_MAP_QPS", "1.5")))
         self._http_client: httpx.AsyncClient | None = None
+        self._sleep = sleep
+        self._monotonic = monotonic
+        self._rate_lock = asyncio.Lock()
+        self._next_request_at = 0.0
 
     @property
     def real_available(self) -> bool:
@@ -43,6 +53,7 @@ class BaiduMapClient:
         params = {**params, "output": "json", "ak": self.ak}
         last_error: Exception | None = None
         for attempt in range(3):
+            await self._wait_for_rate_limit()
             try:
                 response = await self._client().get(f"{self.base_url}{path}", params=params)
                 if response.status_code == 429:
@@ -84,6 +95,23 @@ class BaiduMapClient:
         if isinstance(last_error, BaiduMapError):
             raise last_error
         raise BaiduMapError(str(last_error or "百度地图请求失败")) from last_error
+
+    async def _wait_for_rate_limit(self) -> None:
+        """所有百度 Web 服务请求共享同一发送节奏。
+
+        设施检索、地理编码和步行路线最终都经过该客户端，因此不会再各自
+        抢占同一百度 AK 的并发配额。设为 0 可在明确知道配额足够时关闭。
+        """
+        if self.qps <= 0:
+            return
+        interval = 1 / self.qps
+        async with self._rate_lock:
+            current = self._monotonic()
+            delay = self._next_request_at - current
+            if delay > 0:
+                await self._sleep(delay)
+                current = self._monotonic()
+            self._next_request_at = max(current, self._next_request_at) + interval
 
     def _client(self) -> httpx.AsyncClient:
         if self._http_client is None:

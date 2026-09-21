@@ -68,6 +68,7 @@ npm run dev
 | --- | --- | --- |
 | `BAIDU_MAP_MODE` | 后端提供方 | `mock` 用于离线，`real` 用于真实 API |
 | `BAIDU_MAP_AK` / `BAIDU_MAP_SECRET` | 服务器端地图凭证 | 仅放在本地 `.env` 或密钥管理器 |
+| `BAIDU_MAP_QPS` | 所有百度 Web 服务共享的请求节流 | 低配额开发 AK 建议 `1.5` |
 | `VITE_BAIDU_MAP_AK` | 浏览器底图 AK | 限制域名白名单，不与 Secret 混用 |
 | `LIFE_CIRCLE_DATABASE_PATH` | SQLite 数据库路径 | 开发可指向 `/tmp` 独立文件 |
 | `WALKING_*` | 步行缓存、并发、QPS、超时与重试 | 真实 API 按配额调整，离线模式保持默认值 |

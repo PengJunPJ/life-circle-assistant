@@ -1,6 +1,12 @@
 <template>
   <main class="app-shell">
-    <AppHeader :has-report="Boolean(report)" />
+    <AppHeader
+      :has-report="Boolean(report)"
+      :map-status-loading="mapStatusLoading"
+      :map-status-available="Boolean(mapStatus)"
+      :real-api-ready="Boolean(mapStatus?.real_api_available)"
+      @open-guide="openFirstUseGuide"
+    />
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ accessibilityStatus }}</p>
     <p v-if="analysisError" class="sr-only" role="alert">分析失败：{{ analysisError }}</p>
     <section ref="workspaceRef" class="workspace">
@@ -24,6 +30,9 @@
         :show-critical="showCritical"
         :loading="loading"
         :source="report?.source || center.source"
+        :map-status="mapStatus"
+        :map-status-loading="mapStatusLoading"
+        :real-map-ready="realMapReady"
         @update:address-query="addressQuery = $event"
         @update:coordinate-lng="coordinateLng = $event"
         @update:coordinate-lat="coordinateLat = $event"
@@ -37,6 +46,7 @@
         @apply-coordinates="applyCoordinateInput"
         @toggle-category="toggleCategory"
         @run="startAnalysis"
+        @refresh-map-status="loadMapStatus"
         @close-mobile="closeMobilePanel('controls')"
       />
       <MapStage
@@ -121,11 +131,21 @@
       @close="closeComparison"
       @open-report="handleOpenComparisonReport"
     />
+    <FirstUseGuide
+      :open="guideOpen"
+      :map-status="mapStatus"
+      :map-status-loading="mapStatusLoading"
+      :real-map-ready="realMapReady"
+      @step-change="handleGuideStepChange"
+      @close="closeFirstUseGuide"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { fetchMapStatus } from './services/analysisApi'
+import type { MapStatus } from './types/report'
 import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
@@ -135,13 +155,18 @@ import { recommendationForServiceArea } from './utils/recommendationLinks'
 import AppHeader from './components/AppHeader.vue'
 import AnalysisControls from './components/AnalysisControls.vue'
 import MapStage from './components/MapStage.vue'
+import FirstUseGuide from './components/FirstUseGuide.vue'
 // 报告、图表、历史和导出只在工作台完成分析后使用，拆成异步块避免阻塞地图首屏。
 const ReportPanel = defineAsyncComponent(() => import('./components/ReportPanel.vue'))
 const ReportComparisonPanel = defineAsyncComponent(() => import('./components/ReportComparisonPanel.vue'))
 
-const analysisStarted = ref(false)
+const FIRST_USE_GUIDE_KEY = 'life-circle:first-use-guide:v1'
 const selectedRecommendationId = ref<string | null>(null)
 const activeMobilePanel = ref<'controls' | 'report' | null>(null)
+const mapStatus = ref<MapStatus | null>(null)
+const mapStatusLoading = ref(true)
+const realMapReady = ref(false)
+const guideOpen = ref(false)
 const controlsTrigger = ref<HTMLButtonElement | null>(null)
 const reportTrigger = ref<HTMLButtonElement | null>(null)
 const workspaceRef = ref<HTMLElement | null>(null)
@@ -287,12 +312,36 @@ async function handleOpenComparisonReport(reportId: string) {
   }
 }
 
-// 地图组件先确定真实底图是否可用，再启动首次分析，避免真实地图初始化与任务请求竞态。
-function handleMapReady(_value: boolean) {
-  if (!analysisStarted.value) {
-    analysisStarted.value = true
-    startAnalysis()
+// 真实模式只记录底图就绪状态，不自动提交分析，避免首次访问误消耗 API 配额。
+function handleMapReady(value: boolean) {
+  realMapReady.value = value
+}
+
+async function loadMapStatus() {
+  mapStatusLoading.value = true
+  try {
+    mapStatus.value = await fetchMapStatus()
+  } catch {
+    mapStatus.value = null
+  } finally {
+    mapStatusLoading.value = false
   }
+}
+
+function openFirstUseGuide() {
+  guideOpen.value = true
+  handleGuideStepChange(0)
+}
+
+function handleGuideStepChange(index: number) {
+  activeMobilePanel.value = index === 4 ? 'report' : 'controls'
+  nextTick(keepWorkspaceAtOrigin)
+}
+
+function closeFirstUseGuide(completed: boolean) {
+  guideOpen.value = false
+  window.localStorage.setItem(FIRST_USE_GUIDE_KEY, completed ? 'completed' : 'dismissed')
+  activeMobilePanel.value = 'controls'
 }
 
 function applySelectedReport(selected: NonNullable<typeof report.value>) {
@@ -318,6 +367,10 @@ function handleServiceAreaSelect(serviceAreaId: string | null) {
 
 onMounted(() => {
   loadHistory()
+  loadMapStatus()
+  if (!window.localStorage.getItem(FIRST_USE_GUIDE_KEY)) {
+    window.setTimeout(openFirstUseGuide, 350)
+  }
   window.addEventListener('keydown', handleWorkspaceKeydown)
 })
 onBeforeUnmount(() => window.removeEventListener('keydown', handleWorkspaceKeydown))
