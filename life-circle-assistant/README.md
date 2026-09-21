@@ -135,6 +135,14 @@ JSON 是完整报告，CSV 适合设施和评分表格，GeoJSON 使用 BD-09 �
 python3 scripts/performance_baseline.py --runs 2
 ```
 
+## V2.1 全网格基准评估
+
+项目提供从体检报告生成人工标注模板的命令行工具。完成逐格核查后，可自动输出混淆矩阵、准确率、精确率、召回率、F1 和有效预测覆盖率。命令与指标口径见 [V2.1 全网格基准评估指南](docs/validation/v2.1-benchmark-evaluation.md)。
+
+```bash
+python3 backend/scripts/evaluate_benchmark.py --help
+```
+
 ## 测试
 
 完成后端与前端依赖安装后，在应用目录执行统一质量检查：
