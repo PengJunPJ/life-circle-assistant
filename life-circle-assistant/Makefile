@@ -1,4 +1,4 @@
-.PHONY: quality backend-check frontend-check container-check performance-snapshot
+.PHONY: quality backend-check frontend-check container-check performance-snapshot benchmark-help
 
 quality: backend-check frontend-check container-check
 
@@ -16,3 +16,6 @@ container-check:
 
 performance-snapshot:
 	python3 scripts/performance_baseline.py --runs 2 --output docs/performance/latest-snapshot.json
+
+benchmark-help:
+	python3 backend/scripts/evaluate_benchmark.py --help
