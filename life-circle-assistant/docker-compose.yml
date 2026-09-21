@@ -4,15 +4,40 @@ services:
     environment:
       BAIDU_MAP_AK: ${BAIDU_MAP_AK:-}
       BAIDU_MAP_SECRET: ${BAIDU_MAP_SECRET:-}
-      BAIDU_MAP_MODE: ${BAIDU_MAP_MODE:-real}
+      BAIDU_MAP_MODE: ${BAIDU_MAP_MODE:-mock}
       VITE_BAIDU_MAP_AK: ${VITE_BAIDU_MAP_AK:-}
+      LIFE_CIRCLE_DATABASE_PATH: /app/data/runtime/life-circle.db
+      WALKING_CACHE_TTL_SECONDS: ${WALKING_CACHE_TTL_SECONDS:-86400}
+      WALKING_MAX_CONCURRENCY: ${WALKING_MAX_CONCURRENCY:-6}
+      WALKING_QPS: ${WALKING_QPS:-8}
+      WALKING_TIMEOUT_SECONDS: ${WALKING_TIMEOUT_SECONDS:-8}
+      WALKING_MAX_RETRIES: ${WALKING_MAX_RETRIES:-2}
+      WALKING_RETRY_BASE_SECONDS: ${WALKING_RETRY_BASE_SECONDS:-0.25}
+    volumes:
+      - analysis-data:/app/data/runtime
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
   web:
     build: ./frontend
     environment:
       VITE_API_BASE_URL: http://localhost:8000
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "5173:5173"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--output-document=-", "http://localhost:5173"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  analysis-data:

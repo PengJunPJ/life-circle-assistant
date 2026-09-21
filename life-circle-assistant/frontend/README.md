@@ -20,3 +20,12 @@ npm run serve
 
 打开 <http://localhost:4173>。
 
+## 质量检查
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+完整的前后端与容器质量门禁请在应用根目录执行 `make quality`。

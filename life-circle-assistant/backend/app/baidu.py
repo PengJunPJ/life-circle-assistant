@@ -7,7 +7,18 @@ import httpx
 
 
 class BaiduMapError(RuntimeError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str = "provider_error",
+        retryable: bool = False,
+        rate_limited: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.retryable = retryable
+        self.rate_limited = rate_limited
 
 
 class BaiduMapClient:
@@ -20,6 +31,7 @@ class BaiduMapClient:
         self.secret = os.getenv("BAIDU_MAP_SECRET", "").strip()
         configured_mode = os.getenv("BAIDU_MAP_MODE", "").strip().lower()
         self.mode = configured_mode or ("real" if self.ak else "mock")
+        self._http_client: httpx.AsyncClient | None = None
 
     @property
     def real_available(self) -> bool:
@@ -32,18 +44,56 @@ class BaiduMapClient:
         last_error: Exception | None = None
         for attempt in range(3):
             try:
-                async with httpx.AsyncClient(timeout=8) as client:
-                    response = await client.get(f"{self.base_url}{path}", params=params)
-                    response.raise_for_status()
+                response = await self._client().get(f"{self.base_url}{path}", params=params)
+                if response.status_code == 429:
+                    raise BaiduMapError(
+                        "百度地图接口触发 HTTP 限流",
+                        code="rate_limited",
+                        retryable=True,
+                        rate_limited=True,
+                    )
+                response.raise_for_status()
+                try:
                     payload = response.json()
+                except ValueError as exc:
+                    raise BaiduMapError("百度地图接口返回非 JSON 数据", code="format_error") from exc
                 if payload.get("status") not in (0, "0"):
-                    raise BaiduMapError(payload.get("message") or f"百度地图接口返回状态 {payload.get('status')}")
+                    status = str(payload.get("status"))
+                    rate_limited = status in {"302", "429"}
+                    raise BaiduMapError(
+                        payload.get("message") or f"百度地图接口返回状态 {status}",
+                        code="rate_limited" if rate_limited else f"provider_status_{status}",
+                        retryable=rate_limited or status.startswith("5"),
+                        rate_limited=rate_limited,
+                    )
                 return payload
-            except (httpx.HTTPError, ValueError, BaiduMapError) as exc:
-                last_error = exc
+            except httpx.TimeoutException as exc:
+                last_error = BaiduMapError("百度地图请求超时", code="timeout", retryable=True)
                 if attempt < 2:
                     await asyncio.sleep(0.4 * (2**attempt))
+            except httpx.HTTPError as exc:
+                last_error = BaiduMapError(f"百度地图 HTTP 请求失败：{exc}", code="http_error", retryable=True)
+                if attempt < 2:
+                    await asyncio.sleep(0.4 * (2**attempt))
+            except BaiduMapError as exc:
+                last_error = exc
+                if attempt < 2 and exc.retryable:
+                    await asyncio.sleep(0.4 * (2**attempt))
+                    continue
+                break
+        if isinstance(last_error, BaiduMapError):
+            raise last_error
         raise BaiduMapError(str(last_error or "百度地图请求失败")) from last_error
+
+    def _client(self) -> httpx.AsyncClient:
+        if self._http_client is None:
+            self._http_client = httpx.AsyncClient(timeout=8)
+        return self._http_client
+
+    async def aclose(self) -> None:
+        if self._http_client is not None:
+            await self._http_client.aclose()
+            self._http_client = None
 
     async def geocode(self, address: str, city: str = "广州") -> dict[str, Any]:
         payload = await self._request("/geocoding/v3/", {"address": address, "city": city})
@@ -52,6 +102,18 @@ class BaiduMapClient:
         if "lng" not in location or "lat" not in location:
             raise BaiduMapError("地址没有解析出有效坐标")
         return {"lng": float(location["lng"]), "lat": float(location["lat"]), "address": result.get("formatted_address") or address}
+
+    async def reverse_geocode(self, lng: float, lat: float) -> dict[str, Any]:
+        payload = await self._request("/reverse_geocoding/v3/", {"location": f"{lat},{lng}", "extensions_poi": 0})
+        result = payload.get("result") or {}
+        location = result.get("location") or {}
+        if "lng" not in location or "lat" not in location:
+            raise BaiduMapError("坐标没有解析出有效地址")
+        return {
+            "lng": float(location["lng"]),
+            "lat": float(location["lat"]),
+            "address": result.get("formatted_address") or f"{lng:.6f}, {lat:.6f}",
+        }
 
     async def search_poi(self, query: str, lng: float, lat: float, radius: int = 1000) -> list[dict[str, Any]]:
         payload = await self._request("/place/v2/search", {"query": query, "location": f"{lat},{lng}", "radius": radius, "scope": 2, "page_size": 20})

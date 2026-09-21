@@ -1,0 +1,52 @@
+name: 质量门禁
+
+on:
+  push:
+  pull_request:
+
+defaults:
+  run:
+    working-directory: life-circle-assistant
+
+jobs:
+  backend:
+    name: 后端测试
+    runs-on: ubuntu-latest
+    env:
+      BAIDU_MAP_MODE: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: life-circle-assistant/backend/requirements.txt
+      - run: sudo apt-get update && sudo apt-get install --yes poppler-utils fonts-wqy-zenhei
+      - run: python -m pip install -r backend/requirements.txt
+      - run: python -m pytest backend/tests
+
+  frontend:
+    name: 前端类型、测试与生产构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: life-circle-assistant/frontend/package-lock.json
+      - run: npm ci
+        working-directory: life-circle-assistant/frontend
+      - run: npm run typecheck
+        working-directory: life-circle-assistant/frontend
+      - run: npm test
+        working-directory: life-circle-assistant/frontend
+      - run: npm run build
+        working-directory: life-circle-assistant/frontend
+
+  container:
+    name: 容器构建与演示模式冒烟
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/container-smoke.sh
