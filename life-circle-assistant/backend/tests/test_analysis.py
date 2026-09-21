@@ -228,6 +228,14 @@ def test_provider_can_be_replaced_without_real_baidu_requests(tmp_path):
     assert report["completeness"] == "complete"
     assert report["calculation_mode"]["provider_mode"] == "fixture"
     assert report["data_quality"]["sources"][0]["provider"] == "deterministic-test-provider"
+    assert report["facility_normalization"]["input_count"] == 2
+    assert report["facility_normalization"]["output_count"] == 2
+    assert all(item["canonical_name"] for item in report["facilities"])
+    assert all(item["semantic_type"] for item in report["facilities"])
+    assert any(
+        event["code"] == "facility_semantic_normalization"
+        for event in report["data_quality"]["events"]
+    )
     assert report["scoring"]["status"] == "complete"
     assert report["scoring"]["valid_category_count"] == 2
     assert all(len(item["components"]) == 3 for item in report["category_scores"])

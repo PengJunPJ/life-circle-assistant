@@ -13,6 +13,7 @@ from ..maps.walking import WalkingService
 from ..mock_data import CATEGORIES, mock_isochrone
 from ..schemas import AnalyzeRequest
 from .recommendations import build_planning_recommendations
+from .facility_normalization import normalize_facilities
 from .scoring import score_report
 from .service_areas import build_category_service_areas
 
@@ -133,6 +134,23 @@ class AnalysisApplicationService:
                         category=category,
                     )
                 )
+
+        normalization = normalize_facilities(facilities)
+        facilities = normalization.facilities
+        events.append(
+            quality_event(
+                "facility_semantic_normalization",
+                "info",
+                "facility_collection",
+                (
+                    f"已按设施语义归一化规则 {normalization.summary['rules_version']} "
+                    f"处理 {normalization.summary['input_count']} 条记录，"
+                    f"合并 {normalization.summary['merged_count']} 条同机构重复记录。"
+                ),
+                descriptor.source,
+                "facility_semantic_normalization",
+            )
+        )
 
         facility_api_calls = facility_provider_calls if descriptor.source == "real_api" else 0
         facility_request_end = getattr(self.provider, "facility_request_count", None)
@@ -283,6 +301,7 @@ class AnalysisApplicationService:
                 "isochrone": isochrone,
                 "pois": facilities,
                 "facilities": facilities,
+                "facility_normalization": normalization.summary,
                 "zones": zones,
                 "service_areas": zones,
                 "summary": {
