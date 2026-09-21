@@ -12,13 +12,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
+from .bootstrap import configure_runtime
 from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
-from .maps import MapProvider, MapProviderError, create_map_provider
+from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
-from .maps.walking import WalkingService, WalkingSettings
+from .maps.walking import WalkingService
 from .mock_data import CATEGORIES, CENTER
 from .schemas import AnalyzeRequest, ReportComparisonRequest, SimulationRequest
-from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
+from .storage import ReportRepository, TaskRepository
 
 
 load_dotenv()
@@ -63,8 +64,6 @@ async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: An
 
 
 def create_app(provider: MapProvider | None = None, database_path: str | Path | None = None) -> FastAPI:
-    resolved_provider = provider or create_map_provider()
-
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         try:
@@ -83,14 +82,8 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         allow_headers=["*"],
         expose_headers=["Content-Disposition", "X-Report-Id", "X-Coordinate-System"],
     )
-    app.state.map_provider = resolved_provider
-    app.state.database = Database(database_path)
-    app.state.database.migrate()
-    app.state.task_repository = TaskRepository(app.state.database)
-    app.state.report_repository = ReportRepository(app.state.database)
-    app.state.walking_cache_repository = WalkingCacheRepository(app.state.database)
-    app.state.walking_settings = WalkingSettings.from_env()
-    app.state.recovered_task_count = app.state.task_repository.recover_interrupted()
+    # 将基础设施装配集中到 bootstrap，避免 create_app 同时承担太多职责。
+    resolved_provider = configure_runtime(app, provider=provider, database_path=database_path)
 
     @app.get("/api/health")
     def health(map_provider: MapProvider = Depends(get_map_provider)):
