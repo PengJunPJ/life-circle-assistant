@@ -344,6 +344,11 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         report = report_repository.get(report_id)
         if not report or report.get("status") != "completed":
             raise HTTPException(status_code=404, detail="历史报告不存在或尚未完成")
+        # 注入已保存的 AI 解读，使 JSON/PDF 导出可以附带生成方式、证据引用和数据质量说明。
+        # 仅在非空时注入，避免破坏「导出 JSON == 原始报告」的等值契约。
+        interpretations = report_repository.list_ai_interpretations(report_id)
+        if interpretations:
+            report = {**report, "ai_interpretations": interpretations}
         builders = {
             "json": build_json_export,
             "csv": build_csv_export,

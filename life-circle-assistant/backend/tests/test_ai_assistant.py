@@ -290,3 +290,147 @@ def test_ai_interpretation_api_rejects_unsupported_intent(tmp_path):
     report_id = task["result"]["report_id"]
     response = client.post(f"/api/reports/{report_id}/ai/interpret", json={"intent": "chat"})
     assert response.status_code == 422
+
+
+def _create_demo_report(client: TestClient) -> str:
+    created = client.post("/api/analyze", json={"minutes": 15, "mode": "demo", "categories": ["market"]})
+    assert created.status_code == 200
+    task = client.get(f"/api/analyze/{created.json()['id']}").json()
+    assert task["status"] == "completed"
+    return task["result"]["report_id"]
+
+
+def test_json_export_includes_ai_interpretations_after_generation(tmp_path):
+    """JSON 导出在生成 AI 解读后应附带 ai_interpretations 字段。"""
+    client = TestClient(create_app(database_path=tmp_path / "ai-json-export.db"))
+    report_id = _create_demo_report(client)
+
+    # 生成一条 AI 解读
+    interpret_response = client.post(f"/api/reports/{report_id}/ai/interpret", json={"intent": "summary"})
+    assert interpret_response.status_code == 200
+    saved = interpret_response.json()
+    assert saved["intent"] == "summary"
+
+    # 导出 JSON 并验证包含 AI 结果
+    export_response = client.get(f"/api/reports/{report_id}/exports/json")
+    assert export_response.status_code == 200
+    exported = export_response.json()
+    assert "ai_interpretations" in exported
+    assert len(exported["ai_interpretations"]) >= 1
+    latest = exported["ai_interpretations"][0]
+    assert latest["intent"] == "summary"
+    assert latest["summary"] == saved["summary"]
+    assert latest["mode"] == saved["mode"]
+    assert latest["prompt_version"] == saved["prompt_version"]
+    # 原始报告字段仍然完整
+    assert exported["report_id"] == report_id
+    assert "category_scores" in exported
+    assert "data_quality" in exported
+
+
+def test_json_export_without_ai_omits_interpretations_key(tmp_path):
+    """未生成 AI 解读时，JSON 导出不应注入 ai_interpretations 键，保持与原始报告等值。"""
+    client = TestClient(create_app(database_path=tmp_path / "ai-json-noai.db"))
+    report_id = _create_demo_report(client)
+
+    export_response = client.get(f"/api/reports/{report_id}/exports/json")
+    assert export_response.status_code == 200
+    exported = export_response.json()
+    assert "ai_interpretations" not in exported
+
+    # 与 GET /api/reports/{id} 返回的原始报告等值
+    original = client.get(f"/api/reports/{report_id}").json()
+    assert exported == original
+
+
+def test_pdf_export_includes_ai_section_after_generation(tmp_path):
+    """PDF 导出在生成 AI 解读后应渲染「AI 解读与证据」章节。"""
+    from io import BytesIO
+    from pypdf import PdfReader
+
+    client = TestClient(create_app(database_path=tmp_path / "ai-pdf-export.db"))
+    report_id = _create_demo_report(client)
+
+    interpret_response = client.post(f"/api/reports/{report_id}/ai/interpret", json={"intent": "brief"})
+    assert interpret_response.status_code == 200
+    saved = interpret_response.json()
+
+    export_response = client.get(f"/api/reports/{report_id}/exports/pdf")
+    assert export_response.status_code == 200
+    assert export_response.headers["content-type"] == "application/pdf"
+    assert export_response.content.startswith(b"%PDF-")
+
+    reader = PdfReader(BytesIO(export_response.content))
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    assert "AI 解读与证据" in text
+    assert "生成方式" in text
+    # AI 摘要文本应出现在 PDF 中
+    assert saved["summary"][:20] in text
+
+
+def test_pdf_export_without_ai_has_no_ai_section(tmp_path):
+    """未生成 AI 解读时，PDF 不应包含 AI 章节。"""
+    from io import BytesIO
+    from pypdf import PdfReader
+
+    client = TestClient(create_app(database_path=tmp_path / "ai-pdf-noai.db"))
+    report_id = _create_demo_report(client)
+
+    export_response = client.get(f"/api/reports/{report_id}/exports/pdf")
+    assert export_response.status_code == 200
+    reader = PdfReader(BytesIO(export_response.content))
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    assert "AI 解读与证据" not in text
+
+
+def test_history_reopen_returns_latest_interpretation_first(tmp_path):
+    """历史报告重开：列表端点按生成时间倒序返回，前端取 items[0] 即最新解读。"""
+    client = TestClient(create_app(database_path=tmp_path / "ai-history.db"))
+    report_id = _create_demo_report(client)
+
+    # 依次生成三条不同 intent 的解读
+    first = client.post(f"/api/reports/{report_id}/ai/interpret", json={"intent": "summary"}).json()
+    second = client.post(f"/api/reports/{report_id}/ai/interpret", json={"intent": "priority"}).json()
+    third = client.post(f"/api/reports/{report_id}/ai/interpret", json={"intent": "brief"}).json()
+
+    history = client.get(f"/api/reports/{report_id}/ai/interpretations")
+    assert history.status_code == 200
+    items = history.json()["items"]
+    assert len(items) == 3
+    # 倒序：最新生成的 brief 在最前
+    assert items[0]["intent"] == "brief"
+    assert items[0]["summary"] == third["summary"]
+    assert items[1]["intent"] == "priority"
+    assert items[1]["summary"] == second["summary"]
+    assert items[2]["intent"] == "summary"
+    assert items[2]["summary"] == first["summary"]
+    # 每条都带 id 和生成时间，便于审计
+    for item in items:
+        assert "id" in item
+        assert "generated_at" in item
+        assert "prompt_version" in item
+
+
+def test_history_reopen_after_rerun_does_not_leak_old_interpretations(tmp_path):
+    """报告重跑生成新 report_id 后，旧解读不会关联到新报告。"""
+    client = TestClient(create_app(database_path=tmp_path / "ai-rerun.db"))
+    original_id = _create_demo_report(client)
+    client.post(f"/api/reports/{original_id}/ai/interpret", json={"intent": "summary"})
+
+    # 重跑生成新报告
+    rerun_response = client.post(f"/api/reports/{original_id}/rerun")
+    assert rerun_response.status_code == 200
+    new_task_id = rerun_response.json()["id"]
+    new_task = client.get(f"/api/analyze/{new_task_id}").json()
+    assert new_task["status"] == "completed"
+    new_report_id = new_task["result"]["report_id"]
+    assert new_report_id != original_id
+
+    # 新报告没有继承旧解读
+    new_history = client.get(f"/api/reports/{new_report_id}/ai/interpretations")
+    assert new_history.status_code == 200
+    assert new_history.json()["items"] == []
+
+    # 旧报告解读仍可读取
+    old_history = client.get(f"/api/reports/{original_id}/ai/interpretations")
+    assert len(old_history.json()["items"]) == 1
