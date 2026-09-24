@@ -4,7 +4,7 @@
       <div><div class="eyebrow">空间分析工作台</div><strong>设置分析参数</strong></div>
       <button class="mobile-panel-close" type="button" aria-label="关闭分析参数面板并返回地图" @click="emit('close-mobile')">×</button>
     </div>
-    <div class="desktop-panel-heading eyebrow">空间分析工作台</div>
+    <div class="desktop-panel-heading"><span class="eyebrow">空间分析工作台</span><button class="panel-collapse-btn" type="button" aria-label="收起分析参数面板，地图全屏" @click="emit('toggle-collapse')"><ArrowLeft /></button></div>
     <h1>15分钟生活圈<br /><em>智能体检</em></h1>
     <p class="intro">用真实步行可达性，识别社区服务覆盖与规划机会。</p>
     <div class="map-readiness" :class="{ ready: mapStatus?.real_api_available && realMapReady, snapshot: !mapStatusLoading && mapStatus && !mapStatus.real_api_available }" data-guide="source-status" role="status" aria-live="polite">
@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Location, Refresh, Search } from '@element-plus/icons-vue'
+import { ArrowLeft, Location, Refresh, Search } from '@element-plus/icons-vue'
 import { FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { AnalysisCenter, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, MapStatus } from '../types/report'
@@ -126,5 +126,6 @@ const emit = defineEmits<{
   run: []
   'refresh-map-status': []
   'close-mobile': []
+  'toggle-collapse': []
 }>()
 </script>

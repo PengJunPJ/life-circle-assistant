@@ -162,6 +162,11 @@ class AnalysisApplicationService:
         isochrone = await self._build_isochrone(center, request, events, partial_failures)
 
         self._stage("region_classification", 72)
+
+        def zone_progress(fraction: float) -> None:
+            # 区域分类内部按已处理分组比例在 72→86 之间连续上报，避免进度长时间冻结。
+            self._progress("region_classification", 72 + round(min(1.0, max(0.0, fraction)) * 14))
+
         zones, zone_events, zone_failures = await build_category_service_areas(
             self.walking_service,
             center,
@@ -169,6 +174,7 @@ class AnalysisApplicationService:
             facilities,
             request.minutes,
             failed_categories=facility_search_failed_categories,
+            on_progress=zone_progress,
         )
         events.extend(zone_events)
         partial_failures.extend(zone_failures)
@@ -333,6 +339,10 @@ class AnalysisApplicationService:
         self._active_stage_started = clock
         self.stage_history.append({"code": code, "label": label, "progress": progress, "at": timestamp})
         self.update_stage(code, label, progress)
+
+    def _progress(self, code: str, progress: int) -> None:
+        """阶段内细粒度进度：仅更新进度数值，不切换阶段、不记阶段历史与耗时。"""
+        self.update_stage(code, STAGES[code], progress)
 
     async def _attach_walking_results(
         self,

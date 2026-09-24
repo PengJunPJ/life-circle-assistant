@@ -68,4 +68,33 @@ defineExpose({ run })
 
 <style scoped>
 .ai-assistant { margin-top: 17px; padding-top: 16px; border-top: 1px solid #e2e9e4; }.ai-boundary { margin: 8px 0; color: #7f908b; font-size: 9px; line-height: 1.45; }.ai-actions { display: flex; flex-wrap: wrap; gap: 5px; }.ai-actions button, .ai-question button { padding: 6px 8px; border: 1px solid #c9ddd3; border-radius: 4px; background: #f1f8f4; color: #397568; font-size: 9px; }.ai-actions button:hover, .ai-question button:hover { background: #e2f1ea; }.ai-actions button:disabled, .ai-question button:disabled { opacity: .55; cursor: wait; }.ai-question { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; margin-top: 7px; }.ai-question input { min-width: 0; height: 29px; padding: 0 7px; border: 1px solid #cedbd5; border-radius: 4px; color: #294b4c; font-size: 9px; }.ai-state, .ai-empty { margin-top: 9px; padding: 9px; border-radius: 4px; background: #f0f5f2; color: #72837e; font-size: 9px; line-height: 1.5; }.ai-state.error { background: #f7e8e3; color: #a1503d; }.ai-result { margin-top: 10px; padding: 10px; border: 1px solid #d6e4dc; border-left: 3px solid #4a9a82; border-radius: 4px; background: #fbfdfb; }.ai-result.degraded { border-left-color: #d4a574; background: #fffcf8; }.ai-mode { display: flex; align-items: baseline; gap: 7px; color: #72837e; font-size: 8px; flex-wrap: wrap; }.ai-mode strong { color: #347563; font-size: 10px; }.ai-mode small { margin-left: auto; color: #9aa5a5; }.ai-degraded-badge { padding: 2px 6px; border-radius: 8px; background: #f8edd7; color: #9a702d; font-size: 8px; font-weight: 600; }.ai-summary { margin: 9px 0; color: #36564f; font-size: 11px; line-height: 1.55; }.ai-recommendation { padding: 8px 0; border-top: 1px solid #e6eee9; }.ai-recommendation > div { display: flex; align-items: center; justify-content: space-between; gap: 5px; }.ai-recommendation strong { color: #3c5b54; font-size: 10px; }.ai-recommendation p { margin: 4px 0 0; color: #788984; font-size: 9px; line-height: 1.5; }.ai-priority { padding: 2px 5px; border-radius: 8px; background: #e9f2ed; color: #40806d; font-size: 8px; }.ai-priority.high { background: #f6e0da; color: #a34e3b; }.ai-priority.medium { background: #f8edd7; color: #9a702d; }.ai-evidence { margin-top: 8px; color: #47766c; font-size: 9px; }.ai-evidence summary { cursor: pointer; font-weight: 700; }.ai-evidence ul { display: grid; gap: 5px; margin: 7px 0 0; padding-left: 15px; color: #6c7e78; }.ai-evidence li { line-height: 1.4; }.ai-evidence li strong, .ai-evidence li span, .ai-evidence li small { display: block; }.ai-evidence li strong { color: #41685f; }.ai-evidence li small { color: #9aa8a3; }.ai-notices { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #d6e4dc; }.ai-quality { margin: 0 0 6px; color: #92723d; font-size: 8px; line-height: 1.45; }.ai-quality strong { color: #7a5f2e; }.ai-boundary-inline { margin: 0; color: #7f908b; font-size: 8px; line-height: 1.45; }.ai-boundary-inline strong { color: #5f706b; }.ai-generated { display: block; margin-top: 6px; color: #a0ada8; font-size: 8px; }
+html[data-theme="dark"] .ai-assistant { border-top-color: rgba(126,214,199,.1); }
+html[data-theme="dark"] .ai-boundary, html[data-theme="dark"] .ai-boundary-inline { color: #6f8b90; }
+html[data-theme="dark"] .ai-boundary-inline strong { color: #9db8b8; }
+html[data-theme="dark"] .ai-actions button, html[data-theme="dark"] .ai-question button { border-color: rgba(126,214,199,.24); background: rgba(46,230,197,.08); color: #7ff0da; }
+html[data-theme="dark"] .ai-actions button:hover, html[data-theme="dark"] .ai-question button:hover { background: rgba(46,230,197,.16); }
+html[data-theme="dark"] .ai-question input { border-color: rgba(126,214,199,.2); background: rgba(9,18,27,.7); color: #e9f6f2; }
+html[data-theme="dark"] .ai-state, html[data-theme="dark"] .ai-empty { background: rgba(9,18,27,.6); color: #9db8b8; }
+html[data-theme="dark"] .ai-state.error { background: rgba(255,107,87,.12); color: #ff9d8d; }
+html[data-theme="dark"] .ai-result { border-color: rgba(126,214,199,.2); border-left-color: #2ee6c5; background: rgba(16,32,46,.6); }
+html[data-theme="dark"] .ai-result.degraded { border-left-color: #ffb547; background: rgba(255,181,71,.06); }
+html[data-theme="dark"] .ai-mode { color: #9db8b8; }
+html[data-theme="dark"] .ai-mode strong { color: #2ee6c5; }
+html[data-theme="dark"] .ai-mode small { color: #6f8b90; }
+html[data-theme="dark"] .ai-degraded-badge { background: rgba(255,181,71,.16); color: #ffcf8a; }
+html[data-theme="dark"] .ai-summary { color: #d7ece7; }
+html[data-theme="dark"] .ai-recommendation { border-top-color: rgba(126,214,199,.1); }
+html[data-theme="dark"] .ai-recommendation strong { color: #eaf6f3; }
+html[data-theme="dark"] .ai-recommendation p { color: #9db8b8; }
+html[data-theme="dark"] .ai-priority { background: rgba(52,224,180,.16); color: #7ff0da; }
+html[data-theme="dark"] .ai-priority.high { background: rgba(255,107,87,.16); color: #ff9d8d; }
+html[data-theme="dark"] .ai-priority.medium { background: rgba(255,181,71,.16); color: #ffcf8a; }
+html[data-theme="dark"] .ai-evidence { color: #7ff0da; }
+html[data-theme="dark"] .ai-evidence ul { color: #9db8b8; }
+html[data-theme="dark"] .ai-evidence li strong { color: #cfe7e1; }
+html[data-theme="dark"] .ai-evidence li small { color: #6f8b90; }
+html[data-theme="dark"] .ai-notices { border-top-color: rgba(126,214,199,.2); }
+html[data-theme="dark"] .ai-quality { color: #ffcf8a; }
+html[data-theme="dark"] .ai-quality strong { color: #ffcf8a; }
+html[data-theme="dark"] .ai-generated { color: #6f8b90; }
 </style>

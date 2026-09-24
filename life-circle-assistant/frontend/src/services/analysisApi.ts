@@ -154,13 +154,13 @@ export async function downloadReportExport(reportId: string, format: ReportExpor
   return filename
 }
 
-export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number) => void) {
+export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number, stageLabel: string) => void) {
   let current = task
-  // 后端采用后台任务模型，统一在数据访问模块轮询，页面层只接收进度和最终报告。
+  // 后端采用后台任务模型，统一在数据访问模块轮询，页面层接收进度、阶段名和最终报告。
   while (current.status !== 'completed' && current.status !== 'failed') {
     await new Promise((resolve) => setTimeout(resolve, 180))
     current = await getAnalysisTask(task.id)
-    onProgress(current.progress)
+    onProgress(current.progress, current.stage_label || '')
   }
   if (current.status === 'failed') throw new Error(current.error || '百度地图分析失败')
   return current.result as Report

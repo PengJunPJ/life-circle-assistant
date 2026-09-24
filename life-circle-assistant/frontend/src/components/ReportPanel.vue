@@ -4,7 +4,7 @@
       <div><div class="eyebrow">社区体检报告</div><strong>{{ report ? '查看完整报告' : '等待分析结果' }}</strong></div>
       <button class="mobile-panel-close" type="button" aria-label="关闭体检报告面板并返回地图" @click="emit('close-mobile')">×</button>
     </div>
-    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div></div>
+    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div><button class="panel-collapse-btn" type="button" aria-label="收起体检报告面板，地图全屏" @click="emit('toggle-collapse')"><ArrowRight /></button></div>
     <ReportHistory
       :items="historyItems"
       :total="historyTotal"
@@ -74,9 +74,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { ECharts } from '../utils/chartRuntime'
-import { CircleCheck, TrendCharts, Warning } from '@element-plus/icons-vue'
+import { ArrowRight, CircleCheck, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { HistoryReportItem } from '../types/history'
 import type { RecommendationCandidate } from '../types/recommendations'
 import type { Report } from '../types/report'
@@ -122,6 +122,7 @@ const emit = defineEmits<{
   'run-simulation': []
   'clear-simulation': []
   'close-mobile': []
+  'toggle-collapse': []
 }>()
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)
@@ -152,9 +153,14 @@ async function drawChart() {
   echartsImport ||= loadChartRuntime()
   const echarts = await echartsImport
   if (!chartRef.value || !props.report) return
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+  const axis = dark ? '#9db8b8' : '#71838a'
+  const axisMinor = dark ? '#6f8b90' : '#9aa7a5'
+  const split = dark ? 'rgba(126,214,199,.14)' : '#edf0ed'
+  const nullBar = dark ? '#3a4d59' : '#c5cfcb'
   chart?.dispose()
   chart = echarts.init(chartRef.value)
-  chart.setOption({ grid: { top: 12, right: 12, bottom: 28, left: 32 }, xAxis: { type: 'category', data: props.report.categories.map((item) => item.label), axisLabel: { color: '#71838a', fontSize: 11 } }, yAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: '#edf0ed' } }, axisLabel: { color: '#9aa7a5' } }, series: [{ type: 'bar', barWidth: 20, data: props.report.categories.map((item) => ({ value: item.score ?? 0, itemStyle: { color: item.score === null ? '#c5cfcb' : item.color, borderRadius: [3, 3, 0, 0] } })) }] })
+  chart.setOption({ grid: { top: 12, right: 12, bottom: 28, left: 32 }, xAxis: { type: 'category', data: props.report.categories.map((item) => item.label), axisLabel: { color: axis, fontSize: 11 } }, yAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: split } }, axisLabel: { color: axisMinor } }, series: [{ type: 'bar', barWidth: 20, data: props.report.categories.map((item) => ({ value: item.score ?? 0, itemStyle: { color: item.score === null ? nullBar : item.color, borderRadius: [3, 3, 0, 0] } })) }] })
 }
 
 async function loadChartRuntime(): Promise<ChartRuntime> {
@@ -162,7 +168,10 @@ async function loadChartRuntime(): Promise<ChartRuntime> {
 }
 
 watch(() => props.report, async () => { await nextTick(); await drawChart() }, { immediate: true })
-onBeforeUnmount(() => chart?.dispose())
+onMounted(() => window.addEventListener('life-circle:theme', handleThemeChange))
+onBeforeUnmount(() => { window.removeEventListener('life-circle:theme', handleThemeChange); chart?.dispose() })
+
+function handleThemeChange() { drawChart() }
 </script>
 
 <style scoped>
@@ -177,4 +186,11 @@ onBeforeUnmount(() => chart?.dispose())
 .stage-duration-list span { display: inline-flex; gap: 4px; color: #7b8c87; font-size: 8px; }
 .stage-duration-list em { color: #4d7168; font-style: normal; }
 @media (max-width: 760px) { .execution-metrics { grid-template-columns: repeat(2, 1fr); } }
+html[data-theme="dark"] .execution-section { border-top-color: rgba(126,214,199,.1); }
+html[data-theme="dark"] .execution-metrics > div { background: rgba(9,18,27,.6); }
+html[data-theme="dark"] .execution-metrics span { color: #6f8b90; }
+html[data-theme="dark"] .execution-metrics strong { color: #cfe7e1; }
+html[data-theme="dark"] .execution-metrics small { color: #6f8b90; }
+html[data-theme="dark"] .stage-duration-list span { color: #9db8b8; }
+html[data-theme="dark"] .stage-duration-list em { color: #7ff0da; }
 </style>

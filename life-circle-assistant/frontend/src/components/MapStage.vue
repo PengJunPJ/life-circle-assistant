@@ -25,7 +25,7 @@
     </div>
     <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking }" role="region" aria-label="百度地图生活圈分析区域"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking }" role="img" aria-label="生活圈分析地图画布" @click="handleCanvasClick"></canvas>
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
-    <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>正在计算真实步行可达性… {{ progress }}%</span></div>
+    <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>{{ progressLabel || '正在计算真实步行可达性' }}… {{ progress }}% · 已耗时 {{ elapsedLabel }}</span></div>
     <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
     <div v-if="keyboardServiceAreas.length" class="service-area-keyboard-list" role="group" aria-label="可查看判定证据的服务区域">
       <span class="sr-only">使用 Tab 移动到区域按钮，按回车或空格定位并放大对应网格，同时查看判定依据。</span>
@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, toRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
@@ -61,7 +61,7 @@ import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
 import type { SimulationResult } from '../types/simulation'
 
-const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number; focusRecommendationId: string | null; simulation: SimulationResult | null; simulationPicking: boolean }>()
+const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number; progressLabel?: string; focusRecommendationId: string | null; simulation: SimulationResult | null; simulationPicking: boolean }>()
 const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null] }>()
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
@@ -73,6 +73,19 @@ const focusRecommendationId = toRef(props, 'focusRecommendationId')
 const simulation = toRef(props, 'simulation')
 const simulationPicking = toRef(props, 'simulationPicking')
 const showMobileLegend = ref(false)
+const elapsedSeconds = ref(0)
+let elapsedTimer: number | undefined
+const elapsedLabel = computed(() => `${Math.floor(elapsedSeconds.value / 60)}:${String(elapsedSeconds.value % 60).padStart(2, '0')}`)
+watch(() => props.loading, (value) => {
+  if (value) {
+    elapsedSeconds.value = 0
+    elapsedTimer = window.setInterval(() => { elapsedSeconds.value += 1 }, 1000)
+  } else if (elapsedTimer !== undefined) {
+    window.clearInterval(elapsedTimer)
+    elapsedTimer = undefined
+  }
+}, { immediate: true })
+onBeforeUnmount(() => { if (elapsedTimer !== undefined) window.clearInterval(elapsedTimer) })
 const evidenceRef = ref<HTMLElement | null>(null)
 const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, visibleServiceAreas, selectServiceArea, handleCanvasClick, closeServiceAreaEvidence } = useMapRenderer({
   report,

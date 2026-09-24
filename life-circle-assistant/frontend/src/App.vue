@@ -2,17 +2,19 @@
   <main class="app-shell">
     <AppHeader
       :has-report="Boolean(report)"
+      :theme="theme"
       :map-status-loading="mapStatusLoading"
       :map-status-available="Boolean(mapStatus)"
       :real-api-ready="Boolean(mapStatus?.real_api_available)"
+      @update:theme="applyTheme"
       @open-guide="openFirstUseGuide"
     />
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ accessibilityStatus }}</p>
     <p v-if="analysisError" class="sr-only" role="alert">分析失败：{{ analysisError }}</p>
-    <section ref="workspaceRef" class="workspace">
+    <section ref="workspaceRef" class="workspace" :class="{ 'left-collapsed': collapsedControls, 'right-collapsed': collapsedReport }">
       <AnalysisControls
         id="analysis-controls-panel"
-        :class="{ 'mobile-open': activeMobilePanel === 'controls' }"
+        :class="{ 'mobile-open': activeMobilePanel === 'controls', collapsed: collapsedControls }"
         :mobile-open="activeMobilePanel === 'controls'"
         :center="center"
         :address-query="addressQuery"
@@ -47,6 +49,7 @@
         @toggle-category="toggleCategory"
         @run="startAnalysis"
         @refresh-map-status="loadMapStatus"
+        @toggle-collapse="collapsedControls = !collapsedControls"
         @close-mobile="closeMobilePanel('controls')"
       />
       <MapStage
@@ -59,6 +62,7 @@
         :show-critical="showCritical"
         :loading="loading"
         :progress="progress"
+        :progress-label="progressLabel"
         :focus-recommendation-id="selectedRecommendationId"
         :simulation="simulationResult"
         :simulation-picking="simulationPicking"
@@ -70,7 +74,7 @@
       />
       <ReportPanel
         id="analysis-report-panel"
-        :class="{ 'mobile-open': activeMobilePanel === 'report' }"
+        :class="{ 'mobile-open': activeMobilePanel === 'report', collapsed: collapsedReport }"
         :mobile-open="activeMobilePanel === 'report'"
         :report="report"
         :selected-recommendation-id="selectedRecommendationId"
@@ -100,8 +104,23 @@
         @pick-simulation-location="beginSimulationMapPick"
         @run-simulation="runSimulation"
         @clear-simulation="clearSimulation"
+        @toggle-collapse="collapsedReport = !collapsedReport"
         @close-mobile="closeMobilePanel('report')"
       />
+      <button
+        class="panel-rail left"
+        :class="{ show: collapsedControls }"
+        type="button"
+        aria-label="展开分析参数面板"
+        @click="collapsedControls = false"
+      ><span class="rail-dot" aria-hidden="true"></span><b>分析参数</b></button>
+      <button
+        class="panel-rail right"
+        :class="{ show: collapsedReport }"
+        type="button"
+        aria-label="展开体检报告面板"
+        @click="collapsedReport = false"
+      ><span class="rail-dot" aria-hidden="true"></span><b>体检报告</b></button>
       <button
         v-if="activeMobilePanel"
         class="mobile-panel-backdrop"
@@ -163,6 +182,17 @@ const ReportComparisonPanel = defineAsyncComponent(() => import('./components/Re
 const FIRST_USE_GUIDE_KEY = 'life-circle:first-use-guide:v1'
 const selectedRecommendationId = ref<string | null>(null)
 const activeMobilePanel = ref<'controls' | 'report' | null>(null)
+const collapsedControls = ref(false)
+const collapsedReport = ref(false)
+const THEME_KEY = 'life-circle:theme:v1'
+const theme = ref<'dark' | 'light'>(window.localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark')
+function applyTheme(value: 'dark' | 'light') {
+  theme.value = value
+  document.documentElement.setAttribute('data-theme', value)
+  window.localStorage.setItem(THEME_KEY, value)
+  window.dispatchEvent(new CustomEvent('life-circle:theme'))
+}
+applyTheme(theme.value)
 const mapStatus = ref<MapStatus | null>(null)
 const mapStatusLoading = ref(true)
 const realMapReady = ref(false)
@@ -194,6 +224,7 @@ const {
   showCritical,
   loading,
   progress,
+  progressLabel,
   report,
   error: analysisError,
   runAnalysis,

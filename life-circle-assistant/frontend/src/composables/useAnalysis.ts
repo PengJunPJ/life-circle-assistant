@@ -15,6 +15,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
   const showCritical = ref(true)
   const loading = ref(false)
   const progress = ref(0)
+  const progressLabel = ref('')
   const report = ref<Report | null>(null)
   const error = ref('')
 
@@ -26,6 +27,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     // 新选点不能继续展示旧中心点的报告，避免标记、请求和报告互相矛盾。
     report.value = null
     progress.value = 0
+    progressLabel.value = ''
   })
 
   function applyReport(selected: Report) {
@@ -50,6 +52,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     loading.value = true
     error.value = ''
     progress.value = 18
+    progressLabel.value = ''
     report.value = null
     try {
       if (center.value.supportStatus !== 'supported') throw new Error('请先选择当前支持范围内的分析中心点')
@@ -64,9 +67,13 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
         center_selection_method: center.value.selectionMethod,
       })
       progress.value = 52
-      const completedReport = await waitForAnalysis(task, (value) => { progress.value = value })
+      const completedReport = await waitForAnalysis(task, (value, stageLabel) => {
+        progress.value = value
+        progressLabel.value = stageLabel
+      })
       applyReport(completedReport)
       progress.value = 100
+      progressLabel.value = ''
       ElMessage.success(completedReport.source === 'baidu' ? '百度地图真实体检报告已生成' : '本地快照体检报告已生成')
     } catch (caught: any) {
       const message = caught?.message || '服务暂不可用，请检查后端是否启动'
@@ -93,6 +100,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     showCritical,
     loading,
     progress,
+    progressLabel,
     report,
     error,
     runAnalysis,

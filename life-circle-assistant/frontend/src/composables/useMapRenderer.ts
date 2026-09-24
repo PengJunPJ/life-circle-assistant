@@ -416,12 +416,18 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   })
   onMounted(async () => {
     window.addEventListener('resize', resize)
+    window.addEventListener('life-circle:theme', redrawForTheme)
     await loadBaiduMap()
     drawMap()
   })
   onBeforeUnmount(() => {
     window.removeEventListener('resize', resize)
+    window.removeEventListener('life-circle:theme', redrawForTheme)
   })
+
+  function redrawForTheme() {
+    realMapReady.value ? renderBaiduMap() : drawMap()
+  }
 
   return {
     mapCanvas,

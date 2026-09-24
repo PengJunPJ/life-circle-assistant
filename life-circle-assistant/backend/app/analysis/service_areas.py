@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import math
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from ..baidu import haversine_meters
 from ..maps.provider import MapProvider, MapProviderError, WalkingResult
@@ -110,6 +111,7 @@ async def build_category_service_areas(
     grid_size: int = GRID_SIZE,
     grid_span_m: int = GRID_SPAN_M,
     failed_categories: set[str] | None = None,
+    on_progress: Callable[[float], None] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     """用外部步行矩阵准备证据，再交给纯分类器生成完整 BD-09 GeoJSON。"""
     cells = _build_grid(center, grid_size, grid_span_m)
@@ -117,8 +119,9 @@ async def build_category_service_areas(
     quality_events: list[dict[str, Any]] = []
     partial_failures: list[dict[str, Any]] = []
     failed_categories = failed_categories or set()
+    category_count = max(1, len(categories))
 
-    for category in categories:
+    for category_index, category in enumerate(categories):
         incomplete_grid_ids: list[str] = []
         category_facilities = [item for item in facilities if item["category"] == category]
         candidates_by_cell = [
@@ -130,7 +133,16 @@ async def build_category_service_areas(
             ]
             for cell in cells
         ]
-        routes_by_cell = await _walking_results_by_cell(provider, cells, candidates_by_cell)
+        routes_by_cell = await _walking_results_by_cell(
+            provider,
+            cells,
+            candidates_by_cell,
+            on_progress=(
+                (lambda fraction: on_progress((category_index + fraction) / category_count))
+                if on_progress is not None
+                else None
+            ),
+        )
         category_failed_count = sum(
             1
             for row_index, candidates in enumerate(candidates_by_cell)
@@ -265,8 +277,10 @@ async def _walking_results_by_cell(
     provider: MapProvider,
     cells: list[dict[str, Any]],
     candidates_by_cell: list[list[dict[str, Any]]],
+    *,
+    on_progress: Callable[[float], None] | None = None,
 ) -> list[dict[str, WalkingResult]]:
-    """按相同候选集合分组调用矩阵，避免为预筛选外的坐标对计算路线。"""
+    """按相同候选集合分组调用矩阵，组间受控并发，避免为预筛选外的坐标对计算路线。"""
     route_maps: list[dict[str, WalkingResult]] = [{} for _ in cells]
     groups: dict[tuple[str, ...], list[int]] = {}
     for cell_index, candidates in enumerate(candidates_by_cell):
@@ -279,15 +293,34 @@ async def _walking_results_by_cell(
         for candidates in candidates_by_cell
         for item in candidates
     }
-    for signature, cell_indexes in groups.items():
-        destinations = [facilities_by_id[facility_id] for facility_id in signature]
-        try:
-            matrix = await provider.walking_matrix(
-                [cells[cell_index]["center"] for cell_index in cell_indexes],
-                [(item["lng"], item["lat"]) for item in destinations],
-            )
-        except MapProviderError:
-            matrix = []
+    if not groups:
+        if on_progress is not None:
+            on_progress(1.0)
+        return route_maps
+
+    concurrency = max(1, int(getattr(getattr(provider, "settings", None), "max_concurrency", 6) or 6))
+    semaphore = asyncio.Semaphore(concurrency)
+    group_items = list(groups.items())
+    completed = 0
+
+    async def fetch_group(signature: tuple[str, ...], cell_indexes: list[int]):
+        nonlocal completed
+        async with semaphore:
+            destinations = [facilities_by_id[facility_id] for facility_id in signature]
+            try:
+                matrix = await provider.walking_matrix(
+                    [cells[cell_index]["center"] for cell_index in cell_indexes],
+                    [(item["lng"], item["lat"]) for item in destinations],
+                )
+            except MapProviderError:
+                matrix = []
+        completed += 1
+        if on_progress is not None:
+            on_progress(completed / len(group_items))
+        return cell_indexes, signature, matrix
+
+    outcomes = await asyncio.gather(*(fetch_group(sig, idx) for sig, idx in group_items))
+    for cell_indexes, signature, matrix in outcomes:
         for matrix_row_index, cell_index in enumerate(cell_indexes):
             row = matrix[matrix_row_index] if matrix_row_index < len(matrix) else []
             route_maps[cell_index] = {
