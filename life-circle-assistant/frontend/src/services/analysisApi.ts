@@ -2,7 +2,7 @@ import { API_BASE_URL } from '../constants/facilities'
 import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
 import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate } from '../types/location'
-import type { AiInterpretation, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapStatus, Report } from '../types/report'
+import type { AiInterpretation, AiInterpretationIntent, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapStatus, Report } from '../types/report'
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
 import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
 
@@ -107,7 +107,16 @@ export async function simulateFacility(reportId: string, params: {
   )
 }
 
-export async function interpretReport(reportId: string, params: { intent: 'summary' | 'area_explanation' | 'ask'; grid_id?: string; question?: string }) {
+export async function interpretReport(
+  reportId: string,
+  params: {
+    intent: AiInterpretationIntent
+    grid_id?: string
+    question?: string
+    category?: string
+    simulation_id?: string
+  },
+) {
   return parseResponse<AiInterpretation>(
     await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/ai/interpret`, {
       method: 'POST',

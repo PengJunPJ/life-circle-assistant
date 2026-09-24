@@ -309,7 +309,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             raise HTTPException(status_code=404, detail="历史报告不存在或尚未完成")
         request_payload = payload or {}
         intent = request_payload.get("intent", "summary")
-        if intent not in {"summary", "area_explanation", "ask"}:
+        if intent not in {"summary", "area_explanation", "ask", "priority", "simulation", "brief"}:
             raise HTTPException(status_code=422, detail="不支持的 AI 解读类型")
         try:
             result = build_ai_interpretation(
@@ -317,6 +317,8 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
                 intent=intent,
                 grid_id=request_payload.get("grid_id"),
                 question=request_payload.get("question"),
+                category=request_payload.get("category"),
+                simulation_id=request_payload.get("simulation_id"),
             )
             question = request_payload.get("question")
             saved = report_repository.save_ai_interpretation(report_id, result, question=question)

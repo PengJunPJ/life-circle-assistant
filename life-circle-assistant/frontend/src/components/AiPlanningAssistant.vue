@@ -3,28 +3,29 @@
     <div class="section-title"><span id="ai-assistant-title">可解释 AI 规划助手</span><small>{{ result?.model || '规则模板' }}</small></div>
     <p class="ai-boundary">基于当前体检报告生成解读；不会修改原始评分、路线和设施数据。</p>
     <div class="ai-actions">
-      <button type="button" :disabled="loading" @click="generateSummary">生成体检摘要</button>
-      <button type="button" :disabled="loading" @click="ask('最应该优先补什么设施？')">优先补什么？</button>
-      <button type="button" :disabled="loading" @click="ask('为什么这里会被判定为重点服务盲区？')">为什么是盲区？</button>
+      <button type="button" :disabled="loading" @click="run({ intent: 'summary' })">体检摘要</button>
+      <button type="button" :disabled="loading" @click="run({ intent: 'priority' })">类别优先级</button>
+      <button type="button" :disabled="loading" @click="run({ intent: 'simulation' })">候选设施模拟</button>
+      <button type="button" :disabled="loading" @click="run({ intent: 'brief' })">汇报摘要</button>
     </div>
-    <div class="ai-question"><input v-model="question" aria-label="向规划助手提问" placeholder="例如：增加一个设施模拟后有什么变化？" @keydown.enter="ask(question)" /><button type="button" :disabled="loading || !question.trim()" @click="ask(question)">提问</button></div>
+    <div class="ai-question"><input v-model="question" aria-label="向规划助手提问" placeholder="例如：为什么这里被判定为重点服务盲区？" @keydown.enter="ask(question)" /><button type="button" :disabled="loading || !question.trim()" @click="ask(question)">提问</button></div>
     <div v-if="loading" class="ai-state" role="status">正在整理本次报告的证据…</div>
     <div v-else-if="error" class="ai-state error" role="alert">{{ error }}</div>
     <div v-else-if="result" class="ai-result" aria-live="polite">
-      <div class="ai-mode"><span>生成方式</span><strong>{{ result.model }}</strong><small>{{ result.prompt_version }}</small></div>
+      <div class="ai-mode"><span>生成方式</span><strong>{{ result.model }}</strong><small>{{ intentLabel(result.intent) }} · {{ result.prompt_version }}</small></div>
       <p class="ai-summary">{{ result.summary }}</p>
       <div v-if="result.recommendations.length" class="ai-recommendations"><div v-for="item in result.recommendations" :key="item.title" class="ai-recommendation"><div><strong>{{ item.title }}</strong><span :class="`ai-priority ${item.priority}`">{{ priorityLabel(item.priority) }}</span></div><p>{{ item.text }}</p></div></div>
-      <details class="ai-evidence"><summary>查看证据引用（{{ result.evidence_refs.length }}）</summary><ul><li v-for="ref in result.evidence_refs" :key="`${ref.type}-${ref.id}`"><strong>{{ ref.label }}</strong><span>{{ ref.detail }}</span><small>{{ ref.id }}</small></li></ul></details>
+      <details class="ai-evidence"><summary>查看证据引用（{{ result.evidence_refs.length }}）</summary><ul><li v-for="ref in result.evidence_refs" :key="`${ref.type}-${ref.id}`"><strong>{{ ref.label }}</strong><span>{{ ref.detail }}</span><small>{{ ref.type }} · {{ ref.id }}</small></li></ul></details>
       <p class="ai-quality">{{ result.data_quality_notice }}</p><small class="ai-generated">生成于 {{ formatDate(result.generated_at) }}</small>
     </div>
-    <div v-else class="ai-empty">完成分析后，可生成基于报告证据的摘要和规划解释。</div>
+    <div v-else class="ai-empty">完成分析后，可生成基于报告证据的摘要、类别优先级、模拟解读与汇报摘要。</div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { fetchReportInterpretations, interpretReport } from '../services/analysisApi'
-import type { AiInterpretation, Report } from '../types/report'
+import type { AiInterpretation, AiInterpretationIntent, Report } from '../types/report'
 const props = defineProps<{ report: Report }>()
 const result = ref<AiInterpretation | null>(null)
 const loading = ref(false)
@@ -34,11 +35,26 @@ watch(() => props.report.report_id, async () => {
   result.value = null; error.value = ''; question.value = ''
   try { result.value = (await fetchReportInterpretations(props.report.report_id)).items[0] || null } catch { /* 历史解读不存在时保持空状态 */ }
 }, { immediate: true })
-async function run(params: { intent: 'summary' | 'area_explanation' | 'ask'; question?: string }) { loading.value = true; error.value = ''; try { result.value = await interpretReport(props.report.report_id, params) } catch (err) { error.value = err instanceof Error ? err.message : 'AI 解读生成失败' } finally { loading.value = false } }
-function generateSummary() { return run({ intent: 'summary' }) }
+async function run(params: { intent: AiInterpretationIntent; grid_id?: string; category?: string; simulation_id?: string; question?: string }) {
+  loading.value = true; error.value = ''
+  try { result.value = await interpretReport(props.report.report_id, params) }
+  catch (err) { error.value = err instanceof Error ? err.message : 'AI 解读生成失败' }
+  finally { loading.value = false }
+}
 function ask(value: string) { if (!value.trim()) return; return run({ intent: 'ask', question: value.trim() }) }
 function priorityLabel(value: string) { return ({ high: '优先', medium: '建议关注', low: '持续观察' } as Record<string, string>)[value] || value }
+function intentLabel(value: AiInterpretationIntent) {
+  return ({
+    summary: '体检摘要',
+    area_explanation: '服务区域解释',
+    ask: '规划问答',
+    priority: '类别优先级',
+    simulation: '候选设施模拟',
+    brief: '汇报摘要',
+  } as Record<AiInterpretationIntent, string>)[value] || value
+}
 function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) }
+defineExpose({ run })
 </script>
 
 <style scoped>

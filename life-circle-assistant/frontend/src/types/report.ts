@@ -156,8 +156,16 @@ export type AiEvidenceRef = {
   detail: string
 }
 
+export type AiInterpretationIntent =
+  | 'summary'
+  | 'area_explanation'
+  | 'ask'
+  | 'priority'
+  | 'simulation'
+  | 'brief'
+
 export type AiInterpretation = {
-  intent: 'summary' | 'area_explanation' | 'ask'
+  intent: AiInterpretationIntent
   summary: string
   recommendations: { title: string; text: string; priority: string; evidence_refs: AiEvidenceRef[] }[]
   evidence_refs: AiEvidenceRef[]
