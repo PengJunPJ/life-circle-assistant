@@ -11,6 +11,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Req
 from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService, compare_reports
+from .ai_assistant import build_ai_interpretation
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
 from .bootstrap import configure_runtime
 from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
@@ -296,6 +297,41 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"假设设施位置不可用：{exc}") from exc
+
+    @app.post("/api/reports/{report_id}/ai/interpret")
+    def interpret_report(
+        report_id: str,
+        payload: dict[str, str] | None = None,
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        report = report_repository.get(report_id)
+        if not report or report.get("status") != "completed":
+            raise HTTPException(status_code=404, detail="历史报告不存在或尚未完成")
+        request_payload = payload or {}
+        intent = request_payload.get("intent", "summary")
+        if intent not in {"summary", "area_explanation", "ask"}:
+            raise HTTPException(status_code=422, detail="不支持的 AI 解读类型")
+        try:
+            result = build_ai_interpretation(
+                report,
+                intent=intent,
+                grid_id=request_payload.get("grid_id"),
+                question=request_payload.get("question"),
+            )
+            question = request_payload.get("question")
+            saved = report_repository.save_ai_interpretation(report_id, result, question=question)
+            return saved
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.get("/api/reports/{report_id}/ai/interpretations")
+    def list_report_interpretations(
+        report_id: str,
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        if not report_repository.get(report_id):
+            raise HTTPException(status_code=404, detail="历史报告不存在")
+        return {"items": report_repository.list_ai_interpretations(report_id)}
 
     @app.get("/api/reports/{report_id}/exports/{export_format}")
     def export_completed_report(

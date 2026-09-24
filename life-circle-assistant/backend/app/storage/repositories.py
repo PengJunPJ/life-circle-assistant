@@ -218,3 +218,36 @@ class ReportRepository:
             "limit": limit,
             "offset": offset,
         }
+
+    def save_ai_interpretation(self, report_id: str, result: dict[str, Any], *, question: str | None = None) -> dict[str, Any]:
+        interpretation_id = str(uuid.uuid4())
+        with self.database.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO ai_interpretations(
+                    id, report_id, intent, question, result_json, mode, model,
+                    prompt_version, generated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    interpretation_id,
+                    report_id,
+                    result.get("intent", "summary"),
+                    question,
+                    _dump(result),
+                    result.get("mode", "rule_template"),
+                    result.get("model", "规则模板"),
+                    result.get("prompt_version", "unknown"),
+                    result.get("generated_at") or now(),
+                ),
+            )
+            connection.commit()
+        return {"id": interpretation_id, **result}
+
+    def list_ai_interpretations(self, report_id: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                "SELECT id, result_json FROM ai_interpretations WHERE report_id = ? ORDER BY generated_at DESC LIMIT ?",
+                (report_id, limit),
+            ).fetchall()
+        return [{"id": row["id"], **json.loads(row["result_json"])} for row in rows]

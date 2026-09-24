@@ -149,6 +149,26 @@ export type Report = {
   }
 }
 
+export type AiEvidenceRef = {
+  type: string
+  id: string
+  label: string
+  detail: string
+}
+
+export type AiInterpretation = {
+  intent: 'summary' | 'area_explanation' | 'ask'
+  summary: string
+  recommendations: { title: string; text: string; priority: string; evidence_refs: AiEvidenceRef[] }[]
+  evidence_refs: AiEvidenceRef[]
+  model: string
+  mode: 'rule_template'
+  prompt_version: string
+  generated_at: string
+  data_quality_notice: string
+  boundary_notice: string
+}
+
 export type AnalysisTask = {
   id: string
   status: 'queued' | 'running' | 'completed' | 'failed'

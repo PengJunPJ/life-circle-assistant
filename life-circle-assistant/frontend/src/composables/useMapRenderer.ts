@@ -32,15 +32,37 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   let baiduMap: any = null
   let baiduClickBound = false
 
+  function serviceAreaCenter(feature: ServiceAreaFeature) {
+    const coordinates = feature.geometry.coordinates[0]
+    const vertices = coordinates.length > 1
+      && coordinates[0][0] === coordinates[coordinates.length - 1][0]
+      && coordinates[0][1] === coordinates[coordinates.length - 1][1]
+      ? coordinates.slice(0, -1)
+      : coordinates
+    const total = vertices.reduce((sum, [lng, lat]) => ({ lng: sum.lng + lng, lat: sum.lat + lat }), { lng: 0, lat: 0 })
+    return { lng: total.lng / Math.max(vertices.length, 1), lat: total.lat / Math.max(vertices.length, 1) }
+  }
+
+  function canvasViewport() {
+    const selected = selectedServiceArea.value
+    return selected
+      ? { center: serviceAreaCenter(selected), scale: 72000 }
+      : { center: analysisCenter.value, scale: 42000 }
+  }
+
   function project(lng: number, lat: number, width: number, height: number) {
-    const center = analysisCenter.value
-    return { x: width / 2 + (lng - center.lng) * 42000, y: height / 2 - (lat - center.lat) * 42000 }
+    const viewport = canvasViewport()
+    return {
+      x: width / 2 + (lng - viewport.center.lng) * viewport.scale,
+      y: height / 2 - (lat - viewport.center.lat) * viewport.scale,
+    }
   }
 
   function unproject(x: number, y: number, width: number, height: number) {
+    const viewport = canvasViewport()
     return {
-      lng: analysisCenter.value.lng + (x - width / 2) / 42000,
-      lat: analysisCenter.value.lat - (y - height / 2) / 42000,
+      lng: viewport.center.lng + (x - width / 2) / viewport.scale,
+      lat: viewport.center.lat - (y - height / 2) / viewport.scale,
     }
   }
 
@@ -90,9 +112,12 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     if (currentReport) {
       drawPolygon(currentReport.isochrone.geometry.coordinates[0], 'rgba(61, 155, 139, .22)', '#237866')
       visibleServiceAreas().forEach((zone) => {
-        const style = serviceAreaStyle(zone, isFocusedRegion(zone.properties.grid_id))
+        const selected = isSelectedRegion(zone.properties.grid_id)
+        const style = serviceAreaStyle(zone, selected, isFocusedRegion(zone.properties.grid_id), hasSelectedRegion() && !selected)
         const marker = zone.properties.kind === 'critical' ? '!' : zone.properties.kind === 'sparse' ? '△' : ''
+        if (selected) drawPolygon(zone.geometry.coordinates[0], 'rgba(255,255,255,0)', 'rgba(255,255,255,.96)', 9)
         drawPolygon(zone.geometry.coordinates[0], style.fill, style.stroke, style.strokeWeight, marker)
+        if (selected) drawCanvasSelectionMarker(zone, ctx, w, h)
       })
       simulationAreas().forEach((zone) => {
         drawPolygon(zone.geometry.coordinates[0], 'rgba(51, 126, 184, .18)', '#2f70a5', 3)
@@ -139,12 +164,47 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       .filter((feature) => isServiceAreaVisible(feature, visibleCategories.value, visibility()))
   }
 
-  function serviceAreaStyle(feature: ServiceAreaFeature, focused = false) {
+  function serviceAreaStyle(feature: ServiceAreaFeature, selected = false, focused = false, dimmed = false) {
+    if (selected) {
+      if (feature.properties.kind === 'critical') return { fill: 'rgba(180, 64, 43, .52)', stroke: '#762719', strokeWeight: 5 }
+      if (feature.properties.kind === 'sparse') return { fill: 'rgba(205, 142, 37, .50)', stroke: '#815713', strokeWeight: 5 }
+      if (feature.properties.kind === 'unknown') return { fill: 'rgba(94, 106, 115, .42)', stroke: '#39444b', strokeWeight: 5 }
+      return { fill: 'rgba(45, 138, 105, .36)', stroke: '#145b49', strokeWeight: 5 }
+    }
+    if (dimmed) {
+      if (feature.properties.kind === 'critical') return { fill: 'rgba(199, 92, 67, .10)', stroke: '#c98e80', strokeWeight: 1 }
+      if (feature.properties.kind === 'sparse') return { fill: 'rgba(216, 166, 78, .10)', stroke: '#ceb27a', strokeWeight: 1 }
+      if (feature.properties.kind === 'unknown') return { fill: 'rgba(123, 135, 144, .08)', stroke: '#a1aaaf', strokeWeight: 1 }
+      return { fill: 'rgba(79, 157, 127, .035)', stroke: '#a5c4b7', strokeWeight: 1 }
+    }
     if (focused) return { fill: 'rgba(177, 65, 42, .42)', stroke: '#7f2f20', strokeWeight: 4 }
     if (feature.properties.kind === 'critical') return { fill: 'rgba(199, 92, 67, .28)', stroke: '#b74a35', strokeWeight: 2 }
     if (feature.properties.kind === 'sparse') return { fill: 'rgba(216, 166, 78, .27)', stroke: '#c18b31', strokeWeight: 2 }
     if (feature.properties.kind === 'unknown') return { fill: 'rgba(123, 135, 144, .18)', stroke: '#69757d', strokeWeight: 2 }
     return { fill: 'rgba(79, 157, 127, .08)', stroke: '#6eac94', strokeWeight: 2 }
+  }
+
+  function hasSelectedRegion() {
+    return selectedServiceArea.value !== null
+  }
+
+  function isSelectedRegion(regionId: string) {
+    return selectedServiceArea.value?.properties.grid_id === regionId
+  }
+
+  function drawCanvasSelectionMarker(feature: ServiceAreaFeature, context: CanvasRenderingContext2D, width: number, height: number) {
+    const center = serviceAreaCenter(feature)
+    const point = project(center.lng, center.lat, width, height)
+    context.fillStyle = 'rgba(23, 51, 61, .94)'
+    context.fillRect(point.x - 21, point.y - 12, 42, 24)
+    context.strokeStyle = '#fff'
+    context.lineWidth = 2
+    context.strokeRect?.(point.x - 21, point.y - 12, 42, 24)
+    context.fillStyle = '#fff'
+    context.font = '800 11px sans-serif'
+    context.textAlign = 'center'
+    context.textBaseline = 'middle'
+    context.fillText('已选', point.x, point.y + .5)
   }
 
   function focusedRecommendation(): PlanningRecommendation | null {
@@ -250,12 +310,15 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       baiduClickBound = true
     }
     const center = new BMap.Point(analysisCenter.value.lng, analysisCenter.value.lat)
+    const selectedCenter = selectedServiceArea.value ? serviceAreaCenter(selectedServiceArea.value) : null
     const focusedCandidate = focusedRecommendation()?.candidate_locations[0]
     const hypothetical = simulation.value?.hypothetical_facility
-    const viewCenter = hypothetical
+    const viewCenter = selectedCenter
+      ? new BMap.Point(selectedCenter.lng, selectedCenter.lat)
+      : hypothetical
       ? new BMap.Point(hypothetical.lng, hypothetical.lat)
       : focusedCandidate ? new BMap.Point(focusedCandidate.lng, focusedCandidate.lat) : center
-    baiduMap.centerAndZoom(viewCenter, hypothetical || focusedCandidate ? 17 : 16)
+    baiduMap.centerAndZoom(viewCenter, selectedCenter || hypothetical || focusedCandidate ? 17 : 16)
     baiduMap.clearOverlays()
     const currentReport = report.value
     if (currentReport) {
@@ -263,21 +326,36 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       baiduMap.addOverlay(new BMap.Polygon(polygon, { strokeColor: '#237866', strokeWeight: 4, strokeOpacity: .95, strokeStyle: 'dashed', fillColor: '#3d9b8b', fillOpacity: .2 }))
       visibleServiceAreas().forEach((zone) => {
         const points = zone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
+        const selected = isSelectedRegion(zone.properties.grid_id)
         const focused = isFocusedRegion(zone.properties.grid_id)
-        const style = serviceAreaStyle(zone, focused)
+        const dimmed = hasSelectedRegion() && !selected
+        const style = serviceAreaStyle(zone, selected, focused, dimmed)
+        if (selected) {
+          baiduMap.addOverlay(new BMap.Polygon(points, {
+            strokeColor: '#ffffff', strokeWeight: 10, strokeOpacity: .96, fillColor: '#ffffff', fillOpacity: 0,
+          }))
+        }
         const areaPolygon = new BMap.Polygon(points, {
           strokeColor: style.stroke,
           strokeWeight: style.strokeWeight,
-          strokeOpacity: 1,
+          strokeOpacity: dimmed ? .62 : 1,
           strokeStyle: zone.properties.kind === 'normal' ? 'solid' : 'dashed',
-          fillColor: focused ? '#b1412a' : zone.properties.color,
-          fillOpacity: focused ? .42 : zone.properties.kind === 'normal' ? .08 : .25,
+          fillColor: selected || focused ? style.stroke : zone.properties.color,
+          fillOpacity: selected ? .42 : focused ? .42 : dimmed ? .08 : zone.properties.kind === 'normal' ? .08 : .25,
         })
         areaPolygon.addEventListener('click', (event: any) => {
           selectedServiceArea.value = zone
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(areaPolygon)
+        if (selected) {
+          const zoneCenter = serviceAreaCenter(zone)
+          const label = new BMap.Label('<span class="selected-area-map-label">已选</span>', {
+            position: new BMap.Point(zoneCenter.lng, zoneCenter.lat), offset: new BMap.Size(-21, -13),
+          })
+          label.setStyle({ border: '0', background: 'transparent', padding: '0', whiteSpace: 'nowrap', zIndex: '60' })
+          baiduMap.addOverlay(label)
+        }
       })
       simulationAreas().forEach((zone) => {
         const points = zone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
@@ -325,7 +403,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     else drawMap()
   }
 
-  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking], async () => {
+  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, selectedServiceArea], async () => {
     if (selectedServiceArea.value && !isServiceAreaVisible(selectedServiceArea.value, visibleCategories.value, visibility())) {
       selectedServiceArea.value = null
     }

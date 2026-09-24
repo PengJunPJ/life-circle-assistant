@@ -28,13 +28,13 @@
     <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>正在计算真实步行可达性… {{ progress }}%</span></div>
     <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
     <div v-if="keyboardServiceAreas.length" class="service-area-keyboard-list" role="group" aria-label="可查看判定证据的服务区域">
-      <span class="sr-only">使用 Tab 移动到区域按钮，按回车或空格查看判定依据。</span>
+      <span class="sr-only">使用 Tab 移动到区域按钮，按回车或空格定位并放大对应网格，同时查看判定依据。</span>
       <button
         v-for="area in keyboardServiceAreas"
         :key="area.properties.grid_id"
         type="button"
         :aria-pressed="selectedServiceArea?.properties.grid_id === area.properties.grid_id"
-        :aria-label="`${area.properties.category_label}${area.properties.label} ${area.properties.grid_id}，查看判定依据`"
+        :aria-label="`${area.properties.category_label}${area.properties.label} ${area.properties.grid_id}，定位并放大网格，查看判定依据`"
         @click="selectServiceArea(area)"
       >{{ area.properties.category_label }} · {{ area.properties.grid_id }} · {{ area.properties.label }}</button>
     </div>

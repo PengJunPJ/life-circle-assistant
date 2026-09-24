@@ -66,6 +66,7 @@
           @clear="emit('clear-simulation')"
         />
       </div>
+      <AiPlanningAssistant :report="report" />
       <ReportExportMenu :report-id="report.report_id" />
     </div>
     <div v-else class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span></div>
@@ -86,6 +87,7 @@ import ReportHistory from './ReportHistory.vue'
 import RecommendationList from './RecommendationList.vue'
 import SimulationPanel from './SimulationPanel.vue'
 import ReportExportMenu from './ReportExportMenu.vue'
+import AiPlanningAssistant from './AiPlanningAssistant.vue'
 
 const props = defineProps<{
   report: Report | null
