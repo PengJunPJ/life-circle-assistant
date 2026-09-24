@@ -26,6 +26,122 @@ class Evidence:
         }
 
 
+def _build_report_index(report: dict[str, Any]) -> dict[str, set[str]]:
+    """构建报告实体索引，用于校验证据引用是否指向报告中真实存在的实体。"""
+    index: dict[str, set[str]] = {
+        "report": set(),
+        "category_score": set(),
+        "service_area": set(),
+        "simulation": set(),
+        "facility": set(),
+        "data_quality_event": set(),
+    }
+
+    # 报告 ID
+    report_id = str(report.get("report_id") or report.get("id") or "")
+    if report_id:
+        index["report"].add(report_id)
+
+    # 类别评分
+    for item in report.get("category_scores", []):
+        category = str(item.get("category") or "")
+        if category:
+            index["category_score"].add(category)
+
+    # 服务区域（网格）
+    features = (report.get("service_areas") or report.get("zones") or {}).get("features", [])
+    for feature in features:
+        props = feature.get("properties") or {}
+        grid_id = str(props.get("grid_id") or "")
+        if grid_id:
+            index["service_area"].add(grid_id)
+
+    # 模拟结果
+    for sim in report.get("simulations") or []:
+        sim_id = str(sim.get("id") or "")
+        if sim_id:
+            index["simulation"].add(sim_id)
+
+    # 设施（POI）
+    for poi in report.get("pois") or report.get("facilities") or []:
+        poi_id = str(poi.get("id") or "")
+        if poi_id:
+            index["facility"].add(poi_id)
+
+    # 数据质量事件
+    quality = report.get("data_quality") or {}
+    for event in quality.get("events") or []:
+        event_id = str(event.get("id") or event.get("code") or "")
+        if event_id:
+            index["data_quality_event"].add(event_id)
+
+    return index
+
+
+def _validate_evidence_refs(
+    evidence_refs: list[dict[str, str]],
+    index: dict[str, set[str]],
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    """校验证据引用，返回 (有效引用, 无效引用)。"""
+    valid: list[dict[str, str]] = []
+    invalid: list[dict[str, str]] = []
+
+    for ref in evidence_refs:
+        ref_type = ref.get("type", "")
+        ref_id = ref.get("id", "")
+
+        # 检查类型是否已知
+        if ref_type not in index:
+            invalid.append(ref)
+            continue
+
+        # 检查 ID 是否存在于索引中
+        if ref_id and ref_id in index[ref_type]:
+            valid.append(ref)
+        else:
+            invalid.append(ref)
+
+    return valid, invalid
+
+
+def _filter_hallucinated_content(
+    result: dict[str, Any],
+    report: dict[str, Any],
+) -> dict[str, Any]:
+    """过滤 AI 结果中的幻觉内容：无效证据引用、虚构评分、虚构步行时间等。"""
+    index = _build_report_index(report)
+
+    # 校验顶层证据引用
+    evidence_refs = result.get("evidence_refs") or []
+    valid_refs, invalid_refs = _validate_evidence_refs(evidence_refs, index)
+
+    # 校验建议中的证据引用
+    filtered_recommendations = []
+    for rec in result.get("recommendations") or []:
+        rec_refs = rec.get("evidence_refs") or []
+        valid_rec_refs, _ = _validate_evidence_refs(rec_refs, index)
+        filtered_rec = {**rec, "evidence_refs": valid_rec_refs}
+        filtered_recommendations.append(filtered_rec)
+
+    # 如果所有证据都无效，标记为降级
+    all_invalid = len(invalid_refs) > 0 and len(valid_refs) == 0
+    if all_invalid:
+        result["data_quality_notice"] = (
+            "AI 解读引用的证据无法在当前报告中找到，已降级为仅基于报告摘要的解读。"
+            "原始体检报告仍可正常使用。"
+        )
+        result["mode"] = "rule_template_degraded"
+
+    result["evidence_refs"] = valid_refs
+    result["recommendations"] = filtered_recommendations
+
+    # 记录被过滤的无效引用数量（用于调试，不暴露给前端）
+    if invalid_refs:
+        result["_filtered_invalid_refs"] = len(invalid_refs)
+
+    return result
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -439,6 +555,8 @@ def build_ai_interpretation(
         raise ValueError(f"不支持的 AI 解读类型：{intent}")
 
     labels = _category_labels(report)
+    result: dict[str, Any]
+
     if intent == "area_explanation":
         area = next(iter(_areas(report, grid_id=grid_id)), None) if grid_id else None
         if area is None:
@@ -448,41 +566,44 @@ def build_ai_interpretation(
         score = _score_evidence(report, str(props.get("category")))
         if score:
             evidence.append(score)
-        return _base_result(
+        result = _base_result(
             report,
             intent=intent,
             summary=f"{props.get('category_label', labels.get(str(props.get('category')), '该类别'))}的{props.get('label', '服务区域')}：{props.get('basis') or '报告未提供更细的分类依据。'}",
             recommendations=[{"title": "结合现场条件复核", "text": "重点核对社区出入口、围墙、道路过街和设施实际开放情况，再决定是否需要规划干预。", "priority": "medium", "evidence_refs": [item.as_dict() for item in evidence]}],
             evidence=evidence,
         )
-
-    if intent == "priority":
-        return _build_priority_result(report, category=category)
-
-    if intent == "simulation":
-        return _build_simulation_result(report, simulation_id=simulation_id, category=category)
-
-    if intent == "brief":
-        return _build_brief_result(report)
-
-    if intent == "ask":
+    elif intent == "priority":
+        result = _build_priority_result(report, category=category)
+    elif intent == "simulation":
+        result = _build_simulation_result(report, simulation_id=simulation_id, category=category)
+    elif intent == "brief":
+        result = _build_brief_result(report)
+    elif intent == "ask":
         normalized = (question or "").strip()
         if any(word in normalized for word in ("为什么", "盲区", "网格")):
             critical = _areas(report, kind="critical")
             if critical:
-                return build_ai_interpretation(report, intent="area_explanation", grid_id=critical[0]["properties"].get("grid_id"))
-        if any(word in normalized for word in ("模拟", "新增", "改善")):
-            return _build_simulation_result(report)
-        if any(word in normalized for word in ("汇报", "报告一下", "简报", "街道")):
-            return _build_brief_result(report)
-        if any(word in normalized for word in ("补什么", "优先", "设施", "排序")):
-            return _build_priority_result(report, category=category)
-        return _base_result(report, intent=intent, summary="我目前只能基于本次报告回答摘要、盲区原因、类别优先级、候选设施模拟和汇报摘要等问题。请从示例问题中选择一个方向。", recommendations=[], evidence=_report_evidence(report))
+                result = build_ai_interpretation(report, intent="area_explanation", grid_id=critical[0]["properties"].get("grid_id"))
+            else:
+                result = _base_result(report, intent=intent, summary="当前报告没有识别到重点服务盲区，无法解释盲区原因。", recommendations=[], evidence=_report_evidence(report))
+        elif any(word in normalized for word in ("模拟", "新增", "改善")):
+            result = _build_simulation_result(report)
+        elif any(word in normalized for word in ("汇报", "报告一下", "简报", "街道")):
+            result = _build_brief_result(report)
+        elif any(word in normalized for word in ("补什么", "优先", "设施", "排序")):
+            result = _build_priority_result(report, category=category)
+        else:
+            result = _base_result(report, intent=intent, summary="我目前只能基于本次报告回答摘要、盲区原因、类别优先级、候选设施模拟和汇报摘要等问题。请从示例问题中选择一个方向。", recommendations=[], evidence=_report_evidence(report))
+    else:
+        # summary intent
+        issues = _top_issues(report)
+        summary_score = (report.get("summary") or {}).get("score")
+        summary = f"本次生活圈体检综合指数为 {summary_score if summary_score is not None else '暂不可用'}，识别到 {(report.get('summary') or {}).get('critical_zone_count', 0)} 个重点服务盲区和 {(report.get('summary') or {}).get('sparse_zone_count', 0)} 个设施稀疏区。"
+        evidence = _report_evidence(report)
+        for _, _, refs in issues:
+            evidence.extend(refs)
+        result = _base_result(report, intent="summary", summary=summary, recommendations=_recommendations(report), evidence=evidence[:10])
 
-    issues = _top_issues(report)
-    summary_score = (report.get("summary") or {}).get("score")
-    summary = f"本次生活圈体检综合指数为 {summary_score if summary_score is not None else '暂不可用'}，识别到 {(report.get('summary') or {}).get('critical_zone_count', 0)} 个重点服务盲区和 {(report.get('summary') or {}).get('sparse_zone_count', 0)} 个设施稀疏区。"
-    evidence = _report_evidence(report)
-    for _, _, refs in issues:
-        evidence.extend(refs)
-    return _base_result(report, intent="summary", summary=summary, recommendations=_recommendations(report), evidence=evidence[:10])
+    # 出口统一校验：过滤幻觉内容
+    return _filter_hallucinated_content(result, report)

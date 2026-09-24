@@ -157,6 +157,110 @@ def test_unsupported_intent_is_rejected():
         raise AssertionError("unsupported intent should be rejected")
 
 
+def test_evidence_validation_filters_unknown_refs():
+    """防幻觉：无效证据引用应被过滤，只保留报告中真实存在的实体。"""
+    from app.ai_assistant import _build_report_index, _validate_evidence_refs
+
+    report = report_fixture()
+    index = _build_report_index(report)
+
+    # 构造包含有效和无效引用的列表
+    refs = [
+        {"type": "report", "id": "report-ai-1", "label": "体检报告", "detail": "综合指数 68"},
+        {"type": "category_score", "id": "market", "label": "菜市场评分", "detail": "评分 54"},
+        {"type": "service_area", "id": "unknown-grid", "label": "未知网格", "detail": "虚构"},
+        {"type": "facility", "id": "unknown-poi", "label": "未知设施", "detail": "虚构"},
+        {"type": "unknown_type", "id": "xyz", "label": "未知类型", "detail": "虚构"},
+    ]
+
+    valid, invalid = _validate_evidence_refs(refs, index)
+    assert len(valid) == 2
+    assert len(invalid) == 3
+    assert {ref["id"] for ref in valid} == {"report-ai-1", "market"}
+
+
+def test_hallucinated_evidence_triggers_degradation():
+    """防幻觉：当所有证据引用都无效时，结果应标记为降级模式。"""
+    from app.ai_assistant import _filter_hallucinated_content
+
+    report = report_fixture()
+    # 构造一个所有证据都无效的结果
+    fake_result = {
+        "intent": "summary",
+        "summary": "虚构摘要",
+        "recommendations": [],
+        "evidence_refs": [
+            {"type": "service_area", "id": "fake-grid-1", "label": "虚构网格", "detail": "不存在"},
+            {"type": "facility", "id": "fake-poi-1", "label": "虚构设施", "detail": "不存在"},
+        ],
+        "model": "规则模板",
+        "mode": "rule_template",
+        "prompt_version": "test",
+        "generated_at": "2026-01-01T00:00:00Z",
+        "data_quality_notice": "原始提示",
+        "boundary_notice": "边界提示",
+    }
+
+    filtered = _filter_hallucinated_content(fake_result, report)
+    assert filtered["mode"] == "rule_template_degraded"
+    assert filtered["evidence_refs"] == []
+    assert "降级" in filtered["data_quality_notice"]
+
+
+def test_valid_evidence_passes_through():
+    """防幻觉：有效证据引用应完整保留，不触发降级。"""
+    from app.ai_assistant import _filter_hallucinated_content
+
+    report = report_fixture()
+    valid_result = {
+        "intent": "summary",
+        "summary": "有效摘要",
+        "recommendations": [],
+        "evidence_refs": [
+            {"type": "report", "id": "report-ai-1", "label": "体检报告", "detail": "综合指数 68"},
+            {"type": "category_score", "id": "market", "label": "菜市场评分", "detail": "评分 54"},
+        ],
+        "model": "规则模板",
+        "mode": "rule_template",
+        "prompt_version": "test",
+        "generated_at": "2026-01-01T00:00:00Z",
+        "data_quality_notice": "原始提示",
+        "boundary_notice": "边界提示",
+    }
+
+    filtered = _filter_hallucinated_content(valid_result, report)
+    assert filtered["mode"] == "rule_template"
+    assert len(filtered["evidence_refs"]) == 2
+    assert "降级" not in filtered["data_quality_notice"]
+
+
+def test_mixed_evidence_keeps_only_valid():
+    """防幻觉：混合有效和无效引用时，只保留有效部分，不触发完全降级。"""
+    from app.ai_assistant import _filter_hallucinated_content
+
+    report = report_fixture()
+    mixed_result = {
+        "intent": "summary",
+        "summary": "混合摘要",
+        "recommendations": [],
+        "evidence_refs": [
+            {"type": "report", "id": "report-ai-1", "label": "体检报告", "detail": "综合指数 68"},
+            {"type": "service_area", "id": "fake-grid", "label": "虚构网格", "detail": "不存在"},
+        ],
+        "model": "规则模板",
+        "mode": "rule_template",
+        "prompt_version": "test",
+        "generated_at": "2026-01-01T00:00:00Z",
+        "data_quality_notice": "原始提示",
+        "boundary_notice": "边界提示",
+    }
+
+    filtered = _filter_hallucinated_content(mixed_result, report)
+    assert filtered["mode"] == "rule_template"  # 不是完全降级
+    assert len(filtered["evidence_refs"]) == 1
+    assert filtered["evidence_refs"][0]["id"] == "report-ai-1"
+
+
 def test_ai_interpretation_api_persists_and_reopens_result(tmp_path):
     client = TestClient(create_app(database_path=tmp_path / "ai.db"))
     created = client.post("/api/analyze", json={"minutes": 15, "mode": "demo", "categories": ["market"]})
