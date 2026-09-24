@@ -21,8 +21,18 @@ button { border: 0; cursor: pointer; }
 .panel-collapse-btn { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: #5d7771; background: transparent; transition: .2s; }
 .panel-collapse-btn:hover { background: #e3efe8; color: #183d45; }
 .panel-collapse-btn svg { width: 15px; height: 15px; }
-.desktop-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.desktop-panel-heading { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; margin: -6px -8px 0; border-radius: 8px; background: transparent; color: inherit; text-align: left; cursor: pointer; transition: background .2s; }
+.desktop-panel-heading:hover { background: rgba(24, 61, 69, .06); }
+.panel-collapse-icon { width: 15px; height: 15px; color: #5d7771; transition: color .2s; }
+.desktop-panel-heading:hover .panel-collapse-icon { color: #183d45; }
+.report-heading.clickable { cursor: pointer; }
+.report-heading.clickable:hover { background: rgba(24, 61, 69, .05); }
 .report-heading .panel-collapse-btn { margin-left: 6px; }
+.panel-bulk-toggle { display: flex; gap: 2px; padding: 2px; border: 1px solid #d4ded8; border-radius: 8px; background: #e9efea; }
+.panel-bulk-toggle button { width: 24px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: transparent; color: #55716d; transition: .2s; }
+.panel-bulk-toggle button:hover:not(:disabled) { background: #fff; color: #183d45; }
+.panel-bulk-toggle button:disabled { opacity: .4; cursor: not-allowed; }
+.panel-bulk-toggle button svg { width: 13px; height: 13px; }
 .panel-rail { position: absolute; top: 50%; transform: translateY(-50%); z-index: 22; display: flex; flex-direction: column; align-items: center; gap: 9px; width: 42px; padding: 13px 0; border-radius: 14px; background: rgba(248, 250, 247, .92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(24, 61, 69, .1); box-shadow: 0 12px 34px rgba(24, 61, 69, .18); opacity: 0; pointer-events: none; transition: opacity .3s cubic-bezier(.4, 0, .2,1); }
 .panel-rail.show { opacity: 1; pointer-events: auto; }
 .panel-rail.left { left: 16px; }
@@ -300,6 +310,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
   .legend-item { font-size: 9px; }
   .mobile-legend-toggle { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 9px; border-radius: 5px; background: #e8f0eb; color: #42665f; font-size: 10px; }
   .facility-legend { display: none; }
+  .panel-bulk-toggle { display: none; }
   .mobile-map-legend {
     position: absolute;
     z-index: 7;
@@ -376,6 +387,13 @@ html[data-theme="dark"] .panel-rail b { color: #9db8b8; }
 html[data-theme="dark"] .panel-rail .rail-dot { background: #2ee6c5; box-shadow: 0 0 8px rgba(46,230,197,.7); }
 html[data-theme="dark"] .panel-collapse-btn { color: #9db8b8; }
 html[data-theme="dark"] .panel-collapse-btn:hover { background: rgba(46,230,197,.12); color: #2ee6c5; }
+html[data-theme="dark"] .desktop-panel-heading:hover { background: rgba(46,230,197,.1); }
+html[data-theme="dark"] .panel-collapse-icon { color: #9db8b8; }
+html[data-theme="dark"] .desktop-panel-heading:hover .panel-collapse-icon { color: #2ee6c5; }
+html[data-theme="dark"] .report-heading.clickable:hover { background: rgba(46,230,197,.08); }
+html[data-theme="dark"] .panel-bulk-toggle { background: rgba(20,32,44,.8); border-color: rgba(126,214,199,.24); }
+html[data-theme="dark"] .panel-bulk-toggle button { color: #9db8b8; }
+html[data-theme="dark"] .panel-bulk-toggle button:hover:not(:disabled) { background: rgba(46,230,197,.16); color: #2ee6c5; }
 /* 控制面板内部 */
 html[data-theme="dark"] .eyebrow { color: #2ee6c5; }
 html[data-theme="dark"] .control-panel h1 { color: #eaf6f3; }

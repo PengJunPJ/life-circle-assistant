@@ -4,7 +4,7 @@
       <div><div class="eyebrow">社区体检报告</div><strong>{{ report ? '查看完整报告' : '等待分析结果' }}</strong></div>
       <button class="mobile-panel-close" type="button" aria-label="关闭体检报告面板并返回地图" @click="emit('close-mobile')">×</button>
     </div>
-    <div class="report-heading"><div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div><button class="panel-collapse-btn" type="button" aria-label="收起体检报告面板，地图全屏" @click="emit('toggle-collapse')"><ArrowRight /></button></div>
+    <div class="report-heading clickable" role="presentation" @click="toggleCollapseIfDesktop"><div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div><button class="panel-collapse-btn" type="button" aria-label="收起或展开体检报告面板" @click.stop="toggleCollapseIfDesktop"><ArrowRight /></button></div>
     <ReportHistory
       :items="historyItems"
       :total="historyTotal"
@@ -124,6 +124,12 @@ const emit = defineEmits<{
   'close-mobile': []
   'toggle-collapse': []
 }>()
+
+// 标题栏整体作为折叠开关仅在桌面生效；移动端抽屉由独立关闭按钮控制。
+function toggleCollapseIfDesktop() {
+  if (window.matchMedia('(max-width: 820px)').matches) return
+  emit('toggle-collapse')
+}
 const chartRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)
 let chart: ECharts | null = null

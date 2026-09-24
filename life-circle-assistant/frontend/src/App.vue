@@ -63,6 +63,8 @@
         :loading="loading"
         :progress="progress"
         :progress-label="progressLabel"
+        :all-expanded="!collapsedControls && !collapsedReport"
+        :all-collapsed="collapsedControls && collapsedReport"
         :focus-recommendation-id="selectedRecommendationId"
         :simulation="simulationResult"
         :simulation-picking="simulationPicking"
@@ -71,6 +73,8 @@
         @select-simulation-location="selectSimulationMapLocation"
         @refresh="startAnalysis"
         @service-area-select="handleServiceAreaSelect"
+        @expand-all="expandAllPanels"
+        @collapse-all="collapseAllPanels"
       />
       <ReportPanel
         id="analysis-report-panel"
@@ -303,6 +307,16 @@ function keepWorkspaceAtOrigin() {
   if (!workspaceRef.value) return
   workspaceRef.value.scrollTop = 0
   workspaceRef.value.scrollLeft = 0
+}
+
+function expandAllPanels() {
+  collapsedControls.value = false
+  collapsedReport.value = false
+}
+
+function collapseAllPanels() {
+  collapsedControls.value = true
+  collapsedReport.value = true
 }
 
 function handleWorkspaceKeydown(event: KeyboardEvent) {

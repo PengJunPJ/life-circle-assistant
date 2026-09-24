@@ -9,6 +9,10 @@
         <span class="legend-item risk-legend"><span class="status-symbol sparse" aria-hidden="true">△</span>设施稀疏区</span>
       </div>
       <div class="map-toolbar-actions">
+        <div class="panel-bulk-toggle" role="group" aria-label="两侧面板一键展开或收起">
+          <button type="button" :disabled="allExpanded" title="一键展开两侧面板" aria-label="一键展开两侧面板" @click="emit('expand-all')"><Expand /></button>
+          <button type="button" :disabled="allCollapsed" title="一键收起两侧面板" aria-label="一键收起两侧面板" @click="emit('collapse-all')"><Fold /></button>
+        </div>
         <button class="mobile-legend-toggle" type="button" aria-controls="mobile-map-legend" :aria-expanded="showMobileLegend" @click="showMobileLegend = !showMobileLegend">图例</button>
         <button class="icon-btn" type="button" aria-label="重新运行当前分析" :disabled="loading" @click="emit('refresh')"><Refresh /></button>
       </div>
@@ -54,15 +58,15 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { Expand, Fold, Refresh } from '@element-plus/icons-vue'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
 import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
 import type { SimulationResult } from '../types/simulation'
 
-const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number; progressLabel?: string; focusRecommendationId: string | null; simulation: SimulationResult | null; simulationPicking: boolean }>()
-const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null] }>()
+const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number; progressLabel?: string; allExpanded?: boolean; allCollapsed?: boolean; focusRecommendationId: string | null; simulation: SimulationResult | null; simulationPicking: boolean }>()
+const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'expand-all': []; 'collapse-all': [] }>()
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
 const visibleCategories = toRef(props, 'visibleCategories')
