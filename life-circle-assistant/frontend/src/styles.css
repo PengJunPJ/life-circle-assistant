@@ -672,3 +672,46 @@ html[data-theme="dark"] .el-tour { --el-color-primary: #2ee6c5; }
 html[data-theme="dark"] .el-tour__content { background: #1a2836; border-color: rgba(126,214,199,.2); }
 html[data-theme="dark"] .el-tour__title { color: #eaf6f3; }
 html[data-theme="dark"] .el-tour__description { color: #9db8b8; }
+
+/* ============ 主题切换过渡 ============ */
+/* 羽化扩散半径（可动画自定义属性），由 JS 通过 WAAPI 驱动 */
+@property --vt-r {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* View Transitions：新旧快照叠加，禁用默认淡入淡出，改由 JS 驱动羽化遮罩扩散 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) {
+  z-index: 2;
+  /* 软边：中心实色，到 --vt-r 前 160px 开始渐隐，形成羽化晕染而非刀切硬边 */
+  -webkit-mask-image: radial-gradient(circle at var(--vt-x, 50%) var(--vt-y, 50%), #000 calc(var(--vt-r) - 160px), transparent var(--vt-r));
+  mask-image: radial-gradient(circle at var(--vt-x, 50%) var(--vt-y, 50%), #000 calc(var(--vt-r) - 160px), transparent var(--vt-r));
+}
+
+/* 兜底：不支持 View Transitions 或用户偏好减少动效时，做 crossfade */
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color .32s ease,
+    border-color .32s ease,
+    color .32s ease,
+    fill .32s ease,
+    stroke .32s ease,
+    box-shadow .32s ease !important;
+  transition-delay: 0s !important;
+}
+/* 兜底过渡时排除地图容器，避免瓦片 filter/opacity 被误过渡导致闪烁 */
+html.theme-transitioning .map-canvas,
+html.theme-transitioning .map-canvas *,
+html.theme-transitioning [class*="BMap"],
+html.theme-transitioning [class*="BMap"] * {
+  transition: none !important;
+}

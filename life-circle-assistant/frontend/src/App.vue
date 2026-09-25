@@ -190,11 +190,60 @@ const collapsedControls = ref(false)
 const collapsedReport = ref(false)
 const THEME_KEY = 'life-circle:theme:v1'
 const theme = ref<'dark' | 'light'>(window.localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark')
-function applyTheme(value: 'dark' | 'light') {
+const THEME_DURATION = 420
+const THEME_FEATHER = 160
+let themeBooted = false
+function commitTheme(value: 'dark' | 'light') {
   theme.value = value
   document.documentElement.setAttribute('data-theme', value)
   window.localStorage.setItem(THEME_KEY, value)
   window.dispatchEvent(new CustomEvent('life-circle:theme'))
+}
+function applyTheme(value: 'dark' | 'light', event?: MouseEvent) {
+  // 首次挂载直接落色，不做过渡
+  if (!themeBooted) {
+    themeBooted = true
+    commitTheme(value)
+    return
+  }
+  if (value === theme.value) return
+
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const supportsVT = typeof document.startViewTransition === 'function'
+  // 用户偏好减少动效 或 浏览器不支持 VT：直接切换 + crossfade 兜底
+  if (reduceMotion || !supportsVT || !event) {
+    document.documentElement.classList.add('theme-transitioning')
+    commitTheme(value)
+    window.setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 320)
+    return
+  }
+
+  // View Transitions：以点击位置为圆心的羽化软边扩散
+  const root = document.documentElement
+  const x = event.clientX
+  const y = event.clientY
+  const endRadius = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y),
+  )
+  root.style.setProperty('--vt-x', `${x}px`)
+  root.style.setProperty('--vt-y', `${y}px`)
+  const transition = document.startViewTransition(() => {
+    commitTheme(value)
+  })
+  transition.ready
+    .then(() => {
+      root.animate(
+        { '--vt-r': [`0px`, `${endRadius + THEME_FEATHER}px`] },
+        {
+          duration: THEME_DURATION,
+          easing: 'cubic-bezier(.33,1,.68,1)', // ease-out：前快后慢，收尾减速
+          pseudoElement: '::view-transition-new(root)',
+          fill: 'forwards',
+        },
+      )
+    })
+    .catch(() => { /* 动画被中断时忽略 */ })
 }
 applyTheme(theme.value)
 const mapStatus = ref<MapStatus | null>(null)

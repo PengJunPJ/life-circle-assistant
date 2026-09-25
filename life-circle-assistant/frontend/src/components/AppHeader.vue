@@ -6,8 +6,8 @@
     </div>
     <div class="topbar-actions">
       <div class="theme-switch" role="group" aria-label="主题切换">
-        <button type="button" :class="{ on: theme === 'dark' }" :aria-pressed="theme === 'dark'" title="深色科技风" aria-label="切换到深色科技风" @click="emit('update:theme', 'dark')"><Moon /></button>
-        <button type="button" :class="{ on: theme === 'light' }" :aria-pressed="theme === 'light'" title="浅色高级风" aria-label="切换到浅色高级风" @click="emit('update:theme', 'light')"><Sunny /></button>
+        <button type="button" :class="{ on: theme === 'dark' }" :aria-pressed="theme === 'dark'" title="深色科技风" aria-label="切换到深色科技风" @click="emit('update:theme', 'dark', $event)"><Moon /></button>
+        <button type="button" :class="{ on: theme === 'light' }" :aria-pressed="theme === 'light'" title="浅色高级风" aria-label="切换到浅色高级风" @click="emit('update:theme', 'light', $event)"><Sunny /></button>
       </div>
       <div class="topbar-meta">
         <span class="live-dot" :class="{ pending: mapStatusLoading, warning: !mapStatusLoading && !realApiReady }"></span>
@@ -23,5 +23,5 @@
 import { MapLocation, Moon, QuestionFilled, Sunny } from '@element-plus/icons-vue'
 
 defineProps<{ hasReport: boolean; theme: 'dark' | 'light'; mapStatusLoading: boolean; mapStatusAvailable: boolean; realApiReady: boolean }>()
-const emit = defineEmits<{ 'open-guide': []; 'update:theme': [value: 'dark' | 'light'] }>()
+const emit = defineEmits<{ 'open-guide': []; 'update:theme': [value: 'dark' | 'light', event?: MouseEvent] }>()
 </script>
