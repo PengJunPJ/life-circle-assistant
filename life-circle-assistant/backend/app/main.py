@@ -184,6 +184,50 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             raise HTTPException(status_code=502, detail=f"地图地点检索失败：{exc}") from exc
         return {"source": map_provider.descriptor.source, "results": [asdict(item) for item in results]}
 
+    @app.get("/api/route/walking")
+    async def get_walking_route(
+        origin_lng: float,
+        origin_lat: float,
+        destination_lng: float,
+        destination_lat: float,
+        request: Request,
+        map_provider: MapProvider = Depends(get_map_provider),
+    ):
+        """按需返回起点到终点的步行折线：优先读步行缓存，缺失且为真实提供方才实时请求。"""
+        cache = request.app.state.walking_cache_repository
+        origin = (origin_lng, origin_lat)
+        destination = (destination_lng, destination_lat)
+        lookup = cache.get(map_provider.descriptor.id, origin, destination)
+        result = lookup.result if lookup.status == "hit" else None
+        if result is None or not result.steps:
+            if map_provider.descriptor.mode != "real":
+                raise HTTPException(status_code=409, detail="当前地图提供方不支持真实步行路线")
+            if result is None:
+                walking_service = WalkingService(map_provider, cache, request.app.state.walking_settings)
+                matrix = await walking_service.walking_matrix([origin], [destination])
+                result = matrix[0][0]
+            else:
+                # 旧缓存行只有距离/时长、没有折线：直连提供方补取并回写缓存。
+                matrix = await map_provider.walking_matrix([origin], [destination])
+                fresh = matrix[0][0]
+                if fresh.success and fresh.steps:
+                    cache.put(
+                        map_provider.descriptor.id,
+                        fresh,
+                        ttl_seconds=request.app.state.walking_settings.cache_ttl_seconds,
+                    )
+                    result = fresh
+            if not result.success or not result.steps:
+                raise HTTPException(status_code=404, detail="两点之间没有可用步行路线")
+        return {
+            "origin": {"lng": origin[0], "lat": origin[1]},
+            "destination": {"lng": destination[0], "lat": destination[1]},
+            "distance_m": result.distance_m,
+            "duration_s": result.duration_s,
+            "polyline": result.steps,
+            "source": result.source,
+        }
+
     @app.get("/api/demo/default")
     def default_demo():
         return {"center": CENTER, "categories": CATEGORIES}

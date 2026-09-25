@@ -85,4 +85,38 @@ describe('服务区域选中定位', () => {
     expect(strokes).toContain(5)
     expect(labels).toContain('已选')
   })
+
+  it('Canvas 模式悬停设施点延迟生成悬浮目标，移开即清除', async () => {
+    vi.useFakeTimers()
+    const poiReport = {
+      ...report,
+      pois: [{ id: 'poi-1', name: '测试药店', category: 'pharmacy', lng: 113.4872, lat: 23.1068, walk_minutes: 5, walk_distance_m: 300 }],
+    } as unknown as Report
+    let renderer: ReturnType<typeof useMapRenderer> | null = null
+    const Harness = defineComponent({
+      setup() {
+        renderer = useMapRenderer({
+          report: ref(poiReport),
+          analysisCenter: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
+          visibleCategories: ref(['pharmacy']), showNormal: ref(true), showSparse: ref(true), showCritical: ref(true),
+          focusRecommendationId: ref(null), simulation: ref(null), simulationPicking: ref(false),
+          onSelectCenter: vi.fn(), onSelectSimulationLocation: vi.fn(),
+        })
+        return () => h('canvas', { ref: renderer!.mapCanvas })
+      },
+    })
+
+    mount(Harness)
+    await nextTick()
+    expect(renderer!.hoverTarget.value).toBeNull()
+
+    renderer!.handleCanvasMouseMove({ clientX: 450, clientY: 320 } as MouseEvent)
+    expect(renderer!.hoverTarget.value).toBeNull()
+    vi.advanceTimersByTime(150)
+    expect(renderer!.hoverTarget.value?.poi.id).toBe('poi-1')
+
+    renderer!.handleCanvasMouseLeave()
+    expect(renderer!.hoverTarget.value).toBeNull()
+    vi.useRealTimers()
+  })
 })

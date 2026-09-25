@@ -1,13 +1,32 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import ElMessage from 'element-plus/es/components/message/index'
-import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
+import { ROUTE_ARROW_SPACING, ROUTE_BORDER, ROUTE_COLOR, categoryColor, categoryShort } from '../constants/facilities'
 import { drawCanvasAnalysisCenter, renderBaiduAnalysisCenter } from '../mapLayers/analysisCenterLayer'
 import { fetchMapConfig } from '../services/analysisApi'
-import type { AnalysisCenter } from '../types/location'
-import type { Report, ServiceAreaFeature } from '../types/report'
+import type { AnalysisCenter, WalkingRoute } from '../types/location'
+import type { Poi, Report, ServiceAreaFeature } from '../types/report'
 import type { PlanningRecommendation } from '../types/recommendations'
 import type { SimulationResult } from '../types/simulation'
 import { isServiceAreaVisible, pointInPolygon } from '../utils/serviceAreaLayers'
+import { computeRouteArrows } from '../utils/routeArrows'
+
+export type MapHoverTarget = { poi: Poi; x: number; y: number }
+export type MapRoutePreview = { poi: Poi; route: WalkingRoute }
+
+function drawRouteEndpointLabel(context: CanvasRenderingContext2D, x: number, y: number, text: string) {
+  context.font = '700 10px sans-serif'
+  const width = context.measureText(text).width + 14
+  const anyCtx = context as any
+  context.fillStyle = ROUTE_BORDER
+  context.beginPath()
+  if (typeof anyCtx.roundRect === 'function') anyCtx.roundRect(x - width / 2, y - 9, width, 18, 9)
+  else context.rect(x - width / 2, y - 9, width, 18)
+  context.fill()
+  context.fillStyle = '#fff'
+  context.textAlign = 'center'
+  context.textBaseline = 'middle'
+  context.fillText(text, x, y + .5)
+}
 
 type MapRendererOptions = {
   report: Ref<Report | null>
@@ -31,6 +50,58 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   const selectedServiceArea = ref<ServiceAreaFeature | null>(null)
   let baiduMap: any = null
   let baiduClickBound = false
+  const hoverTarget = ref<MapHoverTarget | null>(null)
+  const routePreview = ref<MapRoutePreview | null>(null)
+  let hoverTimer: number | undefined
+  let hoverClearTimer: number | undefined
+
+  function clearHoverTimer() {
+    if (hoverTimer !== undefined) { window.clearTimeout(hoverTimer); hoverTimer = undefined }
+  }
+
+  function clearHoverClearTimer() {
+    if (hoverClearTimer !== undefined) { window.clearTimeout(hoverClearTimer); hoverClearTimer = undefined }
+  }
+
+  function clearHover() {
+    clearHoverTimer()
+    clearHoverClearTimer()
+    hoverTarget.value = null
+  }
+
+  // 鼠标从 marker 移向卡片按钮时会先触发 mouseout；给一个宽限期，
+  // 若期间进入卡片（retainHover）则取消隐藏，保证按钮点得到。
+  function requestClearHover() {
+    clearHoverTimer()
+    clearHoverClearTimer()
+    hoverClearTimer = window.setTimeout(() => { hoverTarget.value = null }, 160)
+  }
+
+  function retainHover() {
+    clearHoverTimer()
+    clearHoverClearTimer()
+  }
+
+  function scheduleHover(poi: Poi, x: number, y: number, sticky = false) {
+    clearHoverTimer()
+    clearHoverClearTimer()
+    if (sticky) { hoverTarget.value = { poi, x, y }; return }
+    hoverTimer = window.setTimeout(() => { hoverTarget.value = { poi, x, y } }, 120)
+  }
+
+  function visiblePois(): Poi[] {
+    return (report.value?.pois || []).filter((poi) => visibleCategories.value.includes(poi.category))
+  }
+
+  function hitTestPoi(point: { x: number; y: number }, width: number, height: number): MapHoverTarget | null {
+    const hit = [...visiblePois()].reverse().find((poi) => {
+      const projected = project(poi.lng, poi.lat, width, height)
+      return Math.hypot(point.x - projected.x, point.y - projected.y) <= 14
+    })
+    if (!hit) return null
+    const projected = project(hit.lng, hit.lat, width, height)
+    return { poi: hit, x: projected.x, y: projected.y }
+  }
 
   function serviceAreaCenter(feature: ServiceAreaFeature) {
     const coordinates = feature.geometry.coordinates[0]
@@ -122,6 +193,45 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       simulationAreas().forEach((zone) => {
         drawPolygon(zone.geometry.coordinates[0], 'rgba(51, 126, 184, .18)', '#2f70a5', 3)
       })
+      const preview = routePreview.value
+      if (preview) {
+        // 首尾补上起点/终点，保证路线真正连到地图上的两个点
+        const drawnPath: [number, number][] = [
+          [preview.route.origin.lng, preview.route.origin.lat],
+          ...preview.route.polyline,
+          [preview.route.destination.lng, preview.route.destination.lat],
+        ]
+        if (drawnPath.length > 1) {
+          const tracePath = () => {
+            ctx.beginPath()
+            drawnPath.forEach(([lng, lat], index) => {
+              const point = project(lng, lat, w, h)
+              index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)
+            })
+          }
+          // 导航式实线：白色外发光 + 深绿描边 + 浅绿芯线，圆角连接
+          ctx.lineJoin = 'round'
+          ctx.lineCap = 'round'
+          tracePath(); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 10; ctx.stroke()
+          tracePath(); ctx.strokeStyle = ROUTE_BORDER; ctx.lineWidth = 8; ctx.stroke()
+          tracePath(); ctx.strokeStyle = ROUTE_COLOR; ctx.lineWidth = 5; ctx.stroke()
+          computeRouteArrows(drawnPath, (lng, lat) => project(lng, lat, w, h), (x, y) => unproject(x, y, w, h), ROUTE_ARROW_SPACING)
+            .forEach((arrow) => {
+              ctx.save()
+              ctx.translate(arrow.x, arrow.y)
+              ctx.rotate((arrow.bearing * Math.PI) / 180)
+              ctx.beginPath()
+              ctx.moveTo(-4, -4.5); ctx.lineTo(4.5, 0); ctx.lineTo(-4, 4.5); ctx.lineTo(-1.5, 0); ctx.closePath()
+              ctx.fillStyle = 'rgba(255,255,255,.95)'
+              ctx.fill()
+              ctx.restore()
+            })
+        }
+        const start = project(preview.route.origin.lng, preview.route.origin.lat, w, h)
+        const end = project(preview.route.destination.lng, preview.route.destination.lat, w, h)
+        drawRouteEndpointLabel(ctx, start.x, start.y - 16, '起点')
+        drawRouteEndpointLabel(ctx, end.x, end.y + 16, '终点')
+      }
       currentReport.pois.filter((poi) => visibleCategories.value.includes(poi.category)).forEach((poi) => {
         const point = project(poi.lng, poi.lat, w, h)
         ctx.beginPath(); ctx.arc(point.x, point.y, 12, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill()
@@ -235,6 +345,12 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       onSelectSimulationLocation(location.lng, location.lat)
       return
     }
+    const poiHit = hitTestPoi(point, rect.width, rect.height)
+    if (poiHit) {
+      scheduleHover(poiHit.poi, point.x, point.y, true)
+      return
+    }
+    clearHover()
     const candidateHit = [...visibleCandidates()].reverse().find(({ candidate }) => {
       const projected = project(candidate.lng, candidate.lat, rect.width, rect.height)
       return Math.hypot(point.x - projected.x, point.y - projected.y) <= 14
@@ -254,6 +370,23 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     selectedServiceArea.value = null
     const location = unproject(point.x, point.y, rect.width, rect.height)
     onSelectCenter(location.lng, location.lat)
+  }
+
+  function handleCanvasMouseMove(event: MouseEvent) {
+    if (realMapReady.value || simulationPicking.value) return
+    const canvas = mapCanvas.value
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    const hit = hitTestPoi(point, rect.width, rect.height)
+    if (!hit) { requestClearHover(); return }
+    if (hoverTarget.value?.poi.id === hit.poi.id) return
+    scheduleHover(hit.poi, point.x, point.y)
+  }
+
+  function handleCanvasMouseLeave() {
+    if (realMapReady.value) return
+    clearHover()
   }
 
   function serviceAreaById(regionId: string): ServiceAreaFeature | null {
@@ -296,6 +429,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   function renderBaiduMap() {
     const BMap = (window as any).BMap
     if (!BMap || !mapContainer.value) return
+    clearHover()
     if (!baiduMap) {
       baiduMap = new BMap.Map(mapContainer.value)
       baiduMap.enableScrollWheelZoom(true)
@@ -307,6 +441,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         if (simulationPicking.value) onSelectSimulationLocation(event.point.lng, event.point.lat)
         else onSelectCenter(event.point.lng, event.point.lat)
       })
+      baiduMap.addEventListener('movestart', () => clearHover())
+      baiduMap.addEventListener('zoomstart', () => clearHover())
       baiduClickBound = true
     }
     const center = new BMap.Point(analysisCenter.value.lng, analysisCenter.value.lat)
@@ -361,13 +497,61 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         const points = zone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
         baiduMap.addOverlay(new BMap.Polygon(points, { strokeColor: '#2f70a5', strokeWeight: 3, strokeOpacity: 1, fillColor: '#6aa2cc', fillOpacity: .18 }))
       })
-      currentReport.pois.filter((poi) => visibleCategories.value.includes(poi.category)).forEach((poi) => {
+      const preview = routePreview.value
+      if (preview && preview.route.polyline.length > 0) {
+        const drawnPath: [number, number][] = [
+          [preview.route.origin.lng, preview.route.origin.lat],
+          ...preview.route.polyline,
+          [preview.route.destination.lng, preview.route.destination.lat],
+        ]
+        const points = drawnPath.map(([lng, lat]) => new BMap.Point(lng, lat))
+        const solid = { strokeStyle: 'solid' as const, strokeLineCap: 'round' as const, strokeLineJoin: 'round' as const }
+        // 导航式实线：白色外发光 + 深绿描边 + 浅绿芯线
+        baiduMap.addOverlay(new BMap.Polyline(points, { ...solid, strokeColor: '#ffffff', strokeWeight: 10, strokeOpacity: .8 }))
+        baiduMap.addOverlay(new BMap.Polyline(points, { ...solid, strokeColor: ROUTE_BORDER, strokeWeight: 8, strokeOpacity: .96 }))
+        baiduMap.addOverlay(new BMap.Polyline(points, { ...solid, strokeColor: ROUTE_COLOR, strokeWeight: 5, strokeOpacity: 1 }))
+        computeRouteArrows(
+          drawnPath,
+          (lng, lat) => baiduMap.pointToOverlayPixel(new BMap.Point(lng, lat)),
+          (x, y) => baiduMap.overlayPixelToPoint(new BMap.Pixel(x, y)),
+          ROUTE_ARROW_SPACING,
+        ).forEach((arrow) => {
+          const arrowLabel = new BMap.Label(`<span class="route-arrow" style="transform: rotate(${arrow.bearing.toFixed(1)}deg)"></span>`, {
+            position: new BMap.Point(arrow.lng, arrow.lat), offset: new BMap.Size(0, 0),
+          })
+          arrowLabel.setStyle({ border: '0', background: 'transparent', padding: '0', zIndex: '26' })
+          baiduMap.addOverlay(arrowLabel)
+        })
+        const startLabel = new BMap.Label('<span class="route-endpoint-label">起点</span>', {
+          position: new BMap.Point(preview.route.origin.lng, preview.route.origin.lat), offset: new BMap.Size(-16, -34),
+        })
+        startLabel.setStyle({ border: '0', background: 'transparent', padding: '0', zIndex: '27' })
+        baiduMap.addOverlay(startLabel)
+        const endLabel = new BMap.Label('<span class="route-endpoint-label">终点</span>', {
+          position: new BMap.Point(preview.route.destination.lng, preview.route.destination.lat), offset: new BMap.Size(-16, 14),
+        })
+        endLabel.setStyle({ border: '0', background: 'transparent', padding: '0', zIndex: '27' })
+        baiduMap.addOverlay(endLabel)
+      }
+      visiblePois().forEach((poi) => {
         const point = new BMap.Point(poi.lng, poi.lat)
         const marker = new BMap.Marker(point)
-        marker.setTitle(`${poi.name} · ${FACILITY_LABELS[poi.category] || poi.category}`)
-        baiduMap.addOverlay(marker)
+        const showAt = (event: any, sticky = false) => {
+          const pixel = event?.pixel || baiduMap.pointToOverlayPixel(point)
+          scheduleHover(poi, pixel.x, pixel.y, sticky)
+        }
         const label = new BMap.Label(`<span class="facility-map-label facility-${poi.category}"><b>${categoryShort(poi.category)}</b><span>${poi.name}</span></span>`, { position: point, offset: new BMap.Size(-15, -15) })
         label.setStyle({ border: '0', background: 'transparent', padding: '0', whiteSpace: 'nowrap', zIndex: '20' })
+        // 名称标签 pill 覆盖在 marker 之上，两者都要绑定悬停，保证鼠标移到可见图形上即弹卡片
+        ;[marker, label].forEach((overlay) => {
+          overlay.addEventListener('mouseover', (event: any) => showAt(event))
+          overlay.addEventListener('mouseout', () => requestClearHover())
+          overlay.addEventListener('click', (event: any) => {
+            showAt(event, true)
+            event?.domEvent?.stopPropagation?.()
+          })
+        })
+        baiduMap.addOverlay(marker)
         baiduMap.addOverlay(label)
       })
       visibleCandidates().forEach(({ candidate, recommendation }) => {
@@ -403,7 +587,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     else drawMap()
   }
 
-  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, selectedServiceArea], async () => {
+  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, selectedServiceArea, routePreview], async () => {
+    clearHover()
     if (selectedServiceArea.value && !isServiceAreaVisible(selectedServiceArea.value, visibleCategories.value, visibility())) {
       selectedServiceArea.value = null
     }
@@ -414,6 +599,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     await nextTick()
     realMapReady.value ? renderBaiduMap() : drawMap()
   })
+  // 报告或分析中心变化后，旧路线不再对应新结果，自动清除
+  watch([report, analysisCenter], () => { routePreview.value = null })
   onMounted(async () => {
     window.addEventListener('resize', resize)
     window.addEventListener('life-circle:theme', redrawForTheme)
@@ -435,9 +622,16 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     realMapReady,
     mapLoadComplete,
     selectedServiceArea,
+    hoverTarget,
+    routePreview,
+    setRoutePreview: (preview: MapRoutePreview | null) => { routePreview.value = preview },
+    retainHover,
+    clearHover,
     visibleServiceAreas,
     selectServiceArea: (feature: ServiceAreaFeature) => { selectedServiceArea.value = feature },
     handleCanvasClick,
+    handleCanvasMouseMove,
+    handleCanvasMouseLeave,
     closeServiceAreaEvidence: () => { selectedServiceArea.value = null },
     drawMap,
     renderBaiduMap,

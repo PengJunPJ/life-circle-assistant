@@ -64,6 +64,7 @@ class WalkingResult:
     underlying_source: DataSourceKind | None = None
     cached_at: str | None = None
     expires_at: str | None = None
+    steps: list | None = None
 
 
 class MapProvider(Protocol):

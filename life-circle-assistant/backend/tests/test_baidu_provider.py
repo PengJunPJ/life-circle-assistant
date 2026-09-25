@@ -71,3 +71,18 @@ def test_all_baidu_requests_share_configured_qps_limit(monkeypatch):
     asyncio.run(exercise())
 
     assert sleeps == [0.5, 0.5]
+
+
+def test_steps_to_polyline_parses_string_and_object_paths():
+    from app.maps.baidu import steps_to_polyline
+
+    string_form = [
+        {"path": "113.1,23.1;113.2,23.2;113.2,23.2"},
+        {"path": "113.3,23.3"},
+    ]
+    assert steps_to_polyline(string_form) == [[113.1, 23.1], [113.2, 23.2], [113.3, 23.3]]
+
+    object_form = [{"path": [{"lng": 113.4, "lat": 23.4}, {"x": 113.5, "y": 23.5}]}]
+    assert steps_to_polyline(object_form) == [[113.4, 23.4], [113.5, 23.5]]
+
+    assert steps_to_polyline([{"path": "bad"}, {"nope": 1}, None]) == []

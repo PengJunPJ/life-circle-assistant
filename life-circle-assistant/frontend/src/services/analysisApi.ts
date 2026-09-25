@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../constants/facilities'
 import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
-import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate } from '../types/location'
+import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate, WalkingRoute } from '../types/location'
 import type { AiInterpretation, AiInterpretationIntent, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapStatus, Report } from '../types/report'
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
 import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
@@ -20,6 +20,16 @@ export async function fetchMapConfig() {
 
 export async function fetchMapStatus() {
   return parseResponse<MapStatus>(await fetch(`${API_BASE_URL}/api/map/status`))
+}
+
+export async function fetchWalkingRoute(origin: { lng: number; lat: number }, destination: { lng: number; lat: number }) {
+  const query = new URLSearchParams({
+    origin_lng: String(origin.lng),
+    origin_lat: String(origin.lat),
+    destination_lng: String(destination.lng),
+    destination_lat: String(destination.lat),
+  })
+  return parseResponse<WalkingRoute>(await fetch(`${API_BASE_URL}/api/route/walking?${query}`))
 }
 
 export async function searchAddressCandidates(address: string) {

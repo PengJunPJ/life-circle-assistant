@@ -9,6 +9,8 @@
         <span class="legend-item risk-legend"><span class="status-symbol sparse" aria-hidden="true">△</span>设施稀疏区</span>
       </div>
       <div class="map-toolbar-actions">
+        <span v-if="routePreview" class="route-chip" role="status">步行路线 · {{ routePreview.poi.name }} · {{ Math.round(routePreview.route.duration_s / 60) }} 分钟</span>
+        <button v-if="routePreview" class="icon-btn" type="button" title="清除步行路线" aria-label="清除步行路线" @click="setRoutePreview(null)"><Close /></button>
         <div class="panel-bulk-toggle" role="group" aria-label="两侧面板一键展开或收起">
           <button type="button" :disabled="allExpanded" title="一键展开两侧面板" aria-label="一键展开两侧面板" @click="emit('expand-all')"><Expand /></button>
           <button type="button" :disabled="allCollapsed" title="一键收起两侧面板" aria-label="一键收起两侧面板" @click="emit('collapse-all')"><Fold /></button>
@@ -27,7 +29,18 @@
       <span v-if="report?.recommendations.length"><b class="category-symbol candidate-legend" aria-hidden="true">候</b>规划候选点</span>
       <span v-if="simulation"><b class="category-symbol simulation-legend" aria-hidden="true">拟</b>假设设施和模拟区域</span>
     </div>
-    <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking }" role="region" aria-label="百度地图生活圈分析区域"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking }" role="img" aria-label="生活圈分析地图画布" @click="handleCanvasClick"></canvas>
+    <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking }" role="region" aria-label="百度地图生活圈分析区域"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking }" role="img" aria-label="生活圈分析地图画布" @click="handleCanvasClick" @mousemove="handleCanvasMouseMove" @mouseleave="handleCanvasMouseLeave"></canvas>
+    <MapHoverCard
+      :target="hoverTarget"
+      :minutes="minutes"
+      :route-available="routeAvailable"
+      :route-loading="routeLoading"
+      :route-active="routePreview?.poi.id === hoverTarget?.poi.id"
+      @show-route="handleShowRoute"
+      @hide-route="setRoutePreview(null)"
+      @retain="retainHover"
+      @release="clearHover"
+    />
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
     <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>{{ progressLabel || '正在计算真实步行可达性' }}… {{ progress }}% · 已耗时 {{ elapsedLabel }}</span></div>
     <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
@@ -57,10 +70,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from 'vue'
-import { Expand, Fold, Refresh } from '@element-plus/icons-vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
+import { Close, Expand, Fold, Refresh } from '@element-plus/icons-vue'
+import ElMessage from 'element-plus/es/components/message/index'
 import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
+import { fetchWalkingRoute } from '../services/analysisApi'
+import MapHoverCard from './MapHoverCard.vue'
+import type { Poi } from '../types/report'
 import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
 import type { SimulationResult } from '../types/simulation'
@@ -91,7 +108,7 @@ watch(() => props.loading, (value) => {
 }, { immediate: true })
 onBeforeUnmount(() => { if (elapsedTimer !== undefined) window.clearInterval(elapsedTimer) })
 const evidenceRef = ref<HTMLElement | null>(null)
-const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, visibleServiceAreas, selectServiceArea, handleCanvasClick, closeServiceAreaEvidence } = useMapRenderer({
+const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, hoverTarget, routePreview, setRoutePreview, retainHover, clearHover, visibleServiceAreas, selectServiceArea, handleCanvasClick, handleCanvasMouseMove, handleCanvasMouseLeave, closeServiceAreaEvidence } = useMapRenderer({
   report,
   analysisCenter,
   visibleCategories,
@@ -105,6 +122,28 @@ const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceA
   onSelectSimulationLocation: (lng, lat) => emit('select-simulation-location', lng, lat),
 })
 const keyboardServiceAreas = computed(() => visibleServiceAreas())
+
+const routeLoading = ref(false)
+const routeAvailable = computed(() => props.report?.calculation_mode?.provider_mode === 'real')
+
+async function handleShowRoute(poi: Poi) {
+  if (routeLoading.value) return
+  routeLoading.value = true
+  try {
+    const route = await fetchWalkingRoute({ lng: props.analysisCenter.lng, lat: props.analysisCenter.lat }, { lng: poi.lng, lat: poi.lat })
+    setRoutePreview({ poi, route })
+  } catch (error) {
+    ElMessage.warning(error instanceof Error ? error.message : '步行路线获取失败')
+  } finally {
+    routeLoading.value = false
+  }
+}
+
+function handleEscape(event: KeyboardEvent) {
+  if (event.key === 'Escape') setRoutePreview(null)
+}
+onMounted(() => window.addEventListener('keydown', handleEscape))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape))
 
 function formatMetric(value: number | null, unit: string) {
   return value === null ? '无有效结果' : `${value}${unit}`

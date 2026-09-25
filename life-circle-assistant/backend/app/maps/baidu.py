@@ -22,6 +22,37 @@ FACILITY_QUERIES = {
 }
 
 
+def steps_to_polyline(steps: list) -> list:
+    """把百度 directionlite 的 steps 归一化为 [[lng, lat], ...] 折线。
+
+    兼容 ``path`` 为 ``"lng,lat;lng,lat"`` 字符串或坐标对象列表两种形态。
+    """
+    polyline: list = []
+    for step in steps or []:
+        path = step.get("path") if isinstance(step, dict) else None
+        points = []
+        if isinstance(path, str):
+            for pair in path.split(";"):
+                if "," not in pair:
+                    continue
+                lng, _, lat = pair.partition(",")
+                points.append((lng, lat))
+        elif isinstance(path, list):
+            for item in path:
+                if isinstance(item, dict):
+                    lng = item.get("lng", item.get("x"))
+                    lat = item.get("lat", item.get("y"))
+                    points.append((lng, lat))
+        for lng, lat in points:
+            try:
+                coordinate = [round(float(lng), 6), round(float(lat), 6)]
+            except (TypeError, ValueError):
+                continue
+            if not polyline or polyline[-1] != coordinate:
+                polyline.append(coordinate)
+    return polyline
+
+
 class BaiduMapProvider:
     def __init__(self, client: BaiduMapClient | None = None, concurrency: int = 6) -> None:
         self.client = client or BaiduMapClient()
@@ -112,6 +143,7 @@ class BaiduMapProvider:
                         duration_s=route["duration_s"],
                         source="real_api",
                         method="baidu_walking_route",
+                        steps=steps_to_polyline(route.get("steps") or []),
                     )
                 except BaiduMapError as exc:
                     return WalkingResult(

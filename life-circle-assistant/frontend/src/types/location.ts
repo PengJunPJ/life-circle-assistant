@@ -23,3 +23,12 @@ export type LocationApiResponse = {
   provider: string
   result: { lng: number; lat: number; address: string }
 }
+
+export type WalkingRoute = {
+  origin: { lng: number; lat: number }
+  destination: { lng: number; lat: number }
+  distance_m: number
+  duration_s: number
+  polyline: [number, number][]
+  source: string
+}

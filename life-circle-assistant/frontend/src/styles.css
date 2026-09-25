@@ -62,6 +62,36 @@ button { border: 0; cursor: pointer; }
 .simulation-legend b { background: #2f70a5; }
 .simulation-map-label { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px 2px 2px; border: 1px solid rgba(47,112,165,.45); border-radius: 13px; background: rgba(255,255,255,.97); box-shadow: 0 2px 8px rgba(35,78,112,.22); color: #214e73; font: 700 10px/1.2 Inter, "PingFang SC", sans-serif; }
 .simulation-map-label b { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #2f70a5; color: #fff; font-size: 9px; }
+.map-hover-card { position: absolute; z-index: 6; width: 232px; padding: 12px 14px 11px; border: 1px solid #d5dfda; border-left: 4px solid var(--accent, #2f8f80); border-radius: 8px; background: rgba(250,252,249,.98); box-shadow: 0 10px 30px rgba(30,61,57,.18); color: #17333d; pointer-events: auto; }
+.map-hover-card::after { content: ''; position: absolute; bottom: -6px; left: calc(var(--pointer-x, 50%) - 6px); width: 12px; height: 12px; background: rgba(250,252,249,.98); border-right: 1px solid #d5dfda; border-bottom: 1px solid #d5dfda; transform: rotate(45deg); }
+.map-hover-card.below::after { bottom: auto; top: -6px; border-right: 0; border-bottom: 0; border-left: 1px solid #d5dfda; border-top: 1px solid #d5dfda; }
+.map-hover-card.st-ok { --accent: #2f8f80; }
+.map-hover-card.st-warn { --accent: #cd8e25; }
+.map-hover-card.st-bad { --accent: #c75c43; }
+.map-hover-card.st-none { --accent: #69757d; }
+.map-hover-card .hc-head { display: flex; align-items: center; gap: 7px; }
+.map-hover-card .hc-chip { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 700 10px sans-serif; }
+.map-hover-card .hc-cat { font-size: 10px; color: #5c9188; letter-spacing: .1em; }
+.map-hover-card .hc-name { display: block; margin-top: 5px; font-size: 14px; font-weight: 700; line-height: 1.3; }
+.map-hover-card .hc-hero { display: flex; align-items: baseline; gap: 6px; margin-top: 11px; }
+.map-hover-card .hc-hero .num { font-size: 27px; font-weight: 800; line-height: 1; color: var(--accent, #2f8f80); font-variant-numeric: tabular-nums; }
+.map-hover-card .hc-hero .unit { font-size: 12px; color: #6b7d78; }
+.map-hover-card .hc-badge { margin-left: auto; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #fff; background: var(--accent, #2f8f80); }
+.map-hover-card .hc-sub { margin-top: 8px; padding-top: 9px; border-top: 1px solid #e4ebe7; display: flex; flex-direction: column; gap: 5px; }
+.map-hover-card .hc-row { display: flex; justify-content: space-between; font-size: 11px; }
+.map-hover-card .hc-row .k { color: #8a9995; }
+.map-hover-card .hc-row .v { color: #6b7d78; font-weight: 600; }
+.map-hover-card .hc-foot { margin-top: 8px; font-size: 10px; color: #8a9995; display: flex; align-items: center; gap: 5px; }
+.map-hover-card .hc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #2f8f80); flex: none; }
+.map-hover-card .hc-hint { margin-top: 7px; font-size: 10px; color: #8a9995; opacity: .8; }
+.map-hover-card .hc-route-btn { margin-top: 9px; width: 100%; padding: 6px 10px; border: 1px solid var(--accent, #2f8f80); border-radius: 5px; background: transparent; color: var(--accent, #2f8f80); font: 600 11px/1.2 Inter, "PingFang SC", sans-serif; cursor: pointer; }
+.map-hover-card .hc-route-btn:hover:not(:disabled) { background: rgba(47,143,128,.1); }
+.map-hover-card .hc-route-btn:disabled { opacity: .55; cursor: not-allowed; border-color: #9aa8a4; color: #7d8b88; }
+.route-chip { padding: 3px 9px; border-radius: 11px; background: rgba(47,158,68,.12); color: #2b8a3e; font-size: 10px; font-weight: 600; white-space: nowrap; }
+.route-arrow { display: block; width: 12px; height: 10px; margin: -5px 0 0 -6px; background: rgba(255,255,255,.95); clip-path: polygon(0 0, 100% 50%, 0 100%, 32% 50%); }
+.route-endpoint-label { display: inline-grid; place-items: center; padding: 2px 8px; border-radius: 10px; background: #2f9e44; color: #fff; font: 700 10px/1.3 Inter, "PingFang SC", sans-serif; letter-spacing: .06em; white-space: nowrap; box-shadow: 0 2px 6px rgba(20,60,30,.3); }
+.map-hover-card-enter-active, .map-hover-card-leave-active { transition: opacity .14s ease, transform .14s ease; }
+.map-hover-card-enter-from, .map-hover-card-leave-to { opacity: 0; transform: translateY(4px); }
 .map-container.picking, .map-canvas.picking { cursor: copy; }
 .quality-details { margin: -8px 0 16px; padding: 12px; border: 1px solid #d7e5de; border-radius: 5px; background: #f4f8f5; color: #536a65; font-size: 10px; }
 .quality-details-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
@@ -478,6 +508,21 @@ html[data-theme="dark"] .candidate-map-label.focused { border-color: #eaf6f3; co
 html[data-theme="dark"] .candidate-map-label.focused b { background: #eaf6f3; color: #04211c; }
 html[data-theme="dark"] .simulation-map-label { background: rgba(30,48,66,.97); border-color: rgba(56,189,248,.5); color: #9fd3f5; }
 html[data-theme="dark"] .selected-area-map-label { background: rgba(46,230,197,.92); color: #04211c; }
+html[data-theme="dark"] .map-hover-card { background: rgba(24,40,56,.97); border-color: rgba(126,214,199,.22); box-shadow: 0 12px 34px rgba(0,0,0,.55); color: #eaf6f3; }
+html[data-theme="dark"] .map-hover-card::after { background: rgba(24,40,56,.97); border-color: rgba(126,214,199,.22); }
+html[data-theme="dark"] .map-hover-card.st-ok { --accent: #2ee6c5; }
+html[data-theme="dark"] .map-hover-card.st-warn { --accent: #e5b567; }
+html[data-theme="dark"] .map-hover-card.st-bad { --accent: #ef8a72; }
+html[data-theme="dark"] .map-hover-card.st-none { --accent: #8fa3ad; }
+html[data-theme="dark"] .map-hover-card .hc-cat { color: #2ee6c5; }
+html[data-theme="dark"] .map-hover-card .hc-hero .unit { color: #9db8b8; }
+html[data-theme="dark"] .map-hover-card .hc-sub { border-top-color: rgba(126,214,199,.16); }
+html[data-theme="dark"] .map-hover-card .hc-row .k { color: #6f8b90; }
+html[data-theme="dark"] .map-hover-card .hc-row .v { color: #9db8b8; }
+html[data-theme="dark"] .map-hover-card .hc-foot, html[data-theme="dark"] .map-hover-card .hc-hint { color: #6f8b90; }
+html[data-theme="dark"] .map-hover-card .hc-route-btn:disabled { border-color: #55707a; color: #6f8b90; }
+html[data-theme="dark"] .route-chip { background: rgba(105,219,124,.16); color: #69db7c; }
+html[data-theme="dark"] .route-endpoint-label { background: #37b24d; color: #04210c; box-shadow: 0 2px 8px rgba(0,0,0,.45); }
 /* 报告面板内部 */
 html[data-theme="dark"] .report-heading { border-bottom-color: rgba(126,214,199,.1); }
 html[data-theme="dark"] .report-heading h2 { color: #eaf6f3; }

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POI 悬浮卡片原型 · 15分钟生活圈</title>
+<style>
+  :root {
+    --bg: #eef2f0;
+    --stage: #dce3df;
+    --card-bg: rgba(250, 252, 249, .98);
+    --card-border: #d5dfda;
+    --card-shadow: 0 10px 30px rgba(30, 61, 57, .18);
+    --title: #17333d;
+    --kicker: #5c9188;
+    --muted: #6b7d78;
+    --faint: #8a9995;
+    --divider: #e4ebe7;
+    --ok: #2f8f80;
+    --warn: #cd8e25;
+    --bad: #c75c43;
+  }
+  html[data-theme="dark"] {
+    --bg: #0e1a24;
+    --stage: #16283a;
+    --card-bg: rgba(24, 40, 56, .97);
+    --card-border: rgba(126, 214, 199, .22);
+    --card-shadow: 0 12px 34px rgba(0, 0, 0, .55);
+    --title: #eaf6f3;
+    --kicker: #2ee6c5;
+    --muted: #9db8b8;
+    --faint: #6f8b90;
+    --divider: rgba(126, 214, 199, .16);
+    --ok: #2ee6c5;
+    --warn: #e5b567;
+    --bad: #ef8a72;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px;
+    background: var(--bg);
+    font: 13px/1.5 Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--title);
+    transition: background .25s;
+  }
+  .page-head { display: flex; align-items: center; justify-content: space-between; max-width: 1080px; margin: 0 auto 20px; }
+  .page-head h1 { font-size: 17px; margin: 0; }
+  .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+  .theme-toggle { padding: 7px 15px; border: 1px solid var(--card-border); border-radius: 6px; background: var(--card-bg); color: var(--title); cursor: pointer; font-size: 12px; }
+  .grid { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 26px; }
+  .demo { position: relative; height: 300px; border-radius: 10px; overflow: hidden; background: var(--stage); border: 1px solid var(--card-border); }
+  .demo-label { position: absolute; z-index: 5; top: 10px; left: 12px; padding: 3px 9px; border-radius: 4px; background: rgba(0,0,0,.28); color: #fff; font-size: 11px; letter-spacing: .04em; }
+  /* 假地图网格底纹 */
+  .demo::before {
+    content: ''; position: absolute; inset: 0; opacity: .5;
+    background-image: linear-gradient(rgba(255,255,255,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.14) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+  /* POI 圆点标记 */
+  .poi { position: absolute; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 700 11px sans-serif; border: 2px solid rgba(255,255,255,.96); box-shadow: 0 2px 8px rgba(20,47,48,.35); cursor: pointer; }
+
+  /* ===== 悬浮卡片 ===== */
+  .hover-card {
+    position: absolute; z-index: 10; width: 232px;
+    padding: 12px 14px 11px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-left: 4px solid var(--accent, var(--ok));
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    color: var(--title);
+    pointer-events: none;
+    animation: card-in .14s ease-out;
+  }
+  @keyframes card-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  /* 小三角指向标记 */
+  .hover-card::after {
+    content: ''; position: absolute; left: -8px; bottom: 18px;
+    width: 12px; height: 12px; background: var(--card-bg);
+    border-left: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border);
+    transform: rotate(45deg);
+  }
+  .hc-head { display: flex; align-items: center; gap: 7px; }
+  .hc-chip { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 700 10px sans-serif; background: var(--accent, var(--ok)); }
+  .hc-cat { font-size: 10px; color: var(--kicker); letter-spacing: .1em; text-transform: uppercase; }
+  .hc-name { display: block; margin-top: 5px; font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .hc-hero { display: flex; align-items: baseline; gap: 6px; margin-top: 11px; }
+  .hc-hero .num { font-size: 27px; font-weight: 800; line-height: 1; color: var(--accent, var(--ok)); font-variant-numeric: tabular-nums; }
+  .hc-hero .unit { font-size: 12px; color: var(--muted); }
+  .hc-badge { margin-left: auto; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #fff; background: var(--accent, var(--ok)); }
+  .hc-sub { margin-top: 8px; padding-top: 9px; border-top: 1px solid var(--divider); display: flex; flex-direction: column; gap: 5px; }
+  .hc-row { display: flex; justify-content: space-between; font-size: 11px; }
+  .hc-row .k { color: var(--faint); }
+  .hc-row .v { color: var(--muted); font-weight: 600; }
+  .hc-foot { margin-top: 8px; font-size: 10px; color: var(--faint); display: flex; align-items: center; gap: 5px; }
+  .hc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex: none; }
+  .hc-hint { margin-top: 7px; font-size: 10px; color: var(--faint); opacity: .8; }
+</style>
+</head>
+<body>
+  <div class="page-head">
+    <div>
+      <h1>POI 悬浮卡片原型</h1>
+      <p>鼠标移到设施点上弹出 · 展示步行时间 / 距离 / 数据来源。下面用三种可达状态 + 深浅双主题预览。</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">切换深/浅主题</button>
+  </div>
+
+  <div class="grid">
+    <!-- 达标 -->
+    <div class="demo">
+      <span class="demo-label">达标 · 步行 6 分钟（绿）</span>
+      <div class="poi" style="left: 70px; top: 150px; background:#3e9b8b;">医</div>
+      <div class="hover-card" style="left: 100px; top: 96px; --accent:#2f8f80;">
+        <div class="hc-head">
+          <span class="hc-chip">医</span>
+          <span class="hc-cat">医疗服务</span>
+        </div>
+        <span class="hc-name">陆家嘴社区卫生服务中心</span>
+        <div class="hc-hero">
+          <span class="num">6</span><span class="unit">分钟步行</span>
+          <span class="hc-badge">15分钟内</span>
+        </div>
+        <div class="hc-sub">
+          <div class="hc-row"><span class="k">步行距离</span><span class="v">430 米</span></div>
+          <div class="hc-row"><span class="k">语义类型</span><span class="v">综合医院/社区医院</span></div>
+        </div>
+        <div class="hc-foot"><span class="hc-dot"></span>数据来源：真实 API · 置信度 高</div>
+        <div class="hc-hint">点击查看该区域判定依据</div>
+      </div>
+    </div>
+
+    <!-- 临界 -->
+    <div class="demo">
+      <span class="demo-label">临界 · 步行 13 分钟（黄）</span>
+      <div class="poi" style="left: 70px; top: 150px; background:#e38b45;">市</div>
+      <div class="hover-card" style="left: 100px; top: 96px; --accent:#cd8e25;">
+        <div class="hc-head">
+          <span class="hc-chip">市</span>
+          <span class="hc-cat">菜市场</span>
+        </div>
+        <span class="hc-name">世纪联华生鲜超市</span>
+        <div class="hc-hero">
+          <span class="num">13</span><span class="unit">分钟步行</span>
+          <span class="hc-badge">接近上限</span>
+        </div>
+        <div class="hc-sub">
+          <div class="hc-row"><span class="k">步行距离</span><span class="v">980 米</span></div>
+          <div class="hc-row"><span class="k">语义类型</span><span class="v">生鲜超市/菜市场</span></div>
+        </div>
+        <div class="hc-foot"><span class="hc-dot" style="background:#cd8e25"></span>数据来源：有效缓存 · 置信度 中</div>
+        <div class="hc-hint">点击查看该区域判定依据</div>
+      </div>
+    </div>
+
+    <!-- 超时 -->
+    <div class="demo">
+      <span class="demo-label">超时 · 步行 22 分钟（红）</span>
+      <div class="poi" style="left: 70px; top: 150px; background:#3d83b8;">学</div>
+      <div class="hover-card" style="left: 100px; top: 96px; --accent:#c75c43;">
+        <div class="hc-head">
+          <span class="hc-chip">学</span>
+          <span class="hc-cat">教育</span>
+        </div>
+        <span class="hc-name">浦东实验学校（东校区）</span>
+        <div class="hc-hero">
+          <span class="num">22</span><span class="unit">分钟步行</span>
+          <span class="hc-badge">超出15分钟</span>
+        </div>
+        <div class="hc-sub">
+          <div class="hc-row"><span class="k">步行距离</span><span class="v">1650 米</span></div>
+          <div class="hc-row"><span class="k">语义类型</span><span class="v">中学/九年一贯制</span></div>
+        </div>
+        <div class="hc-foot"><span class="hc-dot" style="background:#c75c43"></span>数据来源：空间插值 · 置信度 低</div>
+        <div class="hc-hint">点击查看该区域判定依据</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  function toggleTheme() {
+    const html = document.documentElement;
+    html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  }
+  (function () {
+    const t = new URLSearchParams(location.search).get('theme');
+    if (t) document.documentElement.dataset.theme = t;
+  })();
+</script>
+</body>
+</html>
