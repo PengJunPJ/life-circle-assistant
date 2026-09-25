@@ -96,4 +96,24 @@ watch(() => props.selectedId, async (id) => {
 .recommendation-empty { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding: 13px; border: 1px solid #d6e6de; border-radius: 5px; background: #f1f8f4; }
 .recommendation-empty strong { color: #377364; font-size: 11px; }
 .recommendation-empty span { color: #71857f; font-size: 9px; line-height: 1.5; }
+html[data-theme="dark"] .recommendation-card { border-color: rgba(126,214,199,.16); background: rgba(16,32,46,.6); }
+html[data-theme="dark"] .recommendation-card.selected { border-color: #2ee6c5; box-shadow: 0 0 0 2px rgba(46,230,197,.18); }
+html[data-theme="dark"] .recommendation-heading strong { color: #eaf6f3; }
+html[data-theme="dark"] .recommendation-heading small { color: #6f8b90; }
+html[data-theme="dark"] .recommendation-heading button { border-color: rgba(126,214,199,.24); background: rgba(46,230,197,.08); color: #7ff0da; }
+html[data-theme="dark"] .recommendation-card > p { color: #9db8b8; }
+html[data-theme="dark"] .priority.medium { color: #14202b; }
+html[data-theme="dark"] .recommendation-evidence div { border-top-color: rgba(126,214,199,.1); }
+html[data-theme="dark"] .recommendation-evidence dt { color: #7ff0da; }
+html[data-theme="dark"] .recommendation-evidence dd { color: #9db8b8; }
+html[data-theme="dark"] .candidate-item { border-color: rgba(126,214,199,.28); background: rgba(9,18,27,.5); }
+html[data-theme="dark"] .candidate-locate span { background: rgba(46,230,197,.16); color: #7ff0da; }
+html[data-theme="dark"] .candidate-locate strong { color: #cfe7e1; }
+html[data-theme="dark"] .candidate-locate small { color: #6f8b90; }
+html[data-theme="dark"] .candidate-locate em { color: #9db8b8; }
+html[data-theme="dark"] .candidate-simulate { border-left-color: rgba(126,214,199,.16); background: rgba(46,230,197,.08); color: #7ff0da; }
+html[data-theme="dark"] .candidate-simulate:hover, html[data-theme="dark"] .candidate-simulate:focus-visible { background: rgba(46,230,197,.16); }
+html[data-theme="dark"] .recommendation-empty { border-color: rgba(126,214,199,.2); background: rgba(46,230,197,.06); }
+html[data-theme="dark"] .recommendation-empty strong { color: #7ff0da; }
+html[data-theme="dark"] .recommendation-empty span { color: #9db8b8; }
 </style>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -57,6 +58,7 @@ class WalkingCacheRepository:
                 underlying_source=row["result_source"],
                 cached_at=row["created_at"],
                 expires_at=row["expires_at"],
+                steps=_parse_steps(row["steps_json"] if "steps_json" in row.keys() else None),
             ),
         )
 
@@ -81,15 +83,16 @@ class WalkingCacheRepository:
                     cache_key, provider_id, travel_mode,
                     origin_lng, origin_lat, destination_lng, destination_lat,
                     distance_m, duration_s, result_source, result_method,
-                    created_at, expires_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_at, expires_at, steps_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(cache_key) DO UPDATE SET
                     distance_m = excluded.distance_m,
                     duration_s = excluded.duration_s,
                     result_source = excluded.result_source,
                     result_method = excluded.result_method,
                     created_at = excluded.created_at,
-                    expires_at = excluded.expires_at
+                    expires_at = excluded.expires_at,
+                    steps_json = COALESCE(excluded.steps_json, steps_json)
                 """,
                 (
                     cache_key,
@@ -105,6 +108,7 @@ class WalkingCacheRepository:
                     result.method,
                     created.isoformat(),
                     expires.isoformat(),
+                    json.dumps(result.steps) if result.steps else None,
                 ),
             )
             connection.commit()
@@ -132,3 +136,13 @@ class WalkingCacheRepository:
 def _parse_timestamp(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _parse_steps(value: str | None) -> list | None:
+    if not value:
+        return None
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, list) else None

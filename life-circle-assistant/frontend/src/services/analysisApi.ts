@@ -1,8 +1,8 @@
 import { API_BASE_URL } from '../constants/facilities'
 import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
-import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate } from '../types/location'
-import type { AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, Report } from '../types/report'
+import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate, WalkingRoute } from '../types/location'
+import type { AiInterpretation, AiInterpretationIntent, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapStatus, Report } from '../types/report'
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
 import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
 
@@ -16,6 +16,20 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
 export async function fetchMapConfig() {
   return parseResponse<MapConfig>(await fetch(`${API_BASE_URL}/api/map/config`))
+}
+
+export async function fetchMapStatus() {
+  return parseResponse<MapStatus>(await fetch(`${API_BASE_URL}/api/map/status`))
+}
+
+export async function fetchWalkingRoute(origin: { lng: number; lat: number }, destination: { lng: number; lat: number }) {
+  const query = new URLSearchParams({
+    origin_lng: String(origin.lng),
+    origin_lat: String(origin.lat),
+    destination_lng: String(destination.lng),
+    destination_lat: String(destination.lat),
+  })
+  return parseResponse<WalkingRoute>(await fetch(`${API_BASE_URL}/api/route/walking?${query}`))
 }
 
 export async function searchAddressCandidates(address: string) {
@@ -103,6 +117,31 @@ export async function simulateFacility(reportId: string, params: {
   )
 }
 
+export async function interpretReport(
+  reportId: string,
+  params: {
+    intent: AiInterpretationIntent
+    grid_id?: string
+    question?: string
+    category?: string
+    simulation_id?: string
+  },
+) {
+  return parseResponse<AiInterpretation>(
+    await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/ai/interpret`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    }),
+  )
+}
+
+export async function fetchReportInterpretations(reportId: string) {
+  return parseResponse<{ items: AiInterpretation[] }>(
+    await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/ai/interpretations`),
+  )
+}
+
 export async function downloadReportExport(reportId: string, format: ReportExportFormat) {
   const response = await fetch(
     `${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/exports/${format}`,
@@ -125,13 +164,13 @@ export async function downloadReportExport(reportId: string, format: ReportExpor
   return filename
 }
 
-export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number) => void) {
+export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number, stageLabel: string) => void) {
   let current = task
-  // 后端采用后台任务模型，统一在数据访问模块轮询，页面层只接收进度和最终报告。
+  // 后端采用后台任务模型，统一在数据访问模块轮询，页面层接收进度、阶段名和最终报告。
   while (current.status !== 'completed' && current.status !== 'failed') {
     await new Promise((resolve) => setTimeout(resolve, 180))
     current = await getAnalysisTask(task.id)
-    onProgress(current.progress)
+    onProgress(current.progress, current.stage_label || '')
   }
   if (current.status === 'failed') throw new Error(current.error || '百度地图分析失败')
   return current.result as Report

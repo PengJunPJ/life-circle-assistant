@@ -149,6 +149,34 @@ export type Report = {
   }
 }
 
+export type AiEvidenceRef = {
+  type: string
+  id: string
+  label: string
+  detail: string
+}
+
+export type AiInterpretationIntent =
+  | 'summary'
+  | 'area_explanation'
+  | 'ask'
+  | 'priority'
+  | 'simulation'
+  | 'brief'
+
+export type AiInterpretation = {
+  intent: AiInterpretationIntent
+  summary: string
+  recommendations: { title: string; text: string; priority: string; evidence_refs: AiEvidenceRef[] }[]
+  evidence_refs: AiEvidenceRef[]
+  model: string
+  mode: 'rule_template' | 'rule_template_degraded'
+  prompt_version: string
+  generated_at: string
+  data_quality_notice: string
+  boundary_notice: string
+}
+
 export type AnalysisTask = {
   id: string
   status: 'queued' | 'running' | 'completed' | 'failed'
@@ -165,3 +193,14 @@ export type AnalysisTask = {
 }
 
 export type MapConfig = { mode: string; provider_mode: 'real' | 'snapshot' | 'fixture'; browser_ak: string }
+
+export type MapStatus = {
+  mode: 'real' | 'mock'
+  provider_mode: 'real' | 'snapshot' | 'fixture'
+  provider: string
+  source: string
+  real_api_available: boolean
+  mock_available: boolean
+  snapshot_available: boolean
+  message: string
+}

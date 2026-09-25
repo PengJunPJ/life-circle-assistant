@@ -8,6 +8,11 @@ CenterSelectionMethod = Literal["default", "address", "map", "coordinates"]
 SimulationSelectionMethod = Literal["recommendation", "map"]
 
 class AnalyzeRequest(BaseModel):
+    """创建一次生活圈分析的外部输入。
+
+    Pydantic 会先完成类型和范围校验；更复杂的业务规则（例如是否在黄埔区）
+    放在地图支持范围模块中，避免把 HTTP 输入模型变成业务服务的容器。
+    """
     lng: float = Field(default=113.4872, ge=-180, le=180)
     lat: float = Field(default=23.1068, ge=-90, le=90)
     minutes: Literal[10, 15, 20] = 15

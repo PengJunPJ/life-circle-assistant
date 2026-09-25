@@ -5,6 +5,7 @@ import 'element-plus/theme-chalk/base.css'
 import 'element-plus/theme-chalk/el-segmented.css'
 import 'element-plus/theme-chalk/el-switch.css'
 import 'element-plus/theme-chalk/el-message.css'
+import 'element-plus/theme-chalk/el-tour.css'
 import './styles.css'
 import App from './App.vue'
 

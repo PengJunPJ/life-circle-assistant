@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>生活圈体检 · 布局与视觉原型（悬浮面板 + 全屏地图）</title>
+<style>
+/* ============ 设计令牌：深浅双主题 ============ */
+:root{
+  --font: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --r-lg: 18px; --r-md: 12px; --r-sm: 8px;
+  --accent: #2ee6c5;        /* 主霓虹青 */
+  --accent-2: #38bdf8;      /* 次霓虹蓝 */
+  --origin: #34e0b4;
+  --risk: #ff6b57;
+  --sparse: #ffb547;
+  --market: #ff9d4d; --pharmacy:#ff6b7a; --school:#5aa9ff; --medical:#3fd6b0;
+  --trans: cubic-bezier(.4,0,.2,1);
+}
+html[data-theme="dark"]{
+  --bg-0:#060d15; --bg-1:#0a1622; --map-land:#0d1c28; --map-block:#12293a;
+  --map-road:#1d3d52; --map-road-hi:#2a5a76; --map-water:#0b2434;
+  --glass: rgba(14,28,40,.66); --glass-2: rgba(18,36,50,.55);
+  --stroke: rgba(120,220,205,.16); --stroke-2: rgba(120,220,205,.09);
+  --txt:#e8f5f2; --txt-2:#a9c2c4; --txt-3:#6f8b90;
+  --shadow: 0 24px 60px rgba(0,0,0,.55);
+  --glow: 0 0 0 1px rgba(46,230,197,.10), 0 8px 40px rgba(46,230,197,.10);
+  --chip: rgba(46,230,197,.10);
+  --grid-line: rgba(90,180,190,.05);
+}
+html[data-theme="light"]{
+  --bg-0:#e9efec; --bg-1:#f3f7f4; --map-land:#eef3ef; --map-block:#e2ebe5;
+  --map-road:#ffffff; --map-road-hi:#f7fbf8; --map-water:#d6e7ec;
+  --glass: rgba(255,255,255,.78); --glass-2: rgba(255,255,255,.62);
+  --stroke: rgba(20,90,80,.14); --stroke-2: rgba(20,90,80,.08);
+  --txt:#12333a; --txt-2:#4c6b6a; --txt-3:#7d938f;
+  --accent:#0f9e86; --accent-2:#1d86c9; --origin:#12897a;
+  --shadow: 0 18px 44px rgba(24,60,60,.16);
+  --glow: 0 0 0 1px rgba(15,158,134,.10), 0 8px 30px rgba(15,158,134,.10);
+  --chip: rgba(15,158,134,.10);
+  --grid-line: rgba(20,90,80,.04);
+  --risk:#e0503c; --sparse:#d99122;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:var(--font); color:var(--txt);
+  background:var(--bg-0); overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--stroke);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ============ 全屏地图底座 ============ */
+.stage{position:fixed;inset:0;background:var(--bg-1)}
+.map{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* 微光网格叠加，强化科技感 */
+.grid-veil{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(120% 100% at 50% 45%,#000 40%,transparent 100%);
+}
+.vignette{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(130% 100% at 50% 40%,transparent 55%,rgba(0,0,0,.35) 100%)}
+html[data-theme="light"] .vignette{background:radial-gradient(130% 100% at 50% 40%,transparent 60%,rgba(30,70,70,.08) 100%)}
+
+/* 地图上的浮层元素 */
+.map-hud{position:absolute;inset:0;pointer-events:none}
+.map-hud > *{pointer-events:auto}
+.hud-topbar{
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;height:40px;padding:0 8px 0 14px;
+  background:var(--glass);backdrop-filter:blur(16px) saturate(140%);
+  border:1px solid var(--stroke);border-radius:999px;box-shadow:var(--shadow);
+  white-space:nowrap;
+}
+.hud-topbar .legend{display:flex;align-items:center;gap:14px;font-size:11px;color:var(--txt-2)}
+.hud-topbar .legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+.lg-orig{background:var(--origin);box-shadow:0 0 8px var(--origin)}
+.lg-iso{width:16px!important;height:9px!important;border-radius:3px!important;border:2px dashed var(--origin);background:transparent}
+.lg-risk{background:var(--risk)}
+.lg-sparse{background:var(--sparse)}
+.hud-scale{position:absolute;right:22px;bottom:22px;display:flex;align-items:center;gap:6px;color:var(--txt-3);font-size:10px}
+.hud-scale .bar{width:56px;height:6px;border:1px solid var(--txt-3);border-top:0}
+.hud-caption{
+  position:absolute;left:50%;bottom:22px;transform:translateX(-50%);
+  display:flex;align-items:center;gap:12px;padding:9px 16px;
+  background:var(--glass);backdrop-filter:blur(14px);
+  border:1px solid var(--stroke);border-left:3px solid var(--accent);
+  border-radius:var(--r-sm);box-shadow:var(--shadow);
+}
+.hud-caption .kick{color:var(--accent);font-size:9px;letter-spacing:.14em;text-transform:uppercase}
+.hud-caption strong{font-size:13px}
+.hud-caption span{color:var(--txt-3);font-size:10px;font-variant-numeric:tabular-nums}
+
+/* ============ 悬浮玻璃面板 ============ */
+.panel{
+  position:absolute;top:16px;bottom:16px;width:296px;z-index:20;
+  display:flex;flex-direction:column;
+  background:var(--glass);backdrop-filter:blur(20px) saturate(150%);
+  border:1px solid var(--stroke);border-radius:var(--r-lg);
+  box-shadow:var(--shadow), var(--glow);
+  transition:transform .42s var(--trans), opacity .3s var(--trans);
+  overflow:hidden;
+}
+.panel.left{left:16px}
+.panel.right{right:16px;width:322px}
+.panel.collapsed.left{transform:translateX(calc(-100% - 24px))}
+.panel.collapsed.right{transform:translateX(calc(100% + 24px))}
+.panel-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:16px 16px 12px;border-bottom:1px solid var(--stroke-2);
+}
+.panel-head .eyebrow{color:var(--accent);font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+.panel-head h2{margin:3px 0 0;font-size:16px;letter-spacing:-.01em}
+.panel-head .spacer{margin-left:auto}
+.panel-body{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:14px 16px 18px}
+.sect{padding:14px 0;border-top:1px solid var(--stroke-2)}
+.sect:first-child{border-top:0;padding-top:4px}
+.sect > label,.sect-title{display:block;font-size:10px;font-weight:700;color:var(--txt-3);
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+
+/* 收起后贴边的把手按钮 */
+.rail{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:22;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  width:44px;padding:12px 0;border-radius:14px;
+  background:var(--glass);backdrop-filter:blur(16px);
+  border:1px solid var(--stroke);box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transition:opacity .3s var(--trans);
+}
+.rail.show{opacity:1;pointer-events:auto}
+.rail.left{left:16px}.rail.right{right:16px}
+.rail b{writing-mode:vertical-rl;font-size:11px;letter-spacing:.14em;color:var(--txt-2);font-weight:700}
+.rail .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+
+.icon-btn{width:30px;height:30px;display:grid;place-items:center;border-radius:var(--r-sm);
+  color:var(--txt-2);transition:.2s var(--trans)}
+.icon-btn:hover{background:var(--chip);color:var(--accent)}
+.icon-btn svg{width:16px;height:16px}
+
+/* ============ 表单控件 ============ */
+.field{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;
+  background:var(--glass-2);border:1px solid var(--stroke);border-radius:var(--r-sm);
+  transition:.2s var(--trans)}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--chip)}
+.field input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--txt);font-size:12px}
+.field input::placeholder{color:var(--txt-3)}
+.field svg{width:15px;height:15px;color:var(--txt-3)}
+.seg{display:flex;gap:4px;padding:4px;background:var(--glass-2);border:1px solid var(--stroke);border-radius:var(--r-sm)}
+.seg button{flex:1;height:30px;border-radius:6px;font-size:11px;color:var(--txt-2);transition:.2s var(--trans)}
+.seg button.on{background:var(--accent);color:#04211c;font-weight:700;box-shadow:0 2px 12px var(--chip)}
+html[data-theme="light"] .seg button.on{color:#fff}
+.range-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--txt-2);margin-bottom:8px}
+.range-row b{font-size:20px;color:var(--accent);font-weight:800;letter-spacing:-.02em}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%,var(--accent) var(--pct,50%),var(--stroke) var(--pct,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 0 4px var(--chip);cursor:pointer}
+.chips{display:grid;gap:6px}
+.chip{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);
+  border:1px solid transparent;background:var(--glass-2);font-size:11px;color:var(--txt-2);transition:.2s var(--trans)}
+.chip .swatch{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:#04211c;font-size:9px;font-weight:800}
+.chip.on{border-color:var(--stroke);color:var(--txt);background:var(--chip)}
+.chip .tick{margin-left:auto;color:var(--accent);opacity:0;transition:.2s}
+.chip.on .tick{opacity:1}
+.switch{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:11px;color:var(--txt-2)}
+.toggle{width:38px;height:21px;border-radius:999px;background:var(--stroke);position:relative;transition:.25s var(--trans);flex:0 0 auto}
+.toggle:after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--txt-2);transition:.25s var(--trans)}
+.toggle.on{background:var(--accent)}
+.toggle.on:after{left:19px;background:#04211c}
+.btn-primary{width:100%;height:46px;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:9px;
+  border-radius:var(--r-md);font-size:13px;font-weight:700;letter-spacing:.02em;
+  background:linear-gradient(120deg,var(--accent),var(--accent-2));color:#04211c;
+  box-shadow:0 8px 26px var(--chip);transition:.25s var(--trans)}
+html[data-theme="light"] .btn-primary{color:#fff}
+.btn-primary:hover{filter:brightness(1.07);box-shadow:0 12px 34px var(--chip);transform:translateY(-1px)}
+.btn-primary svg{width:16px;height:16px}
+.api-note{margin-top:11px;display:flex;align-items:center;gap:7px;font-size:9px;color:var(--txt-3)}
+.api-note i{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+
+/* ============ 报告面板 ============ */
+.score-wrap{display:flex;align-items:center;gap:18px;padding:4px 0 16px}
+.ring{--v:78;width:96px;height:96px;flex:0 0 auto;border-radius:50%;position:relative;
+  background:conic-gradient(var(--accent) calc(var(--v)*1%),var(--stroke) 0);
+  filter:drop-shadow(0 0 12px var(--chip))}
+.ring:after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--bg-1)}
+html[data-theme="dark"] .ring:after{background:#0c1a26}
+.ring .inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}
+.ring .inner b{font-size:28px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.ring .inner span{font-size:8px;color:var(--txt-3);letter-spacing:.1em;margin-top:2px}
+.score-meta{flex:1;min-width:0}
+.score-meta .tag{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--chip);
+  color:var(--accent);font-size:10px;font-weight:700}
+.score-meta h3{margin:9px 0 4px;font-size:15px}
+.score-meta p{margin:0;font-size:10px;color:var(--txt-3);line-height:1.5}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{padding:12px;border-radius:var(--r-md);background:var(--glass-2);border:1px solid var(--stroke-2)}
+.stat b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.stat span{display:block;margin-top:3px;font-size:9px;color:var(--txt-3)}
+.stat.risk b{color:var(--risk)}.stat.sparse b{color:var(--sparse)}.stat.ok b{color:var(--accent)}
+.chart{height:132px;width:100%;margin-top:4px}
+.bars{display:flex;align-items:flex-end;gap:9px;height:110px;padding-top:8px}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
+.bars .track{flex:1;width:100%;display:flex;align-items:flex-end;border-radius:6px;background:var(--glass-2);overflow:hidden}
+.bars .fill{width:100%;border-radius:6px;background:linear-gradient(180deg,var(--accent),var(--accent-2));opacity:.9}
+.bars .fill.warn{background:linear-gradient(180deg,var(--sparse),var(--risk))}
+.bars small{font-size:9px;color:var(--txt-3)}
+.rec{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--stroke-2)}
+.rec:last-child{border-bottom:0}
+.rec .pri{flex:0 0 auto;height:19px;padding:0 7px;border-radius:5px;font-size:9px;font-weight:800;
+  display:grid;place-items:center;color:#fff}
+.pri.high{background:var(--risk)}.pri.med{background:var(--sparse)}.pri.low{background:var(--accent-2)}
+.rec .body strong{display:block;font-size:11.5px}
+.rec .body p{margin:4px 0 0;font-size:10px;color:var(--txt-3);line-height:1.55}
+.mini-note{margin-top:10px;padding:10px 12px;border-radius:var(--r-sm);background:var(--glass-2);
+  border-left:3px solid var(--accent-2);font-size:10px;color:var(--txt-2);line-height:1.6}
+
+/* 主题切换 */
+.theme-toggle{display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;
+  background:var(--glass-2);border:1px solid var(--stroke)}
+.theme-toggle button{width:28px;height:24px;border-radius:999px;display:grid;place-items:center;color:var(--txt-3)}
+.theme-toggle button.on{background:var(--accent);color:#04211c}
+html[data-theme="light"] .theme-toggle button.on{color:#fff}
+.theme-toggle svg{width:14px;height:14px}
+
+/* 顶部品牌（左上角浮动） */
+.brand{position:absolute;top:16px;left:16px;z-index:25;display:flex;align-items:center;gap:10px;
+  height:44px;padding:0 16px 0 12px;border-radius:999px;
+  background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--stroke);box-shadow:var(--shadow);
+  transition:transform .42s var(--trans)}
+.brand.shift{transform:translateX(328px)}
+.brand .mark{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04211c}
+.brand .mark svg{width:15px;height:15px}
+.brand strong{font-size:13px;letter-spacing:.01em}
+.brand em{font-style:normal;font-size:8px;color:var(--txt-3);letter-spacing:.14em;display:block;margin-top:1px}
+
+/* 面板收起时的顶栏挪位 */
+.topctl{position:absolute;top:16px;right:16px;z-index:25;display:flex;gap:8px;transition:transform .42s var(--trans)}
+.topctl.shift{transform:translateX(-354px)}
+
+.hint{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:30;
+  padding:8px 16px;border-radius:999px;background:var(--glass);backdrop-filter:blur(14px);
+  border:1px solid var(--stroke);box-shadow:var(--shadow);font-size:11px;color:var(--txt-2);
+  display:flex;align-items:center;gap:8px;animation:fade 6s var(--trans) forwards}
+.hint i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+@keyframes fade{0%{opacity:0;transform:translate(-50%,-8px)}8%{opacity:1;transform:translate(-50%,0)}82%{opacity:1}100%{opacity:0;visibility:hidden}}
+
+/* 起点脉冲 */
+@keyframes pulse{0%{r:8;opacity:.55}70%{r:26;opacity:0}100%{r:26;opacity:0}}
+.pulse-ring{animation:pulse 2.4s ease-out infinite;transform-origin:center}
+
+@media (max-width:1180px){
+  .panel.left{width:272px}.panel.right{width:296px}
+  .brand.shift{transform:translateX(304px)}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- ============ 全屏仿真地图 ============ -->
+  <svg class="map" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-label="生活圈分析地图">
+    <defs>
+      <pattern id="hatch-risk" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <rect width="8" height="8" fill="var(--risk)" opacity=".10"/>
+        <line x1="0" y1="0" x2="0" y2="8" stroke="var(--risk)" stroke-width="2.4" opacity=".55"/>
+      </pattern>
+      <pattern id="hatch-sparse" width="8" height="8" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse">
+        <rect width="8" height="8" fill="var(--sparse)" opacity=".10"/>
+        <line x1="0" y1="0" x2="0" y2="8" stroke="var(--sparse)" stroke-width="2.4" opacity=".5"/>
+      </pattern>
+      <radialGradient id="isoFill" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="var(--accent)" stop-opacity=".16"/>
+        <stop offset="70%" stop-color="var(--accent)" stop-opacity=".07"/>
+        <stop offset="100%" stop-color="var(--accent)" stop-opacity=".02"/>
+      </radialGradient>
+      <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+    </defs>
+
+    <!-- 地块底色 -->
+    <rect width="1600" height="900" fill="var(--map-land)"/>
+    <!-- 水系 -->
+    <path d="M0,720 C220,690 360,760 560,735 C760,710 900,780 1120,745 C1320,715 1460,770 1600,740 L1600,900 L0,900 Z" fill="var(--map-water)" opacity=".7"/>
+    <!-- 街区块 -->
+    <g fill="var(--map-block)" opacity=".85">
+      <rect x="120" y="120" width="180" height="130" rx="6"/><rect x="330" y="100" width="150" height="160" rx="6"/>
+      <rect x="510" y="150" width="200" height="120" rx="6"/><rect x="1080" y="120" width="170" height="150" rx="6"/>
+      <rect x="1290" y="140" width="180" height="120" rx="6"/><rect x="140" y="300" width="160" height="150" rx="6"/>
+      <rect x="1130" y="330" width="190" height="140" rx="6"/><rect x="1360" y="320" width="150" height="160" rx="6"/>
+      <rect x="180" y="500" width="170" height="130" rx="6"/><rect x="1200" y="520" width="180" height="130" rx="6"/>
+    </g>
+    <!-- 路网 -->
+    <g stroke="var(--map-road)" stroke-width="16" fill="none" stroke-linecap="round" opacity=".9">
+      <path d="M0,280 H1600"/><path d="M0,480 H1600"/><path d="M0,660 H1600"/>
+      <path d="M310,0 V900"/><path d="M740,0 V900"/><path d="M1060,0 V900"/><path d="M1340,0 V900"/>
+    </g>
+    <g stroke="var(--map-road-hi)" stroke-width="5" fill="none" stroke-linecap="round" opacity=".8">
+      <path d="M0,280 H1600"/><path d="M0,480 H1600"/><path d="M310,0 V900"/><path d="M1060,0 V900"/>
+      <path d="M120,120 L520,470"/><path d="M1480,140 L1120,520"/>
+    </g>
+
+    <!-- 15分钟等时圈 -->
+    <g transform="translate(800,430)">
+      <path d="M0,-250 C150,-250 265,-150 265,-10 C265,140 150,235 0,235 C-155,235 -268,140 -268,-5 C-268,-150 -150,-250 0,-250 Z"
+            fill="url(#isoFill)" stroke="var(--origin)" stroke-width="2.5" stroke-dasharray="12 9" opacity=".95"/>
+      <path d="M0,-165 C100,-165 175,-95 175,-5 C175,90 100,155 0,155 C-102,155 -178,90 -178,-5 C-178,-95 -100,-165 0,-165 Z"
+            fill="none" stroke="var(--origin)" stroke-width="1.4" stroke-dasharray="7 7" opacity=".5"/>
+    </g>
+
+    <!-- 盲区 / 稀疏区网纹 -->
+    <g>
+      <rect x="980" y="560" width="150" height="120" rx="10" fill="url(#hatch-risk)" stroke="var(--risk)" stroke-width="2" opacity=".95"/>
+      <rect x="430" y="580" width="140" height="105" rx="10" fill="url(#hatch-sparse)" stroke="var(--sparse)" stroke-width="2" opacity=".9"/>
+      <rect x="1180" y="200" width="120" height="95" rx="10" fill="url(#hatch-risk)" stroke="var(--risk)" stroke-width="2" opacity=".85"/>
+    </g>
+
+    <!-- 设施点 -->
+    <g id="facilities"></g>
+
+    <!-- 起点 -->
+    <g transform="translate(800,430)">
+      <circle class="pulse-ring" r="8" fill="var(--origin)" opacity=".5"/>
+      <circle r="11" fill="var(--bg-1)" stroke="var(--origin)" stroke-width="3"/>
+      <circle r="5" fill="var(--origin)"/>
+    </g>
+  </svg>
+  <div class="grid-veil"></div>
+  <div class="vignette"></div>
+
+  <!-- 设施浮层标签 + 盲区标记 -->
+  <div class="map-hud" id="hud"></div>
+
+  <!-- ============ 顶部品牌 & 控制 ============ -->
+  <div class="brand" id="brand">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
+    <div><strong>生活圈体检</strong><em>COMMUNITY PULSE</em></div>
+  </div>
+
+  <div class="topctl" id="topctl">
+    <div class="theme-toggle" role="group" aria-label="主题切换">
+      <button id="btn-dark" class="on" title="深色科技风"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
+      <button id="btn-light" title="浅色高级风"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg></button>
+    </div>
+    <button class="icon-btn" id="btn-collapse-all" title="收起两侧面板，全屏看地图" style="background:var(--glass);border:1px solid var(--stroke);box-shadow:var(--shadow);backdrop-filter:blur(16px)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+
+  <div class="hint" id="hint"><i></i>点击两侧面板顶部的 ⟷ 图标可一键收起，地图立即铺满全屏</div>
+
+  <!-- ============ 左侧：分析参数面板 ============ -->
+  <aside class="panel left" id="panel-left">
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow">Analysis</div>
+        <h2>分析参数</h2>
+      </div>
+      <div class="spacer"></div>
+      <button class="icon-btn" data-collapse="left" title="收起面板">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
+    <div class="panel-body">
+      <div class="sect">
+        <label>分析中心点</label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input value="黄埔区 · 大沙地商圈" placeholder="搜索地址或点击地图选点"/>
+        </div>
+        <div class="api-note"><i></i>已定位 · 经纬度 113.4562, 23.1047</div>
+      </div>
+
+      <div class="sect">
+        <label>分析模式</label>
+        <div class="seg">
+          <button class="on">步行等时圈</button>
+          <button>直线半径</button>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="range-row"><span>可达时长</span><b><span id="min-val">15</span> 分钟</b></div>
+        <input type="range" id="minutes" min="10" max="20" step="5" value="15" style="--pct:50%"/>
+      </div>
+
+      <div class="sect">
+        <span class="sect-title">设施类别</span>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div class="sect">
+        <div class="switch"><span>显示达标区域</span><div class="toggle on" data-sw></div></div>
+        <div class="switch"><span>标注设施稀疏区</span><div class="toggle on" data-sw></div></div>
+        <div class="switch"><span>高亮重点盲区</span><div class="toggle on" data-sw></div></div>
+      </div>
+
+      <button class="btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h8l-1 8 10-12h-8l1-8Z"/></svg>
+        开始生活圈体检
+      </button>
+      <div class="api-note"><i></i>真实百度步行可达性 API 已连接</div>
+    </div>
+  </aside>
+
+  <!-- ============ 右侧：体检报告面板 ============ -->
+  <aside class="panel right" id="panel-right">
+    <div class="panel-head">
+      <div>
+        <div class="eyebrow">Report</div>
+        <h2>体检报告</h2>
+      </div>
+      <div class="spacer"></div>
+      <button class="icon-btn" title="导出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg></button>
+      <button class="icon-btn" data-collapse="right" title="收起面板">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="panel-body">
+      <div class="score-wrap">
+        <div class="ring" style="--v:78"><div class="inner"><b>78</b><span>SCORE</span></div></div>
+        <div class="score-meta">
+          <span class="tag">良好 · 中等偏上</span>
+          <h3>15分钟生活圈完整度</h3>
+          <p>覆盖 6/8 类基础民生设施，医疗与菜场存在局部盲区。</p>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat ok"><b>24</b><span>设施总数</span></div>
+        <div class="stat ok"><b>86%</b><span>达标网格占比</span></div>
+        <div class="stat risk"><b>3</b><span>重点盲区</span></div>
+        <div class="stat sparse"><b>5</b><span>设施稀疏区</span></div>
+      </div>
+
+      <div class="sect">
+        <span class="sect-title">分类可达性评分</span>
+        <div class="bars" id="bars"></div>
+      </div>
+
+      <div class="sect">
+        <span class="sect-title">规划建议</span>
+        <div class="rec"><span class="pri high">高</span><div class="body"><strong>东南片区增设社区卫生服务中心</strong><p>网格 G-118 步行最近医疗点 22 分钟，超出 15 分钟阈值，建议补点。</p></div></div>
+        <div class="rec"><span class="pri med">中</span><div class="body"><strong>大沙地东侧补充生鲜菜场</strong><p>稀疏区覆盖 1.2 万人，最近菜场 18 分钟，建议引入社区生鲜网点。</p></div></div>
+        <div class="rec"><span class="pri low">低</span><div class="body"><strong>优化既有公园步行连通性</strong><p>绿地达标但出入口绕行，建议打通 2 处慢行连接。</p></div></div>
+        <div class="mini-note">🤖 AI 规划助手：基于盲区人口密度与用地条件，已生成 3 个候选点位与模拟增益，可在地图查看。</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 收起后的贴边把手 -->
+  <button class="rail left" id="rail-left"><span class="dot"></span><b>分析参数</b></button>
+  <button class="rail right" id="rail-right"><span class="dot"></span><b>体检报告</b></button>
+
+  <!-- 地图 HUD -->
+  <div class="hud-topbar" id="hud-topbar" style="top:auto;bottom:76px">
+    <div class="legend">
+      <span><i class="lg-orig"></i>起点</span>
+      <span><i class="lg-iso"></i>15分钟等时圈</span>
+      <span><i class="lg-risk"></i>重点盲区</span>
+      <span><i class="lg-sparse"></i>设施稀疏区</span>
+    </div>
+  </div>
+  <div class="hud-scale"><span>0</span><span class="bar"></span><span>500m</span></div>
+  <div class="hud-caption">
+    <span class="kick">分析中心</span>
+    <strong>黄埔区 · 大沙地商圈</strong>
+    <span>113.456200, 23.104700</span>
+  </div>
+</div>
+
+<script>
+/* ===== 设施点数据（仿真） ===== */
+const CATS=[
+  {key:'market',label:'菜场',short:'菜',color:'var(--market)',x:690,y:360},
+  {key:'pharmacy',label:'药店',short:'药',color:'var(--pharmacy)',x:880,y:330},
+  {key:'school',label:'学校',short:'学',color:'var(--school)',x:730,y:520},
+  {key:'medical',label:'医疗',short:'医',color:'var(--medical)',x:940,y:470},
+  {key:'market',label:'菜场',short:'菜',color:'var(--market)',x:600,y:470},
+  {key:'school',label:'学校',short:'学',color:'var(--school)',x:910,y:250},
+  {key:'pharmacy',label:'药店',short:'药',color:'var(--pharmacy)',x:660,y:250},
+  {key:'medical',label:'医疗',short:'医',color:'var(--medical)',x:1010,y:390},
+];
+const svgns='http://www.w3.org/2000/svg';
+const g=document.getElementById('facilities');
+CATS.forEach(c=>{
+  const grp=document.createElementNS(svgns,'g');
+  grp.setAttribute('transform',`translate(${c.x},${c.y})`);
+  grp.innerHTML=`<circle r="13" fill="${c.color}" opacity=".18"/>
+    <circle r="8" fill="${c.color}" stroke="var(--bg-1)" stroke-width="2"/>
+    <text y="3.4" text-anchor="middle" font-size="8" font-weight="800" fill="#04211c" font-family="var(--font)">${c.short}</text>`;
+  g.appendChild(grp);
+});
+/* 盲区感叹号标记 */
+const hud=document.getElementById('hud');
+[[1055,620,'!','var(--risk)'],[500,632,'△','var(--sparse)'],[1240,247,'!','var(--risk)']].forEach(([x,y,t,col])=>{
+  const d=document.createElement('div');
+  d.style.cssText=`position:absolute;left:${x/1600*100}%;top:${y/900*100}%;transform:translate(-50%,-50%);
+    width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:13px;
+    color:#fff;background:${col};box-shadow:0 0 0 4px color-mix(in srgb,${col} 25%,transparent),0 4px 14px rgba(0,0,0,.4)`;
+  d.textContent=t; hud.appendChild(d);
+});
+
+/* ===== 设施类别 chips ===== */
+const chipWrap=document.getElementById('chips');
+[{l:'菜场/生鲜',c:'var(--market)',s:'菜',on:true},{l:'药店',c:'var(--pharmacy)',s:'药',on:true},
+ {l:'学校/托育',c:'var(--school)',s:'学',on:true},{l:'医疗卫生',c:'var(--medical)',s:'医',on:true},
+ {l:'公园绿地',c:'#7bd88f',s:'绿',on:false}].forEach(f=>{
+  const b=document.createElement('button');
+  b.className='chip'+(f.on?' on':'');
+  b.innerHTML=`<span class="swatch" style="background:${f.c}">${f.s}</span>${f.l}<span class="tick">✓</span>`;
+  b.onclick=()=>b.classList.toggle('on');
+  chipWrap.appendChild(b);
+});
+
+/* ===== 分类评分柱 ===== */
+const bars=document.getElementById('bars');
+[['菜场',92,false],['药店',88,false],['学校',74,false],['医疗',58,true],['绿地',81,false],['商超',66,true]].forEach(([l,v,w])=>{
+  const col=document.createElement('div');col.className='col';
+  col.innerHTML=`<div class="track"><div class="fill${w?' warn':''}" style="height:${v}%"></div></div><small>${l}</small>`;
+  bars.appendChild(col);
+});
+
+/* ===== 滑块联动 ===== */
+const range=document.getElementById('minutes'),minVal=document.getElementById('min-val');
+range.oninput=()=>{minVal.textContent=range.value;range.style.setProperty('--pct',((range.value-10)/10*100)+'%')};
+
+/* ===== 开关 ===== */
+document.querySelectorAll('[data-sw]').forEach(t=>t.onclick=()=>t.classList.toggle('on'));
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{
+  b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+});
+
+/* ===== 主题切换 ===== */
+const root=document.documentElement,bd=document.getElementById('btn-dark'),bl=document.getElementById('btn-light');
+function setTheme(t){root.setAttribute('data-theme',t);bd.classList.toggle('on',t==='dark');bl.classList.toggle('on',t==='light');}
+bd.onclick=()=>setTheme('dark');bl.onclick=()=>setTheme('light');
+
+/* ===== 面板收起 / 展开 ===== */
+const pl=document.getElementById('panel-left'),pr=document.getElementById('panel-right');
+const rl=document.getElementById('rail-left'),rr=document.getElementById('rail-right');
+const brand=document.getElementById('brand'),topctl=document.getElementById('topctl');
+function syncRails(){
+  const lc=pl.classList.contains('collapsed'),rc=pr.classList.contains('collapsed');
+  rl.classList.toggle('show',lc);rr.classList.toggle('show',rc);
+  brand.classList.toggle('shift',!lc);
+  topctl.classList.toggle('shift',!rc);
+}
+document.querySelectorAll('[data-collapse]').forEach(b=>b.onclick=()=>{
+  (b.dataset.collapse==='left'?pl:pr).classList.add('collapsed');syncRails();
+});
+rl.onclick=()=>{pl.classList.remove('collapsed');syncRails()};
+rr.onclick=()=>{pr.classList.remove('collapsed');syncRails()};
+let allCollapsed=false;
+document.getElementById('btn-collapse-all').onclick=()=>{
+  allCollapsed=!allCollapsed;
+  pl.classList.toggle('collapsed',allCollapsed);pr.classList.toggle('collapsed',allCollapsed);
+  syncRails();
+};
+syncRails();
+</script>
+</body>
+</html>

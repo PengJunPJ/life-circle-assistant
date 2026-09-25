@@ -269,6 +269,7 @@ def _build_story(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> l
         ]
     )
     story.extend(_recommendation_flows(report, styles))
+    story.extend(_ai_interpretation_section(report, styles))
     story.extend(
         [
             PageBreak(),
@@ -298,6 +299,49 @@ def _build_story(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> l
             ),
         ]
     )
+    return story
+
+
+def _ai_interpretation_section(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> list[Flowable]:
+    """附加已保存的 AI 解读；没有生成结果时不改变原有 PDF 结构。"""
+    interpretations = report.get("ai_interpretations") or []
+    if not interpretations:
+        return []
+    result = interpretations[0]
+    story: list[Flowable] = [PageBreak(), Paragraph("AI 解读与证据", styles["section"])]
+    story.append(Paragraph("以下内容是对本次结构化体检报告的辅助解读，不会修改原始评分、路线和设施数据。", styles["body"]))
+    story.append(Paragraph(f"生成方式：{_escape(result.get('model') or result.get('mode') or '未知')}；提示词版本：{_escape(result.get('prompt_version') or '-')}", styles["small"]))
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph(_escape(result.get("summary") or "未提供 AI 摘要。"), styles["body"]))
+    recommendations = result.get("recommendations") or []
+    if recommendations:
+        story.append(Spacer(1, 4 * mm))
+        story.append(Paragraph("优先行动", styles["subsection"]))
+        rows = [[Paragraph("建议", styles["small"]), Paragraph("优先级", styles["small"]), Paragraph("内容", styles["small"])]]
+        for item in recommendations[:6]:
+            rows.append([
+                Paragraph(_escape(item.get("title") or "-"), styles["small"]),
+                Paragraph(_escape(item.get("priority") or "-"), styles["small"]),
+                Paragraph(_escape(item.get("text") or "-"), styles["small"]),
+            ])
+        table = Table(rows, colWidths=[38 * mm, 22 * mm, 106 * mm], repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), GREEN_LIGHT),
+            ("GRID", (0, 0), (-1, -1), 0.4, LINE),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        story.append(table)
+    refs = result.get("evidence_refs") or []
+    if refs:
+        story.append(Spacer(1, 4 * mm))
+        story.append(Paragraph("证据引用", styles["subsection"]))
+        story.append(Paragraph("；".join(f"{_escape(item.get('label') or item.get('id') or '-')}: {_escape(item.get('detail') or '-') }" for item in refs[:10]), styles["small"]))
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph(_escape(result.get("data_quality_notice") or "未提供 AI 数据质量说明。"), styles["small"]))
     return story
 
 
@@ -851,7 +895,7 @@ def _quality_status_label(status: Any) -> str:
 
 
 def _mode_label(mode: Any) -> str:
-    return {"demo": "演示模式", "analysis": "分析模式", "snapshot": "本地快照模式", "real": "真实地图模式"}.get(str(mode), str(mode or "未提供"))
+    return {"demo": "快速分析", "analysis": "正式分析", "snapshot": "本地快照模式", "real": "真实地图模式"}.get(str(mode), str(mode or "未提供"))
 
 
 def _source_label(source: Any) -> str:

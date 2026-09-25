@@ -68,4 +68,21 @@ function percent(value: number) {
 .score-component p { margin: 6px 0 0; color: #788985; font-size: 9px; line-height: 1.5; }
 .category-weight { display: flex; justify-content: space-between; gap: 8px; margin-top: 9px; color: #85938f; font-size: 8px; }
 .category-weight strong { color: #56756d; }
+html[data-theme="dark"] .score-category { border-color: rgba(126,214,199,.16); background: rgba(16,32,46,.6); }
+html[data-theme="dark"] .score-category summary { color: #cfe7e1; }
+html[data-theme="dark"] .score-category summary::marker { color: #6f8b90; }
+html[data-theme="dark"] .score-category summary > strong { color: #eaf6f3; }
+html[data-theme="dark"] .score-status { background: rgba(52,224,180,.16); color: #7ff0da; }
+html[data-theme="dark"] .score-status.poor_coverage { background: rgba(255,107,87,.16); color: #ff9d8d; }
+html[data-theme="dark"] .score-status.calculation_incomplete, html[data-theme="dark"] .score-status.data_unavailable { background: rgba(255,181,71,.16); color: #ffcf8a; }
+html[data-theme="dark"] .score-category-body { border-top-color: rgba(126,214,199,.1); }
+html[data-theme="dark"] .score-category-body > p { color: #9db8b8; }
+html[data-theme="dark"] .score-component { background: rgba(9,18,27,.6); }
+html[data-theme="dark"] .component-heading strong { color: #cfe7e1; }
+html[data-theme="dark"] .component-heading span { color: #6f8b90; }
+html[data-theme="dark"] .component-heading b { color: #9db8b8; }
+html[data-theme="dark"] .component-meter { background: rgba(126,214,199,.16); }
+html[data-theme="dark"] .score-component p { color: #9db8b8; }
+html[data-theme="dark"] .category-weight { color: #6f8b90; }
+html[data-theme="dark"] .category-weight strong { color: #9db8b8; }
 </style>

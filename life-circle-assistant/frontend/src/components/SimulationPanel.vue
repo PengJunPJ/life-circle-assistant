@@ -126,4 +126,30 @@ function metric(key: string, label: string, before: number | null, after: number
 .comparison-row em.improved { color: #26836d; font-weight: 700; }
 .comparison-row em.worsened { color: #b4533f; font-weight: 700; }
 .simulation-disclosure { display: block; margin-top: 8px; color: #879792; font-size: 8px; line-height: 1.5; }
+html[data-theme="dark"] .simulation-panel { border-color: rgba(126,214,199,.2); background: rgba(9,18,27,.5); }
+html[data-theme="dark"] .simulation-heading strong { color: #eaf6f3; }
+html[data-theme="dark"] .simulation-heading small { color: #6f8b90; }
+html[data-theme="dark"] .simulation-clear { color: #ff9d8d; }
+html[data-theme="dark"] .simulation-field { color: #9db8b8; }
+html[data-theme="dark"] .simulation-field select { border-color: rgba(126,214,199,.2); background: rgba(16,32,46,.8); color: #cfe7e1; }
+html[data-theme="dark"] .simulation-location { background: rgba(16,32,46,.7); }
+html[data-theme="dark"] .simulation-location span { color: #6f8b90; }
+html[data-theme="dark"] .simulation-location strong { color: #cfe7e1; }
+html[data-theme="dark"] .simulation-location small { color: #6f8b90; }
+html[data-theme="dark"] .simulation-location button { border-color: rgba(126,214,199,.24); background: rgba(46,230,197,.08); color: #7ff0da; }
+html[data-theme="dark"] .simulation-location button.active { border-color: #2ee6c5; background: #2ee6c5; color: #04211c; }
+html[data-theme="dark"] .simulation-run { background: linear-gradient(120deg, #2ee6c5, #38bdf8); color: #04211c; }
+html[data-theme="dark"] .simulation-error { color: #ff9d8d; }
+html[data-theme="dark"] .simulation-result { border-top-color: rgba(126,214,199,.12); }
+html[data-theme="dark"] .simulation-result-title strong { color: #eaf6f3; }
+html[data-theme="dark"] .simulation-result-title span { color: #6f8b90; }
+html[data-theme="dark"] .simulation-comparison { border-top-color: rgba(126,214,199,.12); border-left-color: rgba(126,214,199,.12); }
+html[data-theme="dark"] .comparison-head span, html[data-theme="dark"] .comparison-row > * { border-right-color: rgba(126,214,199,.12); border-bottom-color: rgba(126,214,199,.12); }
+html[data-theme="dark"] .comparison-head { background: rgba(46,230,197,.08); color: #9db8b8; }
+html[data-theme="dark"] .comparison-row { background: rgba(16,32,46,.5); color: #9db8b8; }
+html[data-theme="dark"] .comparison-row b { color: #eaf6f3; }
+html[data-theme="dark"] .comparison-row em { color: #9db8b8; }
+html[data-theme="dark"] .comparison-row em.improved { color: #34e0b4; }
+html[data-theme="dark"] .comparison-row em.worsened { color: #ff6b57; }
+html[data-theme="dark"] .simulation-disclosure { color: #6f8b90; }
 </style>

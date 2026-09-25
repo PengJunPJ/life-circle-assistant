@@ -1,0 +1,727 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "hongshan-haiyundonglu-20260921",
+  "status": "draft",
+  "community": {
+    "name": "黄埔区红山街道海韵东路",
+    "center_lng": 113.4872,
+    "center_lat": 23.1068,
+    "address": "广东省广州市黄埔区红山街道海韵东路"
+  },
+  "coordinate_system": "BD-09",
+  "threshold_minutes": 15,
+  "grid_size": 4,
+  "categories": [
+    "market",
+    "pharmacy",
+    "school",
+    "medical"
+  ],
+  "labels": [
+    {
+      "grid_id": "market-r1c1",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r1c2",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r1c3",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r1c4",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r2c1",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r2c2",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r2c3",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r2c4",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r3c1",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r3c2",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r3c3",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r3c4",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r4c1",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r4c2",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r4c3",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "market-r4c4",
+      "category": "market",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c1",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c2",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c3",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c4",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c1",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c2",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c3",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c4",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c1",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c2",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c3",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c4",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c1",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c2",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c3",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c4",
+      "category": "pharmacy",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r1c1",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r1c2",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r1c3",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r1c4",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r2c1",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r2c2",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r2c3",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r2c4",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r3c1",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r3c2",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r3c3",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r3c4",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r4c1",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r4c2",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r4c3",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "school-r4c4",
+      "category": "school",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r1c1",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r1c2",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r1c3",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r1c4",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r2c1",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r2c2",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r2c3",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r2c4",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r3c1",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r3c2",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r3c3",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r3c4",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r4c1",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r4c2",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r4c3",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    },
+    {
+      "grid_id": "medical-r4c4",
+      "category": "medical",
+      "expected_kind": null,
+      "evidence": {
+        "source": "",
+        "checked_at": "",
+        "reviewer": "",
+        "notes": ""
+      }
+    }
+  ],
+  "notes": "请使用独立地图或现场证据逐格填写 expected_kind 和 evidence，完成后将 status 改为 verified。"
+}

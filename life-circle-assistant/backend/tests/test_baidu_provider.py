@@ -1,5 +1,6 @@
 import asyncio
 
+from app.baidu import BaiduMapClient
 from app.maps.baidu import BaiduMapProvider
 
 
@@ -45,3 +46,43 @@ def test_facility_search_splits_market_keywords_and_deduplicates_results():
     assert provider.facility_request_count == 3
     assert [facility.id for facility in facilities] == ["shared-market", "farmers-market"]
     assert all(facility.category == "market" for facility in facilities)
+
+
+def test_all_baidu_requests_share_configured_qps_limit(monkeypatch):
+    monkeypatch.setenv("BAIDU_MAP_QPS", "2")
+    current = 0.0
+    sleeps: list[float] = []
+
+    def monotonic() -> float:
+        return current
+
+    async def sleep(delay: float) -> None:
+        nonlocal current
+        sleeps.append(delay)
+        current += delay
+
+    client = BaiduMapClient(sleep=sleep, monotonic=monotonic)
+
+    async def exercise() -> None:
+        await client._wait_for_rate_limit()
+        await client._wait_for_rate_limit()
+        await client._wait_for_rate_limit()
+
+    asyncio.run(exercise())
+
+    assert sleeps == [0.5, 0.5]
+
+
+def test_steps_to_polyline_parses_string_and_object_paths():
+    from app.maps.baidu import steps_to_polyline
+
+    string_form = [
+        {"path": "113.1,23.1;113.2,23.2;113.2,23.2"},
+        {"path": "113.3,23.3"},
+    ]
+    assert steps_to_polyline(string_form) == [[113.1, 23.1], [113.2, 23.2], [113.3, 23.3]]
+
+    object_form = [{"path": [{"lng": 113.4, "lat": 23.4}, {"x": 113.5, "y": 23.5}]}]
+    assert steps_to_polyline(object_form) == [[113.4, 23.4], [113.5, 23.5]]
+
+    assert steps_to_polyline([{"path": "bad"}, {"nope": 1}, None]) == []

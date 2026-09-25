@@ -11,14 +11,16 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Req
 from fastapi.middleware.cors import CORSMiddleware
 
 from .analysis import AnalysisApplicationService, compare_reports
+from .ai_assistant import build_ai_interpretation
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
+from .bootstrap import configure_runtime
 from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
-from .maps import MapProvider, MapProviderError, create_map_provider
+from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
-from .maps.walking import WalkingService, WalkingSettings
+from .maps.walking import WalkingService
 from .mock_data import CATEGORIES, CENTER
 from .schemas import AnalyzeRequest, ReportComparisonRequest, SimulationRequest
-from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
+from .storage import ReportRepository, TaskRepository
 
 
 load_dotenv()
@@ -63,8 +65,6 @@ async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: An
 
 
 def create_app(provider: MapProvider | None = None, database_path: str | Path | None = None) -> FastAPI:
-    resolved_provider = provider or create_map_provider()
-
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         try:
@@ -83,14 +83,8 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         allow_headers=["*"],
         expose_headers=["Content-Disposition", "X-Report-Id", "X-Coordinate-System"],
     )
-    app.state.map_provider = resolved_provider
-    app.state.database = Database(database_path)
-    app.state.database.migrate()
-    app.state.task_repository = TaskRepository(app.state.database)
-    app.state.report_repository = ReportRepository(app.state.database)
-    app.state.walking_cache_repository = WalkingCacheRepository(app.state.database)
-    app.state.walking_settings = WalkingSettings.from_env()
-    app.state.recovered_task_count = app.state.task_repository.recover_interrupted()
+    # 将基础设施装配集中到 bootstrap，避免 create_app 同时承担太多职责。
+    resolved_provider = configure_runtime(app, provider=provider, database_path=database_path)
 
     @app.get("/api/health")
     def health(map_provider: MapProvider = Depends(get_map_provider)):
@@ -189,6 +183,50 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         except MapProviderError as exc:
             raise HTTPException(status_code=502, detail=f"地图地点检索失败：{exc}") from exc
         return {"source": map_provider.descriptor.source, "results": [asdict(item) for item in results]}
+
+    @app.get("/api/route/walking")
+    async def get_walking_route(
+        origin_lng: float,
+        origin_lat: float,
+        destination_lng: float,
+        destination_lat: float,
+        request: Request,
+        map_provider: MapProvider = Depends(get_map_provider),
+    ):
+        """按需返回起点到终点的步行折线：优先读步行缓存，缺失且为真实提供方才实时请求。"""
+        cache = request.app.state.walking_cache_repository
+        origin = (origin_lng, origin_lat)
+        destination = (destination_lng, destination_lat)
+        lookup = cache.get(map_provider.descriptor.id, origin, destination)
+        result = lookup.result if lookup.status == "hit" else None
+        if result is None or not result.steps:
+            if map_provider.descriptor.mode != "real":
+                raise HTTPException(status_code=409, detail="当前地图提供方不支持真实步行路线")
+            if result is None:
+                walking_service = WalkingService(map_provider, cache, request.app.state.walking_settings)
+                matrix = await walking_service.walking_matrix([origin], [destination])
+                result = matrix[0][0]
+            else:
+                # 旧缓存行只有距离/时长、没有折线：直连提供方补取并回写缓存。
+                matrix = await map_provider.walking_matrix([origin], [destination])
+                fresh = matrix[0][0]
+                if fresh.success and fresh.steps:
+                    cache.put(
+                        map_provider.descriptor.id,
+                        fresh,
+                        ttl_seconds=request.app.state.walking_settings.cache_ttl_seconds,
+                    )
+                    result = fresh
+            if not result.success or not result.steps:
+                raise HTTPException(status_code=404, detail="两点之间没有可用步行路线")
+        return {
+            "origin": {"lng": origin[0], "lat": origin[1]},
+            "destination": {"lng": destination[0], "lat": destination[1]},
+            "distance_m": result.distance_m,
+            "duration_s": result.duration_s,
+            "polyline": result.steps,
+            "source": result.source,
+        }
 
     @app.get("/api/demo/default")
     def default_demo():
@@ -304,6 +342,43 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"假设设施位置不可用：{exc}") from exc
 
+    @app.post("/api/reports/{report_id}/ai/interpret")
+    def interpret_report(
+        report_id: str,
+        payload: dict[str, str] | None = None,
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        report = report_repository.get(report_id)
+        if not report or report.get("status") != "completed":
+            raise HTTPException(status_code=404, detail="历史报告不存在或尚未完成")
+        request_payload = payload or {}
+        intent = request_payload.get("intent", "summary")
+        if intent not in {"summary", "area_explanation", "ask", "priority", "simulation", "brief"}:
+            raise HTTPException(status_code=422, detail="不支持的 AI 解读类型")
+        try:
+            result = build_ai_interpretation(
+                report,
+                intent=intent,
+                grid_id=request_payload.get("grid_id"),
+                question=request_payload.get("question"),
+                category=request_payload.get("category"),
+                simulation_id=request_payload.get("simulation_id"),
+            )
+            question = request_payload.get("question")
+            saved = report_repository.save_ai_interpretation(report_id, result, question=question)
+            return saved
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.get("/api/reports/{report_id}/ai/interpretations")
+    def list_report_interpretations(
+        report_id: str,
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        if not report_repository.get(report_id):
+            raise HTTPException(status_code=404, detail="历史报告不存在")
+        return {"items": report_repository.list_ai_interpretations(report_id)}
+
     @app.get("/api/reports/{report_id}/exports/{export_format}")
     def export_completed_report(
         report_id: str,
@@ -313,6 +388,11 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         report = report_repository.get(report_id)
         if not report or report.get("status") != "completed":
             raise HTTPException(status_code=404, detail="历史报告不存在或尚未完成")
+        # 注入已保存的 AI 解读，使 JSON/PDF 导出可以附带生成方式、证据引用和数据质量说明。
+        # 仅在非空时注入，避免破坏「导出 JSON == 原始报告」的等值契约。
+        interpretations = report_repository.list_ai_interpretations(report_id)
+        if interpretations:
+            report = {**report, "ai_interpretations": interpretations}
         builders = {
             "json": build_json_export,
             "csv": build_csv_export,
