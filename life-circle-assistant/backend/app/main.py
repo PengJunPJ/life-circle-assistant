@@ -25,7 +25,7 @@ from .storage import ReportRepository, TaskRepository
 
 load_dotenv()
 
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.1.0"
 
 
 def get_map_provider(request: Request) -> MapProvider:
