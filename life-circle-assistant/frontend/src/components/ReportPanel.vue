@@ -79,7 +79,7 @@ import type { ECharts } from '../utils/chartRuntime'
 import { ArrowRight, CircleCheck, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { HistoryReportItem } from '../types/history'
 import type { RecommendationCandidate } from '../types/recommendations'
-import type { Report } from '../types/report'
+import type { Category, Report } from '../types/report'
 import type { SimulationLocation, SimulationResult } from '../types/simulation'
 import DataQualityDetails from './DataQualityDetails.vue'
 import ScoreBreakdown from './ScoreBreakdown.vue'
@@ -154,6 +154,40 @@ function formatRate(value: number) {
   return `${Math.round(value * 100)}%`
 }
 
+// 柱状图悬浮提示：把该类别的关键体检信息一次性给出，避免用户再去翻下方明细
+function categoryTooltipHtml(item: Category, dark: boolean) {
+  const muted = dark ? '#9db8b8' : '#7b8c87'
+  const strong = dark ? '#eaf6f3' : '#22403a'
+  const divider = dark ? 'rgba(126,214,199,.2)' : '#e3eae6'
+  const row = (label: string, value: string) =>
+    `<div style="display:flex;justify-content:space-between;gap:18px;margin-top:3px;">` +
+    `<span style="color:${muted};">${label}</span>` +
+    `<span style="color:${strong};font-weight:600;">${value}</span></div>`
+  const components = item.components
+    .map((c) => row(`${c.label}（占 ${c.weight_percent}%）`, c.score === null ? '—' : `${c.score}`))
+    .join('')
+  const scoreText = item.score === null ? '—' : `${item.score} / 100`
+  const nearestText = item.nearest_walk_minutes === null ? '—' : `${item.nearest_walk_minutes} 分钟`
+  const weightText = `${formatRate(item.configured_weight)}（实际 ${formatRate(item.applied_weight)}）`
+  const note = item.valid_for_overall
+    ? ''
+    : `<div style="margin-top:6px;color:${muted};font-size:11px;line-height:1.5;">${item.status_explanation}</div>`
+  return (
+    `<div style="min-width:196px;">` +
+    `<div style="display:flex;align-items:center;gap:6px;">` +
+    `<span style="width:9px;height:9px;border-radius:2px;background:${item.color};display:inline-block;"></span>` +
+    `<strong style="color:${strong};font-size:13px;">${item.label}</strong>` +
+    `<span style="color:${muted};font-size:11px;">${item.status_label}</span></div>` +
+    row('类别得分', scoreText) +
+    row('设施数量', `${item.count} 个`) +
+    row('最近步行', nearestText) +
+    row('综合权重', weightText) +
+    `<div style="margin-top:7px;padding-top:6px;border-top:1px solid ${divider};">${components}</div>` +
+    note +
+    `</div>`
+  )
+}
+
 async function drawChart() {
   if (!chartRef.value || !props.report) return
   echartsImport ||= loadChartRuntime()
@@ -166,7 +200,43 @@ async function drawChart() {
   const nullBar = dark ? '#3a4d59' : '#c5cfcb'
   chart?.dispose()
   chart = echarts.init(chartRef.value)
-  chart.setOption({ grid: { top: 12, right: 12, bottom: 28, left: 32 }, xAxis: { type: 'category', data: props.report.categories.map((item) => item.label), axisLabel: { color: axis, fontSize: 11 } }, yAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: split } }, axisLabel: { color: axisMinor } }, series: [{ type: 'bar', barWidth: 20, data: props.report.categories.map((item) => ({ value: item.score ?? 0, itemStyle: { color: item.score === null ? nullBar : item.color, borderRadius: [3, 3, 0, 0] } })) }] })
+  chart.setOption({
+    grid: { top: 12, right: 12, bottom: 28, left: 32 },
+    tooltip: {
+      trigger: 'item',
+      // 图表容器较矮，confine 会把提示裁掉；挂到 body 让其自由浮于面板之上
+      appendToBody: true,
+      // 默认贴光标上方会在图表靠近视口顶部时把表头顶出屏幕；改为右下优先、越界自动翻转
+      position: (point: number[], _params: unknown, _dom: unknown, _rect: unknown, size: { contentSize: number[] }) => {
+        // point 为图表容器内局部坐标；先换算到页面坐标做视口越界判断，再转回局部返回
+        const host = chartRef.value?.getBoundingClientRect()
+        const ox = host?.left ?? 0
+        const oy = host?.top ?? 0
+        // 首帧 contentSize 可能为 0，用估算尺寸兜底，保证越界翻转判断可靠
+        const tw = size.contentSize[0] || 240
+        const th = size.contentSize[1] || 240
+        let px = ox + point[0] + 16
+        let py = oy + point[1] + 16
+        if (px + tw > window.innerWidth - 8) px = ox + point[0] - tw - 16
+        if (px < 8) px = 8
+        if (py + th > window.innerHeight - 8) py = oy + point[1] - th - 16
+        if (py < 8) py = 8
+        return [px - ox, py - oy]
+      },
+      backgroundColor: dark ? 'rgba(13,25,37,.97)' : 'rgba(255,255,255,.98)',
+      borderColor: dark ? 'rgba(126,214,199,.3)' : '#dbe4df',
+      borderWidth: 1,
+      padding: 10,
+      textStyle: { color: dark ? '#e9f6f2' : '#274039', fontSize: 12 },
+      formatter: (params: { dataIndex: number }) => {
+        const item = props.report?.categories[params.dataIndex]
+        return item ? categoryTooltipHtml(item, dark) : ''
+      },
+    },
+    xAxis: { type: 'category', data: props.report.categories.map((item) => item.label), axisLabel: { color: axis, fontSize: 11 } },
+    yAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: split } }, axisLabel: { color: axisMinor } },
+    series: [{ type: 'bar', barWidth: 20, data: props.report.categories.map((item) => ({ value: item.score ?? 0, itemStyle: { color: item.score === null ? nullBar : item.color, borderRadius: [3, 3, 0, 0] } })) }],
+  })
 }
 
 async function loadChartRuntime(): Promise<ChartRuntime> {
