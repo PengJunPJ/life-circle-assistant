@@ -351,7 +351,7 @@ def test_category_failure_produces_partial_report_and_quality_event(tmp_path):
 
 def test_analysis_request_rejects_empty_unknown_categories_and_invalid_coordinates():
     assert client.post("/api/analyze", json={"categories": []}).status_code == 422
-    assert client.post("/api/analyze", json={"categories": ["park"]}).status_code == 422
+    assert client.post("/api/analyze", json={"categories": ["not_a_facility"]}).status_code == 422
     assert client.post("/api/analyze", json={"lng": 181}).status_code == 422
 
 

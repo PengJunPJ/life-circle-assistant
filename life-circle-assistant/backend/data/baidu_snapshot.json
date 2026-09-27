@@ -5,14 +5,115 @@
   "generated_at": "2026-09-20T00:00:00+08:00",
   "is_synthetic": true,
   "note": "本文件是可复现的离线演示种子，设施名称、坐标和步行时间不代表当前真实地图结果。配置真实百度地图凭证后，可使用 backend/scripts/cache_baidu_snapshot.py 生成含真实抓取时间的快照。",
-  "center": {"lng": 113.4872, "lat": 23.1068, "address": "广州市黄埔区红山街道海韵东路离线样例中心"},
+  "center": {
+    "lng": 113.4872,
+    "lat": 23.1068,
+    "address": "广州市黄埔区红山街道海韵东路离线样例中心"
+  },
   "pois": [
-    {"id": "m-01", "name": "离线样例菜市场 A", "category": "market", "lng": 113.4891, "lat": 23.1085, "walk_minutes": 6},
-    {"id": "m-02", "name": "离线样例农贸市场 B", "category": "market", "lng": 113.4818, "lat": 23.1042, "walk_minutes": 10},
-    {"id": "p-01", "name": "离线样例药店 A", "category": "pharmacy", "lng": 113.4887, "lat": 23.1053, "walk_minutes": 5},
-    {"id": "p-02", "name": "离线样例药店 B", "category": "pharmacy", "lng": 113.4937, "lat": 23.1092, "walk_minutes": 12},
-    {"id": "s-01", "name": "离线样例小学 A", "category": "school", "lng": 113.4904, "lat": 23.1078, "walk_minutes": 8},
-    {"id": "s-02", "name": "离线样例小学 B", "category": "school", "lng": 113.4808, "lat": 23.1105, "walk_minutes": 16},
-    {"id": "h-01", "name": "离线样例医疗服务 A", "category": "medical", "lng": 113.4851, "lat": 23.1029, "walk_minutes": 9}
+    {
+      "id": "m-01",
+      "name": "离线样例菜市场 A",
+      "category": "market",
+      "lng": 113.4891,
+      "lat": 23.1085,
+      "walk_minutes": 6
+    },
+    {
+      "id": "m-02",
+      "name": "离线样例农贸市场 B",
+      "category": "market",
+      "lng": 113.4818,
+      "lat": 23.1042,
+      "walk_minutes": 10
+    },
+    {
+      "id": "p-01",
+      "name": "离线样例药店 A",
+      "category": "pharmacy",
+      "lng": 113.4887,
+      "lat": 23.1053,
+      "walk_minutes": 5
+    },
+    {
+      "id": "p-02",
+      "name": "离线样例药店 B",
+      "category": "pharmacy",
+      "lng": 113.4937,
+      "lat": 23.1092,
+      "walk_minutes": 12
+    },
+    {
+      "id": "s-01",
+      "name": "离线样例小学 A",
+      "category": "school",
+      "lng": 113.4904,
+      "lat": 23.1078,
+      "walk_minutes": 8
+    },
+    {
+      "id": "s-02",
+      "name": "离线样例小学 B",
+      "category": "school",
+      "lng": 113.4808,
+      "lat": 23.1105,
+      "walk_minutes": 16
+    },
+    {
+      "id": "h-01",
+      "name": "离线样例医疗服务 A",
+      "category": "medical",
+      "lng": 113.4851,
+      "lat": 23.1029,
+      "walk_minutes": 9
+    },
+    {
+      "id": "e-01",
+      "name": "离线样例养老服务中心 A",
+      "category": "elderly",
+      "lng": 113.4862,
+      "lat": 23.1091,
+      "walk_minutes": 7
+    },
+    {
+      "id": "e-02",
+      "name": "离线样例敬老院 B",
+      "category": "elderly",
+      "lng": 113.4925,
+      "lat": 23.104,
+      "walk_minutes": 13
+    },
+    {
+      "id": "g-01",
+      "name": "离线样例社区公园 A",
+      "category": "park",
+      "lng": 113.4835,
+      "lat": 23.108,
+      "walk_minutes": 6
+    },
+    {
+      "id": "g-02",
+      "name": "离线样例口袋公园 B",
+      "category": "park",
+      "lng": 113.491,
+      "lat": 23.1035,
+      "walk_minutes": 11
+    },
+    {
+      "id": "c-01",
+      "name": "离线样例便利超市 A",
+      "category": "convenience",
+      "lng": 113.488,
+      "lat": 23.1062,
+      "walk_minutes": 4
+    },
+    {
+      "id": "c-02",
+      "name": "离线样例综合超市 B",
+      "category": "convenience",
+      "lng": 113.4822,
+      "lat": 23.105,
+      "walk_minutes": 9
+    }
   ]
 }

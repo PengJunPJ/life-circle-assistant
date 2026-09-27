@@ -3,7 +3,10 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 
-CoreCategory = Literal["market", "pharmacy", "school", "medical"]
+CoreCategory = Literal[
+    "market", "pharmacy", "school", "medical",
+    "elderly", "park", "convenience",
+]
 CenterSelectionMethod = Literal["default", "address", "map", "coordinates"]
 SimulationSelectionMethod = Literal["recommendation", "map"]
 

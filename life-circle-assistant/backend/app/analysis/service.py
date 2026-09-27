@@ -170,7 +170,9 @@ class AnalysisApplicationService:
         zones, zone_events, zone_failures = await build_category_service_areas(
             self.walking_service,
             center,
-            list(request.categories),
+            # 仅对配置了 service_area_grid 的类别跑 16 格盲区网格；扩展类只保留覆盖评分，
+            # 避免为评审盲区口径之外的类别支付 16×K 的步行坐标对成本。
+            [c for c in request.categories if CATEGORIES[c].get("service_area_grid", True)],
             facilities,
             request.minutes,
             failed_categories=facility_search_failed_categories,

@@ -5,6 +5,9 @@ export const FACILITY_LABELS: Record<string, string> = {
   pharmacy: '药店',
   school: '小学',
   medical: '医疗服务',
+  elderly: '养老',
+  park: '公园绿地',
+  convenience: '便利超市',
 }
 
 export const FACILITY_ICONS: Record<string, string> = {
@@ -12,6 +15,9 @@ export const FACILITY_ICONS: Record<string, string> = {
   pharmacy: '药',
   school: '学',
   medical: '医',
+  elderly: '养',
+  park: '园',
+  convenience: '超',
 }
 
 export const FACILITY_COLORS: Record<string, string> = {
@@ -19,6 +25,9 @@ export const FACILITY_COLORS: Record<string, string> = {
   pharmacy: '#d65a5a',
   school: '#3d83b8',
   medical: '#3e9b8b',
+  elderly: '#9061c2',
+  park: '#55a05a',
+  convenience: '#d9a13b',
 }
 
 export const DEFAULT_CATEGORIES = Object.keys(FACILITY_LABELS)
