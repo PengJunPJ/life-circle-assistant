@@ -158,6 +158,7 @@ class AnalysisApplicationService:
             facility_api_calls = max(0, facility_request_end - facility_request_start)
 
         self._stage("walking_calculation", 56)
+        walking_http_start = getattr(getattr(self.provider, "client", None), "walking_request_count", None)
         await self._attach_walking_results(center, facilities, events, partial_failures)
         isochrone = await self._build_isochrone(center, request, events, partial_failures)
 
@@ -180,6 +181,11 @@ class AnalysisApplicationService:
         )
         events.extend(zone_events)
         partial_failures.extend(zone_failures)
+
+        # 批量分块会使一次逻辑矩阵调用对应多次真实 HTTP；以客户端计数为准披露调用量
+        walking_http_end = getattr(getattr(self.provider, "client", None), "walking_request_count", None)
+        if isinstance(walking_http_start, int) and isinstance(walking_http_end, int):
+            self.walking_service.metrics.api_calls = max(0, walking_http_end - walking_http_start)
 
         self._stage("scoring", 86)
         walking_failed_categories = {
@@ -411,10 +417,21 @@ class AnalysisApplicationService:
         max_radius = 1_250
         boundary: list[tuple[float, float]] = []
         durations: list[float] = []
+        # 首环 24/16 个方向采样合并为一次批量步行矩阵，避免逐方向单点请求
+        candidates = [
+            interpolate_point(center, 2 * math.pi * index / directions, max_radius)
+            for index in range(directions)
+        ]
+        try:
+            initial_rows = await self.walking_service.walking_matrix([center], candidates)
+        except MapProviderError as exc:
+            initial_rows = []
+            partial_failures.append({"scope": "isochrone", "code": "isochrone_batch_failed", "message": str(exc)})
+        initial_routes = initial_rows[0] if initial_rows else []
         for index in range(directions):
             angle = 2 * math.pi * index / directions
-            candidate = interpolate_point(center, angle, max_radius)
-            route = await self._single_route(center, candidate)
+            candidate = candidates[index]
+            route = initial_routes[index] if index < len(initial_routes) else None
             if route and route.success and (route.duration_s or 0) <= request.minutes * 60:
                 boundary.append(candidate)
                 durations.append(route.duration_s or 0)

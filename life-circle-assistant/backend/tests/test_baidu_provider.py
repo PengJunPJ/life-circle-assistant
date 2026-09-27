@@ -1,7 +1,88 @@
 import asyncio
 
-from app.baidu import BaiduMapClient
+from app.baidu import BaiduMapClient, BaiduMapError
 from app.maps.baidu import BaiduMapProvider
+
+
+class BatchStubClient:
+    """记录批量算路与逐对步行调用，用于验证分块与退化策略。"""
+
+    def __init__(self, *, fail_batch: bool = False) -> None:
+        self.batch_calls: list[tuple[int, int]] = []
+        self.pair_calls: list[tuple[tuple[float, float], tuple[float, float]]] = []
+        self.fail_batch = fail_batch
+
+    async def batch_walking(self, origins, destinations):
+        self.batch_calls.append((len(origins), len(destinations)))
+        if self.fail_batch:
+            raise BaiduMapError("批量算路不可用", code="provider_status_2")
+        return [
+            {
+                "distance_m": 100.0 * (oi * len(destinations) + di + 1),
+                "duration_s": 60.0 * (oi * len(destinations) + di + 1),
+            }
+            for oi in range(len(origins))
+            for di in range(len(destinations))
+        ]
+
+    async def walking_route(self, origin, destination):
+        self.pair_calls.append((origin, destination))
+        return {
+            "distance_m": 500.0,
+            "duration_s": 300.0,
+            "steps": [{"path": "113.1,23.1;113.2,23.2"}],
+        }
+
+
+def test_provider_declares_batch_walking_support():
+    provider = BaiduMapProvider(client=BatchStubClient())  # type: ignore[arg-type]
+    assert provider.supports_batch_walking is True
+
+
+def test_walking_matrix_chunks_by_pair_limit():
+    client = BatchStubClient()
+    provider = BaiduMapProvider(client=client)  # type: ignore[arg-type]
+    destinations = [(113.48 + i * 0.001, 23.10) for i in range(250)]
+
+    matrix = asyncio.run(provider.walking_matrix([(113.4872, 23.1068)], destinations))
+
+    # 点对乘积上限 100：1×250 应拆成 100/100/50 三次批量请求
+    assert client.batch_calls == [(1, 100), (1, 100), (1, 50)]
+    assert client.pair_calls == []
+    assert len(matrix) == 1 and len(matrix[0]) == 250
+    # stub 按块内行优先下标赋值：首块第 1/100 对、次块首对、末块第 50 对
+    assert matrix[0][0].success and matrix[0][0].distance_m == 100.0
+    assert matrix[0][0].duration_s == 60.0
+    assert matrix[0][99].distance_m == 100.0 * 100
+    assert matrix[0][100].distance_m == 100.0
+    assert matrix[0][249].distance_m == 100.0 * 50
+    assert all(item.method == "baidu_walking_route_matrix" for item in matrix[0])
+
+
+def test_walking_matrix_keeps_directionlite_for_single_pair():
+    client = BatchStubClient()
+    provider = BaiduMapProvider(client=client)  # type: ignore[arg-type]
+
+    matrix = asyncio.run(provider.walking_matrix([(113.4872, 23.1068)], [(113.4887, 23.1053)]))
+
+    # 单坐标对不走批量算路，保留 steps 折线供步行路线预览
+    assert client.batch_calls == []
+    assert len(client.pair_calls) == 1
+    assert matrix[0][0].success
+    assert matrix[0][0].method == "baidu_walking_route"
+    assert matrix[0][0].steps == [[113.1, 23.1], [113.2, 23.2]]
+
+
+def test_walking_matrix_falls_back_to_pairs_when_batch_fails():
+    client = BatchStubClient(fail_batch=True)
+    provider = BaiduMapProvider(client=client)  # type: ignore[arg-type]
+    destinations = [(113.48 + i * 0.001, 23.10) for i in range(3)]
+
+    matrix = asyncio.run(provider.walking_matrix([(113.4872, 23.1068)], destinations))
+
+    assert client.batch_calls == [(1, 3)]
+    assert len(client.pair_calls) == 3
+    assert all(item.success and item.distance_m == 500.0 for item in matrix[0])
 
 
 class RecordingBaiduClient:

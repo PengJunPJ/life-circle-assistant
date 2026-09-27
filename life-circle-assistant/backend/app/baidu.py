@@ -37,6 +37,8 @@ class BaiduMapClient:
         configured_mode = os.getenv("BAIDU_MAP_MODE", "").strip().lower()
         self.mode = configured_mode or ("real" if self.ak else "mock")
         self.qps = max(0.0, float(os.getenv("BAIDU_MAP_QPS", "1.5")))
+        # 步行类请求的真实发出次数（含批量分块），供报告披露真实 API 调用量
+        self.walking_request_count = 0
         self._http_client: httpx.AsyncClient | None = None
         self._sleep = sleep
         self._monotonic = monotonic
@@ -148,6 +150,7 @@ class BaiduMapClient:
         return payload.get("results") or []
 
     async def walking_route(self, origin: tuple[float, float], destination: tuple[float, float]) -> dict[str, Any]:
+        self.walking_request_count += 1
         payload = await self._request("/directionlite/v1/walking", {"origin": f"{origin[1]},{origin[0]}", "destination": f"{destination[1]},{destination[0]}"})
         result = payload.get("result") or {}
         routes = result.get("routes") or []
@@ -155,6 +158,46 @@ class BaiduMapClient:
             raise BaiduMapError("两点之间没有可用步行路线")
         route = routes[0]
         return {"distance_m": float(route.get("distance", 0)), "duration_s": float(route.get("duration", 0)), "steps": route.get("steps") or []}
+
+    async def batch_walking(
+        self,
+        origins: list[tuple[float, float]],
+        destinations: list[tuple[float, float]],
+    ) -> list[dict[str, Any]]:
+        """百度批量算路（步行），一次请求返回 origins×destinations 的距离/耗时矩阵。
+
+        返回行优先扁平列表，元素为 ``{"distance_m": float, "duration_s": float}``。
+        百度对单次请求的点对乘积有限制（实测 100 对可用、160 对报"点对数量超出限制"），
+        分块由调用方负责；本方法只校验返回规模与请求一致。
+        """
+        self.walking_request_count += 1
+        payload = await self._request(
+            "/routematrix/v2/walking",
+            {
+                "origins": "|".join(f"{lat},{lng}" for lng, lat in origins),
+                "destinations": "|".join(f"{lat},{lng}" for lng, lat in destinations),
+            },
+        )
+        rows = payload.get("result") or []
+        expected = len(origins) * len(destinations)
+        if len(rows) != expected:
+            raise BaiduMapError(
+                f"批量算路返回 {len(rows)} 条结果，与请求的 {expected} 个点对不一致",
+                code="format_error",
+            )
+        parsed: list[dict[str, Any]] = []
+        for item in rows:
+            distance = (item or {}).get("distance") or {}
+            duration = (item or {}).get("duration") or {}
+            if "value" not in distance or "value" not in duration:
+                raise BaiduMapError("批量算路结果缺少 distance/duration 字段", code="format_error")
+            parsed.append(
+                {
+                    "distance_m": float(distance["value"]),
+                    "duration_s": float(duration["value"]),
+                }
+            )
+        return parsed
 
     async def walking_routes(self, origin: tuple[float, float], destinations: Iterable[tuple[float, float]], concurrency: int = 6) -> list[dict[str, Any] | None]:
         semaphore = asyncio.Semaphore(concurrency)

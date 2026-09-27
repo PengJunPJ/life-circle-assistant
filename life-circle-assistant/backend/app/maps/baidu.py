@@ -64,8 +64,14 @@ class BaiduMapProvider:
 
     @property
     def supports_batch_walking(self) -> bool:
-        # 百度轻量步行路线接口一次只接受一个坐标对，由可靠调用层控制并发和 QPS。
-        return False
+        # 多坐标对走百度批量算路（/routematrix/v2/walking）一次取回矩阵；
+        # 单坐标对仍走 directionlite 以保留 steps 折线供步行路线预览。
+        return True
+
+    # 百度批量算路单次请求的点对乘积上限：实测 10×10=100 可用、16×10=160 报
+    # “点对数量超出限制”，故按 100 对分块并留原点分块余量。
+    BATCH_PAIR_LIMIT = 100
+    BATCH_ORIGIN_CHUNK = 10
 
     @property
     def descriptor(self) -> ProviderDescriptor:
@@ -133,38 +139,105 @@ class BaiduMapProvider:
         destinations: list[tuple[float, float]],
     ) -> list[list[WalkingResult]]:
         semaphore = asyncio.Semaphore(self.concurrency)
+        if len(origins) * len(destinations) <= 1:
+            # 单坐标对走 directionlite：批量算路不返回 steps，而步行路线预览需要折线。
+            return [
+                list(await asyncio.gather(*(self._pair_result(origin, destination, semaphore) for destination in destinations)))
+                for origin in origins
+            ]
+        matrix: list[list[WalkingResult | None]] = [[None] * len(destinations) for _ in origins]
+        for origin_start in range(0, len(origins), self.BATCH_ORIGIN_CHUNK):
+            origin_chunk = origins[origin_start : origin_start + self.BATCH_ORIGIN_CHUNK]
+            chunk_size = max(1, self.BATCH_PAIR_LIMIT // len(origin_chunk))
+            for dest_start in range(0, len(destinations), chunk_size):
+                dest_chunk = destinations[dest_start : dest_start + chunk_size]
+                await self._fill_batch_chunk(matrix, origin_start, dest_start, origin_chunk, dest_chunk, semaphore)
+        return [
+            [
+                item
+                if item is not None
+                else WalkingResult(
+                    origin=origin,
+                    destination=destination,
+                    success=False,
+                    distance_m=None,
+                    duration_s=None,
+                    source="real_api",
+                    method="baidu_walking_route_matrix",
+                    error_code="format_error",
+                    error_message="批量算路分块未填充结果",
+                )
+                for destination, item in zip(destinations, row)
+            ]
+            for origin, row in zip(origins, matrix)
+        ]
 
-        async def calculate(origin: tuple[float, float], destination: tuple[float, float]) -> WalkingResult:
-            async with semaphore:
-                try:
-                    route = await self.client.walking_route(origin, destination)
-                    return WalkingResult(
+    async def _fill_batch_chunk(
+        self,
+        matrix: list[list[WalkingResult | None]],
+        origin_offset: int,
+        dest_offset: int,
+        origin_chunk: list[tuple[float, float]],
+        dest_chunk: list[tuple[float, float]],
+        semaphore: asyncio.Semaphore,
+    ) -> None:
+        try:
+            flat = await self.client.batch_walking(origin_chunk, dest_chunk)
+        except BaiduMapError:
+            flat = None
+        if flat is not None:
+            for origin_index, origin in enumerate(origin_chunk):
+                for dest_index, destination in enumerate(dest_chunk):
+                    item = flat[origin_index * len(dest_chunk) + dest_index]
+                    matrix[origin_offset + origin_index][dest_offset + dest_index] = WalkingResult(
                         origin=origin,
                         destination=destination,
                         success=True,
-                        distance_m=route["distance_m"],
-                        duration_s=route["duration_s"],
+                        distance_m=item["distance_m"],
+                        duration_s=item["duration_s"],
                         source="real_api",
-                        method="baidu_walking_route",
-                        steps=steps_to_polyline(route.get("steps") or []),
+                        method="baidu_walking_route_matrix",
                     )
-                except BaiduMapError as exc:
-                    return WalkingResult(
-                        origin=origin,
-                        destination=destination,
-                        success=False,
-                        distance_m=None,
-                        duration_s=None,
-                        source="real_api",
-                        method="baidu_walking_route",
-                        error_code=exc.code,
-                        error_message=str(exc),
-                    )
+            return
+        # 分块批量失败：该块退化为逐对 directionlite，保证结果可审计而非整矩阵失败
+        indexes = [(oi, di) for oi in range(len(origin_chunk)) for di in range(len(dest_chunk))]
+        results = await asyncio.gather(
+            *(self._pair_result(origin_chunk[oi], dest_chunk[di], semaphore) for oi, di in indexes)
+        )
+        for (oi, di), result in zip(indexes, results):
+            matrix[origin_offset + oi][dest_offset + di] = result
 
-        rows: list[list[WalkingResult]] = []
-        for origin in origins:
-            rows.append(await asyncio.gather(*(calculate(origin, destination) for destination in destinations)))
-        return rows
+    async def _pair_result(
+        self,
+        origin: tuple[float, float],
+        destination: tuple[float, float],
+        semaphore: asyncio.Semaphore,
+    ) -> WalkingResult:
+        async with semaphore:
+            try:
+                route = await self.client.walking_route(origin, destination)
+                return WalkingResult(
+                    origin=origin,
+                    destination=destination,
+                    success=True,
+                    distance_m=route["distance_m"],
+                    duration_s=route["duration_s"],
+                    source="real_api",
+                    method="baidu_walking_route",
+                    steps=steps_to_polyline(route.get("steps") or []),
+                )
+            except BaiduMapError as exc:
+                return WalkingResult(
+                    origin=origin,
+                    destination=destination,
+                    success=False,
+                    distance_m=None,
+                    duration_s=None,
+                    source="real_api",
+                    method="baidu_walking_route",
+                    error_code=exc.code,
+                    error_message=str(exc),
+                )
 
     @staticmethod
     def _provider_error(exc: BaiduMapError) -> MapProviderError:
