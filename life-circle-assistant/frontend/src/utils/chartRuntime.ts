@@ -1,9 +1,9 @@
-import { BarChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent } from 'echarts/components'
+import { BarChart, RadarChart } from 'echarts/charts'
+import { GridComponent, RadarComponent, TooltipComponent } from 'echarts/components'
 import { init, use, type ECharts } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 
-use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
+use([BarChart, RadarChart, GridComponent, RadarComponent, TooltipComponent, CanvasRenderer])
 
 export { init }
 export type { ECharts }

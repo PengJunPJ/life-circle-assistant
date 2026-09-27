@@ -49,7 +49,7 @@
           <span v-for="stage in stageDurations" :key="stage.code"><b>{{ stage.label }}</b><em>{{ formatDuration(stage.duration_ms) }}</em></span>
         </div>
       </section>
-      <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>可展开核验计算过程</small></div><div ref="chartRef" class="chart"></div><ScoreBreakdown :scores="report.category_scores" /></div>
+      <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>可展开核验计算过程</small></div><div ref="chartRef" class="chart"></div><div ref="radarRef" class="radar" role="img" aria-label="各类别得分雷达图"></div><ScoreBreakdown :scores="report.category_scores" /></div>
       <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" @locate="emit('locate-recommendation', $event)" @simulate="(category, candidate) => emit('simulate-candidate', category, candidate)" /></div>
       <div class="report-section">
         <SimulationPanel
@@ -131,8 +131,10 @@ function toggleCollapseIfDesktop() {
   emit('toggle-collapse')
 }
 const chartRef = ref<HTMLDivElement | null>(null)
+const radarRef = ref<HTMLDivElement | null>(null)
 const showQualityDetails = ref(false)
 let chart: ECharts | null = null
+let radarChart: ECharts | null = null
 type ChartRuntime = typeof import('../utils/chartRuntime')
 let echartsImport: Promise<ChartRuntime> | null = null
 const overallScore = computed(() => props.report?.summary.score ?? null)
@@ -243,14 +245,76 @@ async function loadChartRuntime(): Promise<ChartRuntime> {
   return import('../utils/chartRuntime')
 }
 
-watch(() => props.report, async () => { await nextTick(); await drawChart() }, { immediate: true })
-onMounted(() => window.addEventListener('life-circle:theme', handleThemeChange))
-onBeforeUnmount(() => { window.removeEventListener('life-circle:theme', handleThemeChange); chart?.dispose() })
+// 雷达图：把各类别得分放在同一张多边形上，便于横向比较短板类别
+async function drawRadar() {
+  if (!radarRef.value || !props.report) return
+  echartsImport ||= loadChartRuntime()
+  const echarts = await echartsImport
+  if (!radarRef.value || !props.report) return
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+  const axis = dark ? '#9db8b8' : '#71838a'
+  const split = dark ? 'rgba(126,214,199,.16)' : '#e3eae6'
+  const accent = dark ? '#2ee6c5' : '#3e9b8b'
+  const categories = props.report.categories
+  radarChart?.dispose()
+  radarChart = echarts.init(radarRef.value)
+  radarChart.setOption({
+    tooltip: {
+      trigger: 'item',
+      appendToBody: true,
+      backgroundColor: dark ? 'rgba(13,25,37,.97)' : 'rgba(255,255,255,.98)',
+      borderColor: dark ? 'rgba(126,214,199,.3)' : '#dbe4df',
+      borderWidth: 1,
+      padding: 10,
+      textStyle: { color: dark ? '#e9f6f2' : '#274039', fontSize: 12 },
+      formatter: () =>
+        categories
+          .map((item) => `${item.label}：${item.score === null ? '—' : item.score}`)
+          .join('<br/>'),
+    },
+    radar: {
+      indicator: categories.map((item) => ({ name: item.label, max: 100 })),
+      radius: '66%',
+      center: ['50%', '52%'],
+      axisName: { color: axis, fontSize: 11 },
+      axisLine: { lineStyle: { color: split } },
+      splitLine: { lineStyle: { color: split } },
+      splitArea: { show: false },
+    },
+    series: [
+      {
+        type: 'radar',
+        symbolSize: 4,
+        data: [
+          {
+            name: '类别得分',
+            value: categories.map((item) => item.score ?? 0),
+            lineStyle: { color: accent, width: 2 },
+            itemStyle: { color: accent },
+            areaStyle: { color: dark ? 'rgba(46,230,197,.18)' : 'rgba(62,155,139,.16)' },
+          },
+        ],
+      },
+    ],
+  })
+}
 
-function handleThemeChange() { drawChart() }
+watch(() => props.report, async () => { await nextTick(); await drawChart(); await drawRadar() }, { immediate: true })
+onMounted(() => window.addEventListener('life-circle:theme', handleThemeChange))
+onBeforeUnmount(() => {
+  window.removeEventListener('life-circle:theme', handleThemeChange)
+  chart?.dispose()
+  radarChart?.dispose()
+})
+
+function handleThemeChange() {
+  drawChart()
+  drawRadar()
+}
 </script>
 
 <style scoped>
+.radar { height: 232px; margin-top: 4px; }
 .execution-section { border-top: 1px solid #e7eeea; padding-top: 11px; }
 .execution-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .execution-metrics > div { padding: 7px 8px; border-radius: 4px; background: #f1f6f3; }
