@@ -164,7 +164,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       ctx.beginPath()
       coordinates.forEach(([lng, lat], index) => {
         const point = project(lng, lat, w, h)
-        index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)
+        if (index) ctx.lineTo(point.x, point.y)
+        else ctx.moveTo(point.x, point.y)
       })
       ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth
       ctx.setLineDash(marker === '!' ? [3, 3] : marker === '△' ? [9, 4] : [])
@@ -206,7 +207,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
             ctx.beginPath()
             drawnPath.forEach(([lng, lat], index) => {
               const point = project(lng, lat, w, h)
-              index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)
+              if (index) ctx.lineTo(point.x, point.y)
+        else ctx.moveTo(point.x, point.y)
             })
           }
           // 导航式实线：白色外发光 + 深绿描边 + 浅绿芯线，圆角连接
@@ -597,7 +599,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       selectedServiceArea.value = serviceAreaById(recommendation.target_region_ids[0])
     }
     await nextTick()
-    realMapReady.value ? renderBaiduMap() : drawMap()
+    if (realMapReady.value) renderBaiduMap()
+    else drawMap()
   })
   // 报告或分析中心变化后，旧路线不再对应新结果，自动清除
   watch([report, analysisCenter], () => { routePreview.value = null })
@@ -613,7 +616,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   })
 
   function redrawForTheme() {
-    realMapReady.value ? renderBaiduMap() : drawMap()
+    if (realMapReady.value) renderBaiduMap()
+    else drawMap()
   }
 
   return {
