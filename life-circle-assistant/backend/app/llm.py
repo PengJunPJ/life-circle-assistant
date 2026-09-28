@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import os
+import time
+from asyncio import Lock, Semaphore, sleep
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -38,6 +40,9 @@ class LLMSettings:
     model: str
     timeout_seconds: float
     max_tokens: int
+    max_concurrency: int
+    max_retries: int
+    retry_base_seconds: float
 
     @classmethod
     def from_env(cls) -> LLMSettings:
@@ -49,6 +54,9 @@ class LLMSettings:
             model=os.getenv("LLM_MODEL", "").strip(),
             timeout_seconds=max(3.0, float(os.getenv("LLM_TIMEOUT_SECONDS", "30"))),
             max_tokens=max(256, int(os.getenv("LLM_MAX_TOKENS", "1200"))),
+            max_concurrency=max(1, int(os.getenv("LLM_MAX_CONCURRENCY", "2"))),
+            max_retries=max(0, int(os.getenv("LLM_MAX_RETRIES", "2"))),
+            retry_base_seconds=max(0.1, float(os.getenv("LLM_RETRY_BASE_SECONDS", "0.5"))),
         )
 
     @property
@@ -62,6 +70,11 @@ class OpenAICompatibleProvider:
     def __init__(self, settings: LLMSettings) -> None:
         self.model = settings.model
         self._settings = settings
+        self._semaphore = Semaphore(settings.max_concurrency)
+        self._lock = Lock()
+        self._calls = 0
+        self._failures = 0
+        self._total_latency_ms = 0.0
         self._client = httpx.AsyncClient(
             base_url=settings.base_url,
             timeout=httpx.Timeout(settings.timeout_seconds),
@@ -69,31 +82,57 @@ class OpenAICompatibleProvider:
         )
 
     async def generate(self, *, system: str, user: str) -> dict[str, Any]:
-        try:
-            response = await self._client.post(
-                "/chat/completions",
-                json={
-                    "model": self.model,
-                    "temperature": 0.1,
-                    "max_tokens": self._settings.max_tokens,
-                    "response_format": {"type": "json_object"},
-                    "messages": [
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                },
-            )
-            response.raise_for_status()
-            payload = response.json()
-            content = payload["choices"][0]["message"]["content"]
-            if isinstance(content, list):
-                content = "".join(str(part.get("text", "")) for part in content if isinstance(part, dict))
-            result = json.loads(str(content))
-            if not isinstance(result, dict):
-                raise LLMError("模型返回的 JSON 顶层结构不是对象")
-            return result
-        except (httpx.HTTPError, KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
-            raise LLMError(f"模型调用或解析失败：{exc}") from exc
+        async with self._semaphore:
+            started = time.perf_counter()
+            last_error: Exception | None = None
+            for attempt in range(self._settings.max_retries + 1):
+                try:
+                    response = await self._client.post(
+                        "/chat/completions",
+                        json={
+                            "model": self.model,
+                            "temperature": 0.1,
+                            "max_tokens": self._settings.max_tokens,
+                            "response_format": {"type": "json_object"},
+                            "messages": [
+                                {"role": "system", "content": system},
+                                {"role": "user", "content": user},
+                            ],
+                        },
+                    )
+                    response.raise_for_status()
+                    payload = response.json()
+                    content = payload["choices"][0]["message"]["content"]
+                    if isinstance(content, list):
+                        content = "".join(str(part.get("text", "")) for part in content if isinstance(part, dict))
+                    result = json.loads(str(content))
+                    if not isinstance(result, dict):
+                        raise LLMError("模型返回的 JSON 顶层结构不是对象")
+                    await self._record_call(time.perf_counter() - started)
+                    return result
+                except Exception as exc:
+                    last_error = exc
+                    if attempt < self._settings.max_retries:
+                        await sleep(self._settings.retry_base_seconds * (2**attempt))
+            await self._record_call(time.perf_counter() - started, failed=True)
+            raise LLMError(f"模型调用或解析失败：{last_error}") from last_error
+
+    async def _record_call(self, latency: float, *, failed: bool = False) -> None:
+        async with self._lock:
+            self._calls += 1
+            self._total_latency_ms += latency * 1000
+            if failed:
+                self._failures += 1
+
+    def health(self) -> dict[str, Any]:
+        return {
+            "enabled": True,
+            "provider": "openai_compatible",
+            "model": self.model,
+            "calls": self._calls,
+            "failures": self._failures,
+            "average_latency_ms": round(self._total_latency_ms / self._calls, 1) if self._calls else 0,
+        }
 
     async def close(self) -> None:
         await self._client.aclose()
@@ -106,6 +145,26 @@ def create_llm_provider() -> LLMProvider | None:
     if settings.provider != "openai_compatible":
         raise ValueError(f"不支持的 LLM_PROVIDER：{settings.provider}")
     return OpenAICompatibleProvider(settings)
+
+
+def llm_configuration() -> dict[str, Any]:
+    settings = LLMSettings.from_env()
+    missing = [
+        name
+        for name, value in (
+            ("LLM_API_KEY", settings.api_key),
+            ("LLM_MODEL", settings.model),
+        )
+        if not value
+    ]
+    return {
+        "enabled": settings.enabled,
+        "available": settings.available,
+        "provider": settings.provider,
+        "model": settings.model or None,
+        "base_url": settings.base_url,
+        "missing": missing,
+    }
 
 
 def _context(report: dict[str, Any], deterministic: dict[str, Any]) -> dict[str, Any]:

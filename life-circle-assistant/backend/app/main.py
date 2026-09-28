@@ -16,7 +16,7 @@ from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
 from .bootstrap import configure_runtime
 from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
-from .llm import enhance_interpretation
+from .llm import enhance_interpretation, llm_configuration
 from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService
@@ -100,6 +100,14 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             "provider_mode": descriptor.mode,
             "real_api_available": descriptor.source == "real_api",
             "seeded_walking_cache": getattr(request.app.state, "seeded_walking_cache_count", 0),
+            "llm": {
+                **llm_configuration(),
+                **(
+                    request.app.state.llm_provider.health()
+                    if request.app.state.llm_provider is not None and hasattr(request.app.state.llm_provider, "health")
+                    else {}
+                ),
+            },
         }
 
     @app.get("/api/map/status")

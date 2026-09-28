@@ -1,6 +1,6 @@
 <template>
   <section class="ai-assistant" aria-labelledby="ai-assistant-title">
-    <div class="section-title"><span id="ai-assistant-title">可解释 AI 规划助手</span><small>{{ result?.model || '规则模板' }}</small></div>
+    <div class="section-title"><span id="ai-assistant-title">可解释 AI 规划助手</span><small>{{ result?.mode === 'llm_structured' ? '大模型增强' : (result?.model || '规则模板') }}</small></div>
     <p class="ai-boundary">基于当前体检报告生成解读；不会修改原始评分、路线和设施数据。</p>
     <div class="ai-actions">
       <button type="button" :disabled="loading" @click="run({ intent: 'summary' })">体检摘要</button>
