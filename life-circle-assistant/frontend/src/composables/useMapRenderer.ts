@@ -48,6 +48,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   const realMapReady = ref(false)
   const mapLoadComplete = ref(false)
   const selectedServiceArea = ref<ServiceAreaFeature | null>(null)
+  const manualServiceAreaSelection = ref(false)
   let baiduMap: any = null
   let baiduClickBound = false
   const hoverTarget = ref<MapHoverTarget | null>(null)
@@ -358,7 +359,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       return Math.hypot(point.x - projected.x, point.y - projected.y) <= 14
     })
     if (candidateHit) {
-      selectedServiceArea.value = serviceAreaById(candidateHit.candidate.region_id)
+      const candidateArea = serviceAreaById(candidateHit.candidate.region_id)
+      if (candidateArea) selectServiceArea(candidateArea)
       return
     }
     const serviceAreaHit = [...visibleServiceAreas()].reverse().find((feature) => {
@@ -366,7 +368,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       return pointInPolygon(point, polygon)
     })
     if (serviceAreaHit) {
-      selectedServiceArea.value = serviceAreaHit
+      selectServiceArea(serviceAreaHit)
       return
     }
     selectedServiceArea.value = null
@@ -394,6 +396,13 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   function serviceAreaById(regionId: string): ServiceAreaFeature | null {
     return (report.value?.service_areas.features || report.value?.zones.features || [])
       .find((feature) => feature.properties.grid_id === regionId) || null
+  }
+
+  function selectServiceArea(feature: ServiceAreaFeature) {
+    manualServiceAreaSelection.value = true
+    selectedServiceArea.value = selectedServiceArea.value?.properties.grid_id === feature.properties.grid_id
+      ? null
+      : feature
   }
   function loadScript(src: string) {
     return new Promise<void>((resolve, reject) => {
@@ -482,7 +491,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
           fillOpacity: selected ? .42 : focused ? .42 : dimmed ? .08 : zone.properties.kind === 'normal' ? .08 : .25,
         })
         areaPolygon.addEventListener('click', (event: any) => {
-          selectedServiceArea.value = zone
+          selectServiceArea(zone)
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(areaPolygon)
@@ -561,7 +570,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         const marker = new BMap.Marker(point)
         marker.setTitle(`${recommendation.category_label}规划候选点 · ${candidate.region_id}`)
         marker.addEventListener('click', (event: any) => {
-          selectedServiceArea.value = serviceAreaById(candidate.region_id)
+          const candidateArea = serviceAreaById(candidate.region_id)
+          if (candidateArea) selectServiceArea(candidateArea)
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(marker)
@@ -589,15 +599,25 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     else drawMap()
   }
 
-  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, selectedServiceArea, routePreview], async () => {
+  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, simulation, simulationPicking, selectedServiceArea, routePreview], async () => {
     clearHover()
     if (selectedServiceArea.value && !isServiceAreaVisible(selectedServiceArea.value, visibleCategories.value, visibility())) {
       selectedServiceArea.value = null
     }
-    const recommendation = focusedRecommendation()
-    if (recommendation && !recommendation.target_region_ids.includes(selectedServiceArea.value?.properties.grid_id || '')) {
-      selectedServiceArea.value = serviceAreaById(recommendation.target_region_ids[0])
+    await nextTick()
+    if (realMapReady.value) renderBaiduMap()
+    else drawMap()
+  })
+  watch([report, focusRecommendationId], async () => {
+    if (manualServiceAreaSelection.value) {
+      manualServiceAreaSelection.value = false
+      return
     }
+    const recommendation = focusedRecommendation()
+    if (!recommendation) return
+    const target = serviceAreaById(recommendation.target_region_ids[0])
+    if (!target) return
+    selectedServiceArea.value = target
     await nextTick()
     if (realMapReady.value) renderBaiduMap()
     else drawMap()
@@ -632,11 +652,14 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     retainHover,
     clearHover,
     visibleServiceAreas,
-    selectServiceArea: (feature: ServiceAreaFeature) => { selectedServiceArea.value = feature },
+    selectServiceArea,
     handleCanvasClick,
     handleCanvasMouseMove,
     handleCanvasMouseLeave,
-    closeServiceAreaEvidence: () => { selectedServiceArea.value = null },
+    closeServiceAreaEvidence: () => {
+      manualServiceAreaSelection.value = true
+      selectedServiceArea.value = null
+    },
     drawMap,
     renderBaiduMap,
   }

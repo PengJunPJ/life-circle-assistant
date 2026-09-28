@@ -50,12 +50,35 @@
       <div class="range-row"><span>步行时间</span><strong>{{ minutes }} 分钟</strong></div>
       <el-segmented :model-value="minutes" :options="[10, 15, 20]" size="small" @update:model-value="emit('update:minutes', $event as AnalysisMinutes)" />
     </div>
-    <div class="panel-section">
-      <label>设施与服务区域图层</label>
-      <div class="facility-list"><button v-for="category in Object.keys(FACILITY_LABELS)" :key="category" type="button" :class="['facility-toggle', { selected: visibleCategories.includes(category) }]" :aria-pressed="visibleCategories.includes(category)" @click="emit('toggle-category', category)"><span class="facility-icon" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ FACILITY_ICONS[category] }}</span><span>{{ FACILITY_LABELS[category] }}</span><span class="check" aria-hidden="true">{{ visibleCategories.includes(category) ? '✓' : '' }}</span></button></div>
-      <div class="switch-line"><span>显示正常覆盖区</span><el-switch aria-label="显示正常覆盖区" :model-value="showNormal" @update:model-value="emit('update:showNormal', $event)" /></div>
-      <div class="switch-line"><span>显示设施稀疏区</span><el-switch aria-label="显示设施稀疏区" :model-value="showSparse" @update:model-value="emit('update:showSparse', $event)" /></div>
-      <div class="switch-line"><span>显示重点服务盲区</span><el-switch aria-label="显示重点服务盲区" :model-value="showCritical" @update:model-value="emit('update:showCritical', $event)" /></div>
+    <div class="panel-section layer-panel">
+      <div class="layer-section-title">
+        <div><label>设施与服务区域</label><small>选择地图上要展示的图层</small></div>
+        <span class="layer-count">{{ visibleCategories.length }}/{{ Object.keys(FACILITY_LABELS).length }} 类</span>
+      </div>
+      <div class="facility-list layer-facility-list">
+        <button v-for="category in Object.keys(FACILITY_LABELS)" :key="category" type="button" :style="{ '--facility-color': categoryColor(category) }" :class="['facility-toggle', { selected: visibleCategories.includes(category) }]" :aria-pressed="visibleCategories.includes(category)" @click="emit('toggle-category', category)">
+          <span class="facility-icon" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ FACILITY_ICONS[category] }}</span>
+          <span class="facility-name">{{ FACILITY_LABELS[category] }}</span>
+          <span class="check" aria-hidden="true">{{ visibleCategories.includes(category) ? '✓' : '' }}</span>
+        </button>
+      </div>
+      <div class="coverage-list" aria-label="服务区域状态图层">
+        <div class="coverage-item" :class="{ active: showNormal }">
+          <span class="coverage-swatch normal" aria-hidden="true"></span>
+          <span class="coverage-copy"><strong>正常覆盖区</strong><small>步行可达范围内</small></span>
+          <el-switch aria-label="显示正常覆盖区" :model-value="showNormal" @update:model-value="emit('update:showNormal', $event)" />
+        </div>
+        <div class="coverage-item" :class="{ active: showSparse }">
+          <span class="coverage-swatch sparse" aria-hidden="true"></span>
+          <span class="coverage-copy"><strong>设施稀疏区</strong><small>周边同类设施偏少</small></span>
+          <el-switch aria-label="显示设施稀疏区" :model-value="showSparse" @update:model-value="emit('update:showSparse', $event)" />
+        </div>
+        <div class="coverage-item" :class="{ active: showCritical }">
+          <span class="coverage-swatch critical" aria-hidden="true"></span>
+          <span class="coverage-copy"><strong>重点服务盲区</strong><small>步行时间超过阈值</small></span>
+          <el-switch aria-label="显示重点服务盲区" :model-value="showCritical" @update:model-value="emit('update:showCritical', $event)" />
+        </div>
+      </div>
     </div>
     <button class="primary-action" data-guide="run-analysis" type="button" aria-describedby="analysis-source-note" :disabled="loading || resolving || Boolean(locationError) || center.supportStatus !== 'supported'" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : mapStatus?.real_api_available ? '开始真实分析' : '开始快照体检' }}<span aria-hidden="true">↗</span></button>
     <div id="analysis-source-note" class="api-note"><span class="api-indicator" :class="{ real: mapStatus?.real_api_available || source === 'baidu' || source === 'real_api' }" aria-hidden="true"></span><span>当前：{{ mapStatus?.real_api_available || source === 'baidu' || source === 'real_api' ? '百度地图真实数据' : '本地百度数据快照' }}</span></div>

@@ -86,6 +86,63 @@ describe('服务区域选中定位', () => {
     expect(labels).toContain('已选')
   })
 
+  it('重复点击同一服务区域可以取消选中', async () => {
+    let renderer: ReturnType<typeof useMapRenderer> | null = null
+    const Harness = defineComponent({
+      setup() {
+        renderer = useMapRenderer({
+          report: ref(report),
+          analysisCenter: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
+          visibleCategories: ref(['school']), showNormal: ref(true), showSparse: ref(true), showCritical: ref(true),
+          focusRecommendationId: ref(null), simulation: ref(null), simulationPicking: ref(false),
+          onSelectCenter: vi.fn(), onSelectSimulationLocation: vi.fn(),
+        })
+        return () => h('canvas', { ref: renderer!.mapCanvas })
+      },
+    })
+
+    mount(Harness)
+    await nextTick()
+    renderer!.selectServiceArea(area)
+    expect(renderer!.selectedServiceArea.value).toEqual(area)
+    renderer!.selectServiceArea(area)
+    expect(renderer!.selectedServiceArea.value).toBeNull()
+  })
+
+  it('服务区域点击不会被已有规划建议焦点重新改回目标区域', async () => {
+    const otherArea = { ...area, properties: { ...area.properties, grid_id: 'school-r1c2' } }
+    const recommendation = {
+      id: 'recommendation-1',
+      category: 'school',
+      category_label: '小学',
+      priority: 'high',
+      title: '补充小学服务',
+      summary: '补充小学服务',
+      target_region_ids: [area.properties.grid_id],
+      candidate_locations: [],
+    }
+    let renderer: ReturnType<typeof useMapRenderer> | null = null
+    const selectedRecommendationId = ref<string | null>('recommendation-1')
+    const Harness = defineComponent({
+      setup() {
+        renderer = useMapRenderer({
+          report: ref({ ...report, service_areas: { type: 'FeatureCollection', features: [area, otherArea] }, recommendations: [recommendation] } as unknown as Report),
+          analysisCenter: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
+          visibleCategories: ref(['school']), showNormal: ref(true), showSparse: ref(true), showCritical: ref(true),
+          focusRecommendationId: selectedRecommendationId, simulation: ref(null), simulationPicking: ref(false),
+          onSelectCenter: vi.fn(), onSelectSimulationLocation: vi.fn(),
+        })
+        return () => h('canvas', { ref: renderer!.mapCanvas })
+      },
+    })
+
+    mount(Harness)
+    await nextTick()
+    renderer!.selectServiceArea(otherArea)
+    await nextTick()
+    expect(renderer!.selectedServiceArea.value?.properties.grid_id).toBe('school-r1c2')
+  })
+
   it('Canvas 模式悬停设施点延迟生成悬浮目标，移开即清除', async () => {
     vi.useFakeTimers()
     const poiReport = {
