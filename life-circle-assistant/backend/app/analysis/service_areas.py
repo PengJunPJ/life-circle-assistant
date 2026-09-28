@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from ..baidu import haversine_meters
 from ..maps.provider import MapProvider, MapProviderError, WalkingResult
 from ..mock_data import CATEGORIES
-
 
 AreaKind = Literal["normal", "sparse", "critical", "unknown"]
 ClassificationStatus = Literal["valid", "calculation_incomplete"]
@@ -128,8 +128,7 @@ async def build_category_service_areas(
             [
                 facility
                 for facility in category_facilities
-                if haversine_meters(cell["center"], (facility["lng"], facility["lat"]))
-                <= CANDIDATE_PREFILTER_RADIUS_M
+                if haversine_meters(cell["center"], (facility["lng"], facility["lat"])) <= CANDIDATE_PREFILTER_RADIUS_M
             ]
             for cell in cells
         ]
@@ -288,11 +287,7 @@ async def _walking_results_by_cell(
         if signature:
             groups.setdefault(signature, []).append(cell_index)
 
-    facilities_by_id = {
-        item["id"]: item
-        for candidates in candidates_by_cell
-        for item in candidates
-    }
+    facilities_by_id = {item["id"]: item for candidates in candidates_by_cell for item in candidates}
     if not groups:
         if on_progress is not None:
             on_progress(1.0)

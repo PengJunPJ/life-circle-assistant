@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import math
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from ..maps.provider import MapProvider, MapProviderError
@@ -73,8 +73,7 @@ class ReportSimulationService:
             center,
         )
         simulated_scores = [
-            simulated_category_score if item.get("category") == request.category else item
-            for item in original_scores
+            simulated_category_score if item.get("category") == request.category else item for item in original_scores
         ]
         simulated_overall = aggregate_overall_score(simulated_scores)
         before = self._snapshot(
@@ -91,7 +90,7 @@ class ReportSimulationService:
         return {
             "id": str(uuid.uuid4()),
             "report_id": report["report_id"],
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "coordinate_system": "BD-09",
             "selection_method": request.selection_method,
             "candidate_id": candidate.get("id") if candidate else None,
@@ -156,21 +155,25 @@ class ReportSimulationService:
             failure_message = str(exc)
         if route is None or not route.success:
             message = failure_message or (route.error_message if route else "步行矩阵未返回假设设施结果")
-            failures.append({
-                "scope": "hypothetical_facility",
-                "code": "hypothetical_walking_failed",
-                "message": message,
-            })
-            events.append({
-                "code": "hypothetical_walking_failed",
-                "severity": "warning",
-                "scope": "hypothetical_facility",
-                "category": category,
-                "object_ref": None,
-                "source": self.provider.descriptor.source,
-                "method": "provider_walking_matrix",
-                "message": message,
-            })
+            failures.append(
+                {
+                    "scope": "hypothetical_facility",
+                    "code": "hypothetical_walking_failed",
+                    "message": message,
+                }
+            )
+            events.append(
+                {
+                    "code": "hypothetical_walking_failed",
+                    "severity": "warning",
+                    "scope": "hypothetical_facility",
+                    "category": category,
+                    "object_ref": None,
+                    "source": self.provider.descriptor.source,
+                    "method": "provider_walking_matrix",
+                    "message": message,
+                }
+            )
         facility = {
             "id": f"hypothetical-{category}-{uuid.uuid4().hex[:10]}",
             "name": f"假设{CATEGORIES[category]['label']}",
@@ -195,11 +198,7 @@ class ReportSimulationService:
         features = service_areas.get("features", [])
         critical = [item for item in features if item.get("properties", {}).get("kind") == "critical"]
         sparse = [item for item in features if item.get("properties", {}).get("kind") == "sparse"]
-        covered = [
-            item
-            for item in features
-            if item.get("properties", {}).get("kind") in {"normal", "sparse"}
-        ]
+        covered = [item for item in features if item.get("properties", {}).get("kind") in {"normal", "sparse"}]
         return {
             "category_score": category_score.get("score"),
             "overall_score": overall_score,
@@ -220,14 +219,14 @@ def _polygon_area_sqm(coordinates: list[list[float]]) -> float:
     if len(points) < 3:
         return 0
     latitude = sum(point[1] for point in points) / len(points)
-    projected = [
-        (lng * 111_320 * math.cos(math.radians(latitude)), lat * 111_320)
-        for lng, lat in points
-    ]
-    return abs(
-        sum(
-            projected[index][0] * projected[(index + 1) % len(projected)][1]
-            - projected[(index + 1) % len(projected)][0] * projected[index][1]
-            for index in range(len(projected))
+    projected = [(lng * 111_320 * math.cos(math.radians(latitude)), lat * 111_320) for lng, lat in points]
+    return (
+        abs(
+            sum(
+                projected[index][0] * projected[(index + 1) % len(projected)][1]
+                - projected[(index + 1) % len(projected)][0] * projected[index][1]
+                for index in range(len(projected))
+            )
         )
-    ) / 2
+        / 2
+    )

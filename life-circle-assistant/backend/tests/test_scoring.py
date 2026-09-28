@@ -1,6 +1,5 @@
 from app.analysis.scoring import score_category, score_report
 
-
 CENTER = (113.4872, 23.1068)
 
 

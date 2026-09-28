@@ -1,10 +1,9 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.maps.provider import ProviderDescriptor, WalkingResult
 from app.maps.walking import WalkingService, WalkingSettings
 from app.storage import Database, WalkingCacheRepository
-
 
 ORIGIN = (113.5, 23.1)
 DESTINATION = (113.51, 23.11)
@@ -167,7 +166,7 @@ def test_expired_cache_is_not_used(tmp_path):
         "walking-test-provider",
         cached_result,
         ttl_seconds=1,
-        created_at=datetime.now(timezone.utc) - timedelta(minutes=5),
+        created_at=datetime.now(UTC) - timedelta(minutes=5),
     )
     provider = MatrixProvider()
     service = WalkingService(provider, cache, settings())

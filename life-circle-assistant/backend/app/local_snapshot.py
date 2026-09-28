@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 SNAPSHOT_PATH = Path(__file__).resolve().parent.parent / "data" / "baidu_snapshot.json"
 
 

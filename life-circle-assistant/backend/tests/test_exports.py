@@ -65,14 +65,19 @@ def test_json_csv_and_geojson_exports_are_consistent_with_the_same_persisted_rep
         report["service_areas"]["features"]
     )
     expected_candidates = sum(len(item["candidate_locations"]) for item in report["recommendations"])
-    assert len([feature for feature in geojson["features"] if feature["properties"]["layer"] == "planning_candidate"]) == expected_candidates
+    assert (
+        len([feature for feature in geojson["features"] if feature["properties"]["layer"] == "planning_candidate"])
+        == expected_candidates
+    )
 
     for response, extension in ((json_response, "json"), (csv_response, "csv"), (geojson_response, "geojson")):
         disposition = response.headers["content-disposition"]
         assert completed_date in disposition
         assert report_id[:8] in disposition
         assert f".{extension}" in disposition
-        assert "/" not in disposition and "\\" not in disposition and "\r" not in disposition and "\n" not in disposition
+        assert (
+            "/" not in disposition and "\\" not in disposition and "\r" not in disposition and "\n" not in disposition
+        )
         assert response.headers["x-report-id"] == report_id
         assert response.headers["x-coordinate-system"] == "BD-09"
 

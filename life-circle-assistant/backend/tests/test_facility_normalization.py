@@ -89,9 +89,7 @@ def test_does_not_merge_same_institution_name_at_different_sites():
 
 
 def test_does_not_merge_different_colocated_institutions():
-    result = normalize_facilities(
-        [facility("a", "安康诊所"), facility("b", "惠民诊所")]
-    )
+    result = normalize_facilities([facility("a", "安康诊所"), facility("b", "惠民诊所")])
 
     assert len(result.facilities) == 2
 

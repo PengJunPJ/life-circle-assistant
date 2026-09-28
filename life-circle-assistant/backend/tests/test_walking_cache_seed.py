@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.maps.provider import WalkingResult
 from app.storage import Database, WalkingCacheRepository
@@ -47,7 +47,7 @@ def test_seed_imports_into_empty_cache_and_restamps_ttl(tmp_path):
     database = Database(tmp_path / "seed-empty.db")
     database.migrate()
     cache = WalkingCacheRepository(database)
-    now = datetime(2026, 9, 28, 4, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 28, 4, 0, 0, tzinfo=UTC)
 
     inserted = seed_walking_cache_if_empty(cache, _rows(), ttl_seconds=3600, now=now)
 

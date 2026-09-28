@@ -13,4 +13,3 @@ __all__ = [
     "generate_benchmark_template",
     "render_markdown_report",
 ]
-

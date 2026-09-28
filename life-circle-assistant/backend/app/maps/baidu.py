@@ -13,7 +13,6 @@ from .provider import (
     WalkingResult,
 )
 
-
 FACILITY_QUERIES = {
     "market": ("菜市场", "农贸市场", "生鲜超市"),
     "pharmacy": ("药店",),
@@ -126,11 +125,7 @@ class BaiduMapProvider:
             except BaiduMapError as exc:
                 # 任一分词失败都会使该类别召回不完整；显式失败比静默返回部分结果更可审计。
                 raise self._provider_error(exc) from exc
-            normalized.extend(
-                self._normalize_place(item, category)
-                for item in results
-                if self._has_location(item)
-            )
+            normalized.extend(self._normalize_place(item, category) for item in results if self._has_location(item))
         return self._deduplicate_places(normalized)
 
     async def walking_matrix(
@@ -142,7 +137,11 @@ class BaiduMapProvider:
         if len(origins) * len(destinations) <= 1:
             # 单坐标对走 directionlite：批量算路不返回 steps，而步行路线预览需要折线。
             return [
-                list(await asyncio.gather(*(self._pair_result(origin, destination, semaphore) for destination in destinations)))
+                list(
+                    await asyncio.gather(
+                        *(self._pair_result(origin, destination, semaphore) for destination in destinations)
+                    )
+                )
                 for origin in origins
             ]
         matrix: list[list[WalkingResult | None]] = [[None] * len(destinations) for _ in origins]

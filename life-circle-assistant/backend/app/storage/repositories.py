@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .database import Database
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _dump(value: Any) -> str:
@@ -179,7 +179,9 @@ class ReportRepository:
 
     def get_by_task_id(self, task_id: str) -> dict[str, Any] | None:
         with self.database.connect() as connection:
-            row = connection.execute("SELECT report_json FROM analysis_reports WHERE task_id = ?", (task_id,)).fetchone()
+            row = connection.execute(
+                "SELECT report_json FROM analysis_reports WHERE task_id = ?", (task_id,)
+            ).fetchone()
         return json.loads(row["report_json"]) if row else None
 
     def list_history(self, *, limit: int = 20, offset: int = 0) -> dict[str, Any]:
@@ -219,7 +221,9 @@ class ReportRepository:
             "offset": offset,
         }
 
-    def save_ai_interpretation(self, report_id: str, result: dict[str, Any], *, question: str | None = None) -> dict[str, Any]:
+    def save_ai_interpretation(
+        self, report_id: str, result: dict[str, Any], *, question: str | None = None
+    ) -> dict[str, Any]:
         interpretation_id = str(uuid.uuid4())
         with self.database.connect() as connection:
             connection.execute(

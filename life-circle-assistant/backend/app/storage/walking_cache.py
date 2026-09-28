@@ -3,11 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from ..maps.provider import DataSourceKind, WalkingResult
+from ..maps.provider import WalkingResult
 from .database import Database
-
 
 COORDINATE_PRECISION = 6
 
@@ -33,7 +32,7 @@ class WalkingCacheRepository:
         *,
         at: datetime | None = None,
     ) -> CacheLookup:
-        instant = at or datetime.now(timezone.utc)
+        instant = at or datetime.now(UTC)
         cache_key = self.make_key(provider_id, origin, destination, travel_mode)
         with self.database.connect() as connection:
             row = connection.execute(
@@ -73,7 +72,7 @@ class WalkingCacheRepository:
     ) -> None:
         if not result.success or result.distance_m is None or result.duration_s is None:
             return
-        created = created_at or datetime.now(timezone.utc)
+        created = created_at or datetime.now(UTC)
         expires = created + timedelta(seconds=ttl_seconds)
         cache_key = self.make_key(provider_id, result.origin, result.destination, travel_mode)
         with self.database.connect() as connection:
@@ -140,7 +139,7 @@ class WalkingCacheRepository:
 
 def _parse_timestamp(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 def _parse_steps(value: str | None) -> list | None:

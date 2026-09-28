@@ -78,9 +78,7 @@ def test_simulation_only_recalculates_selected_category_and_keeps_source_report_
     ).json()
     source_report = client.get(f"/api/report/{created['id']}").json()
     report_id = source_report["report_id"]
-    original_school_score = next(
-        item for item in source_report["category_scores"] if item["category"] == "school"
-    )
+    original_school_score = next(item for item in source_report["category_scores"] if item["category"] == "school")
     original_facilities = source_report["facilities"]
 
     response = client.post(
@@ -100,10 +98,9 @@ def test_simulation_only_recalculates_selected_category_and_keeps_source_report_
     assert simulation["after"]["category_score"] > simulation["before"]["category_score"]
     assert simulation["after"]["coverage_area_sqm"] > simulation["before"]["coverage_area_sqm"]
     assert simulation["after"]["critical_zone_count"] < simulation["before"]["critical_zone_count"]
-    assert {
-        feature["properties"]["category"]
-        for feature in simulation["after"]["service_areas"]["features"]
-    } == {"market"}
+    assert {feature["properties"]["category"] for feature in simulation["after"]["service_areas"]["features"]} == {
+        "market"
+    }
     assert simulation["unaffected_category_scores"] == [original_school_score]
 
     reloaded = client.get(f"/api/reports/{report_id}").json()

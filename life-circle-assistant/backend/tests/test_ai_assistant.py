@@ -1,5 +1,6 @@
-from app.ai_assistant import build_ai_interpretation
 from fastapi.testclient import TestClient
+
+from app.ai_assistant import build_ai_interpretation
 from app.main import create_app
 
 
@@ -15,15 +16,37 @@ def report_fixture() -> dict:
             {"category": "market", "label": "菜市场", "score": 54, "status_explanation": "设施数量偏少"},
             {"category": "school", "label": "小学", "score": 82, "status_explanation": "覆盖较完整"},
         ],
-        "service_areas": {"type": "FeatureCollection", "features": [{
-            "type": "Feature",
-            "properties": {
-                "grid_id": "market-r1c1", "category": "market", "category_label": "菜市场",
-                "label": "重点服务盲区", "kind": "critical", "basis": "最近同类设施步行18.0分钟，超过15分钟阈值，且周边1000米内无同类设施。",
-            },
-            "geometry": {"type": "Polygon", "coordinates": [[[113.4, 23.1], [113.41, 23.1], [113.41, 23.11], [113.4, 23.11], [113.4, 23.1]]]},
-        }]},
-        "recommendations": [{"title": "优先补充菜市场", "category": "market", "priority": "high", "rationale": "优先覆盖重点服务盲区", "target_region_ids": ["market-r1c1"]}],
+        "service_areas": {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "grid_id": "market-r1c1",
+                        "category": "market",
+                        "category_label": "菜市场",
+                        "label": "重点服务盲区",
+                        "kind": "critical",
+                        "basis": "最近同类设施步行18.0分钟，超过15分钟阈值，且周边1000米内无同类设施。",
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [[113.4, 23.1], [113.41, 23.1], [113.41, 23.11], [113.4, 23.11], [113.4, 23.1]]
+                        ],
+                    },
+                }
+            ],
+        },
+        "recommendations": [
+            {
+                "title": "优先补充菜市场",
+                "category": "market",
+                "priority": "high",
+                "rationale": "优先覆盖重点服务盲区",
+                "target_region_ids": ["market-r1c1"],
+            }
+        ],
         "parameters": {"minutes": 15},
         "center": {"address": "广州市黄埔区红山街道海韵东路"},
     }
@@ -31,30 +54,55 @@ def report_fixture() -> dict:
 
 def report_with_simulation_fixture() -> dict:
     report = report_fixture()
-    report["simulations"] = [{
-        "id": "sim-market-1",
-        "report_id": "report-ai-1",
-        "category": "market",
-        "category_label": "菜市场",
-        "selection_method": "recommendation",
-        "candidate_id": "cand-1",
-        "hypothetical_facility": {
-            "id": "hypothetical-market-1",
-            "name": "假设菜市场",
+    report["simulations"] = [
+        {
+            "id": "sim-market-1",
+            "report_id": "report-ai-1",
             "category": "market",
-            "lng": 113.405,
-            "lat": 23.105,
-            "walk_minutes": 9.5,
-            "walk_distance_m": 720,
-            "source": "hypothetical",
-            "calculation_method": "provider_walking_matrix",
-            "is_hypothetical": True,
-        },
-        "before": {"category_score": 54, "overall_score": 68, "coverage_area_sqm": 120000, "critical_zone_count": 1, "sparse_zone_count": 2},
-        "after": {"category_score": 78, "overall_score": 74, "coverage_area_sqm": 165000, "critical_zone_count": 0, "sparse_zone_count": 1},
-        "delta": {"category_score": 24, "overall_score": 6, "coverage_area_sqm": 45000, "critical_zone_count": -1, "sparse_zone_count": -1},
-        "data_quality": {"source": "baidu", "events": [], "partial_failures": [], "disclosure": "模拟结果仅用于方案比较，不修改来源设施或原始体检报告。"},
-    }]
+            "category_label": "菜市场",
+            "selection_method": "recommendation",
+            "candidate_id": "cand-1",
+            "hypothetical_facility": {
+                "id": "hypothetical-market-1",
+                "name": "假设菜市场",
+                "category": "market",
+                "lng": 113.405,
+                "lat": 23.105,
+                "walk_minutes": 9.5,
+                "walk_distance_m": 720,
+                "source": "hypothetical",
+                "calculation_method": "provider_walking_matrix",
+                "is_hypothetical": True,
+            },
+            "before": {
+                "category_score": 54,
+                "overall_score": 68,
+                "coverage_area_sqm": 120000,
+                "critical_zone_count": 1,
+                "sparse_zone_count": 2,
+            },
+            "after": {
+                "category_score": 78,
+                "overall_score": 74,
+                "coverage_area_sqm": 165000,
+                "critical_zone_count": 0,
+                "sparse_zone_count": 1,
+            },
+            "delta": {
+                "category_score": 24,
+                "overall_score": 6,
+                "coverage_area_sqm": 45000,
+                "critical_zone_count": -1,
+                "sparse_zone_count": -1,
+            },
+            "data_quality": {
+                "source": "baidu",
+                "events": [],
+                "partial_failures": [],
+                "disclosure": "模拟结果仅用于方案比较，不修改来源设施或原始体检报告。",
+            },
+        }
+    ]
     return report
 
 
@@ -114,8 +162,8 @@ def test_simulation_intent_uses_reported_delta_only():
     result = build_ai_interpretation(report_with_simulation_fixture(), intent="simulation")
     assert result["intent"] == "simulation"
     assert "+24" in result["summary"]  # category_score delta
-    assert "+6" in result["summary"]   # overall_score delta
-    assert "-1" in result["summary"]   # critical zone delta
+    assert "+6" in result["summary"]  # overall_score delta
+    assert "-1" in result["summary"]  # critical zone delta
     assert "9.5" in result["summary"]  # hypothetical walk minutes
     assert any(ref["type"] == "simulation" and ref["id"] == "sim-market-1" for ref in result["evidence_refs"])
 
@@ -346,6 +394,7 @@ def test_json_export_without_ai_omits_interpretations_key(tmp_path):
 def test_pdf_export_includes_ai_section_after_generation(tmp_path):
     """PDF 导出在生成 AI 解读后应渲染「AI 解读与证据」章节。"""
     from io import BytesIO
+
     from pypdf import PdfReader
 
     client = TestClient(create_app(database_path=tmp_path / "ai-pdf-export.db"))
@@ -371,6 +420,7 @@ def test_pdf_export_includes_ai_section_after_generation(tmp_path):
 def test_pdf_export_without_ai_has_no_ai_section(tmp_path):
     """未生成 AI 解读时，PDF 不应包含 AI 章节。"""
     from io import BytesIO
+
     from pypdf import PdfReader
 
     client = TestClient(create_app(database_path=tmp_path / "ai-pdf-noai.db"))

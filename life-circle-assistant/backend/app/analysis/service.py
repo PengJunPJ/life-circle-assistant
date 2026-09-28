@@ -3,20 +3,20 @@ from __future__ import annotations
 import math
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import asdict
-from datetime import datetime, timezone
-from typing import Any, Callable
+from datetime import UTC, datetime
+from typing import Any
 
 from ..contracts.reports import build_quality_summary, create_report_skeleton, quality_event
 from ..maps.provider import MapProvider, MapProviderError, WalkingResult
 from ..maps.walking import WalkingService
 from ..mock_data import CATEGORIES, mock_isochrone
 from ..schemas import AnalyzeRequest
-from .recommendations import build_planning_recommendations
 from .facility_normalization import normalize_facilities
+from .recommendations import build_planning_recommendations
 from .scoring import score_report
 from .service_areas import build_category_service_areas
-
 
 StageUpdater = Callable[[str, str, int], None]
 
@@ -33,7 +33,7 @@ STAGES = {
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def polygon_feature(coords: list[list[float]], properties: dict[str, Any]) -> dict[str, Any]:
@@ -122,7 +122,9 @@ class AnalysisApplicationService:
                 facilities.extend(asdict(item) for item in results)
             except MapProviderError as exc:
                 facility_search_failed_categories.add(category)
-                partial_failures.append({"scope": "category", "category": category, "code": "facility_search_failed", "message": str(exc)})
+                partial_failures.append(
+                    {"scope": "category", "category": category, "code": "facility_search_failed", "message": str(exc)}
+                )
                 events.append(
                     quality_event(
                         "category_partial",
@@ -375,7 +377,14 @@ class AnalysisApplicationService:
                 item["walk_minutes"] = None
                 item["walk_distance_m"] = None
                 message = route.error_message if route else "步行矩阵未返回坐标对结果"
-                partial_failures.append({"scope": "coordinate_pair", "code": "walking_result_failed", "object_ref": item["id"], "message": message})
+                partial_failures.append(
+                    {
+                        "scope": "coordinate_pair",
+                        "code": "walking_result_failed",
+                        "object_ref": item["id"],
+                        "message": message,
+                    }
+                )
                 events.append(
                     quality_event(
                         "walk_failed",
@@ -388,7 +397,9 @@ class AnalysisApplicationService:
                         object_ref=item["id"],
                     )
                 )
-                walking_failures_by_category[item["category"]] = walking_failures_by_category.get(item["category"], 0) + 1
+                walking_failures_by_category[item["category"]] = (
+                    walking_failures_by_category.get(item["category"], 0) + 1
+                )
                 continue
             item["walk_minutes"] = round((route.duration_s or 0) / 60, 1)
             item["walk_distance_m"] = round(route.distance_m or 0)
@@ -419,8 +430,7 @@ class AnalysisApplicationService:
         durations: list[float] = []
         # 首环 24/16 个方向采样合并为一次批量步行矩阵，避免逐方向单点请求
         candidates = [
-            interpolate_point(center, 2 * math.pi * index / directions, max_radius)
-            for index in range(directions)
+            interpolate_point(center, 2 * math.pi * index / directions, max_radius) for index in range(directions)
         ]
         try:
             initial_rows = await self.walking_service.walking_matrix([center], candidates)
@@ -438,7 +448,14 @@ class AnalysisApplicationService:
                 self._record_degraded_route(route, events, object_ref=f"isochrone-{index}")
                 continue
             if not route or not route.success:
-                partial_failures.append({"scope": "isochrone_sample", "code": "isochrone_sample_failed", "object_ref": str(index), "message": route.error_message if route else "无步行结果"})
+                partial_failures.append(
+                    {
+                        "scope": "isochrone_sample",
+                        "code": "isochrone_sample_failed",
+                        "object_ref": str(index),
+                        "message": route.error_message if route else "无步行结果",
+                    }
+                )
                 events.append(
                     quality_event(
                         "isochrone_sample_failed",
@@ -503,7 +520,10 @@ class AnalysisApplicationService:
             return mock_isochrone(request.minutes)
         coords = [[lng, lat] for lng, lat in boundary]
         coords.append(coords[0])
-        area = abs(sum(coords[i][0] * coords[i + 1][1] - coords[i + 1][0] * coords[i][1] for i in range(len(coords) - 1))) / 2
+        area = (
+            abs(sum(coords[i][0] * coords[i + 1][1] - coords[i + 1][0] * coords[i][1] for i in range(len(coords) - 1)))
+            / 2
+        )
         area_sqm = round(area * (111_320**2) * math.cos(math.radians(center[1])))
         return polygon_feature(
             coords,
@@ -518,7 +538,9 @@ class AnalysisApplicationService:
             },
         )
 
-    async def _single_route(self, origin: tuple[float, float], destination: tuple[float, float]) -> WalkingResult | None:
+    async def _single_route(
+        self, origin: tuple[float, float], destination: tuple[float, float]
+    ) -> WalkingResult | None:
         try:
             rows = await self.walking_service.walking_matrix([origin], [destination])
         except MapProviderError:

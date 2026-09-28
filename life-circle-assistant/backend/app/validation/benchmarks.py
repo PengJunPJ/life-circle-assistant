@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 
 VerifiedAreaKind = Literal["normal", "sparse", "critical"]
 PredictedAreaKind = Literal["normal", "sparse", "critical", "unknown"]
@@ -63,7 +62,7 @@ class CommunityBenchmark(BaseModel):
     notes: str = ""
 
     @model_validator(mode="after")
-    def validate_inventory(self) -> "CommunityBenchmark":
+    def validate_inventory(self) -> CommunityBenchmark:
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("设施类别不得重复")
 
@@ -274,7 +273,7 @@ def evaluate_benchmark(report: dict[str, Any], benchmark_data: dict[str, Any]) -
     reviewed_count = len(reviewed_labels)
     result = {
         "schema_version": "1.0",
-        "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        "evaluated_at": datetime.now(UTC).isoformat(),
         "benchmark": {
             "benchmark_id": benchmark.benchmark_id,
             "status": benchmark.status,
@@ -351,7 +350,15 @@ def render_markdown_report(evaluation: dict[str, Any]) -> str:
             f"| {KIND_LABELS[actual]} | {row['normal']} | {row['sparse']} | {row['critical']} | {row['unknown']} |"
         )
 
-    lines.extend(["", "## 分类别指标", "", "| 类别 | 样本数 | 准确率 | 有效预测覆盖率 | 宏平均 F1 |", "| --- | ---: | ---: | ---: | ---: |"]) 
+    lines.extend(
+        [
+            "",
+            "## 分类别指标",
+            "",
+            "| 类别 | 样本数 | 准确率 | 有效预测覆盖率 | 宏平均 F1 |",
+            "| --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
     for category in benchmark["categories"]:
         category_metrics = evaluation["category_results"][category]["metrics"]
         lines.append(

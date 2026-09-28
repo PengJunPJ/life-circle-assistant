@@ -8,7 +8,6 @@ from typing import Any
 
 from ..baidu import haversine_meters
 
-
 RULES_VERSION = "1.0"
 SAME_SITE_DISTANCE_M = 80
 
@@ -68,10 +67,7 @@ def normalize_facilities(
             (
                 cluster
                 for cluster in clusters
-                if any(
-                    _same_institution(candidate, member, same_site_distance_m)
-                    for member in cluster
-                )
+                if any(_same_institution(candidate, member, same_site_distance_m) for member in cluster)
             ),
             None,
         )

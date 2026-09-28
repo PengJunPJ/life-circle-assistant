@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 SOURCE_LABELS = {
     "real_api": "真实 API",
     "cache": "有效缓存",

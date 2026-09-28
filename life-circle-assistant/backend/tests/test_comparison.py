@@ -154,7 +154,9 @@ def test_comparison_api_limits_two_distinct_completed_reports(tmp_path):
     compared = client.post("/api/reports/compare", json={"report_ids": [first_id, second_id]})
     assert compared.status_code == 200
     assert compared.json()["report_ids"] == [first_id, second_id]
-    assert next(item for item in compared.json()["parameter_differences"] if item["field"] == "minutes")["changed"] is True
+    assert (
+        next(item for item in compared.json()["parameter_differences"] if item["field"] == "minutes")["changed"] is True
+    )
 
     assert client.post("/api/reports/compare", json={"report_ids": [first_id]}).status_code == 422
     assert client.post("/api/reports/compare", json={"report_ids": [first_id, second_id, "extra"]}).status_code == 422

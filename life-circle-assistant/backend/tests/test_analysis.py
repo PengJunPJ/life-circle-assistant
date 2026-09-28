@@ -9,11 +9,13 @@ from app.storage import Database, TaskRepository
 
 client = TestClient(app)
 
+
 def test_health():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.json()["version"] == "2.1.1"
+
 
 def test_map_status_and_mock_geocode():
     status = client.get("/api/map/status")
@@ -40,11 +42,13 @@ def test_snapshot_place_search_keeps_legacy_category_label_behavior():
     assert response.json()["source"] == "local_snapshot"
     assert response.json()["results"]
 
+
 def test_map_config_does_not_expose_secret():
     response = client.get("/api/map/config")
     assert response.status_code == 200
     assert "browser_ak" in response.json()
     assert "secret" not in response.json()
+
 
 def test_create_and_get_analysis():
     response = client.post("/api/analyze", json={"minutes": 15, "mode": "demo"})
@@ -63,8 +67,7 @@ def test_create_and_get_analysis():
     assert body["execution"]["stage_durations_ms"]["center_resolution"] >= 0
     assert body["execution"]["cache"]["hits"] == body["execution"]["metrics"]["walking_cache_hits"]
     assert body["execution"]["api_calls"] == (
-        body["execution"]["metrics"]["facility_api_calls"]
-        + body["execution"]["metrics"]["walking_api_calls"]
+        body["execution"]["metrics"]["facility_api_calls"] + body["execution"]["metrics"]["walking_api_calls"]
     )
     assert all("duration_ms" in stage for stage in body["execution"]["stages"])
     assert [stage["code"] for stage in body["execution"]["stages"][:2]] == [
@@ -212,6 +215,8 @@ class EmptyFacilityFixtureMapProvider(FixtureMapProvider):
     async def search_facilities(self, category: str, center: tuple[float, float], radius_m: int = 1000):
         self.calls.append(f"search_facilities:{category}")
         return []
+
+
 def test_provider_can_be_replaced_without_real_baidu_requests(tmp_path):
     provider = FixtureMapProvider()
     fixture_client = TestClient(create_app(provider, tmp_path / "replace-provider.db"))
@@ -220,7 +225,9 @@ def test_provider_can_be_replaced_without_real_baidu_requests(tmp_path):
     assert geocode.status_code == 200
     assert geocode.json()["result"]["location"] == {"lng": 113.5, "lat": 23.1}
 
-    response = fixture_client.post("/api/analyze", json={"minutes": 15, "mode": "demo", "categories": ["market", "school"]})
+    response = fixture_client.post(
+        "/api/analyze", json={"minutes": 15, "mode": "demo", "categories": ["market", "school"]}
+    )
     assert response.status_code == 200
     report = fixture_client.get(f"/api/report/{response.json()['id']}").json()
 
@@ -232,10 +239,7 @@ def test_provider_can_be_replaced_without_real_baidu_requests(tmp_path):
     assert report["facility_normalization"]["output_count"] == 2
     assert all(item["canonical_name"] for item in report["facilities"])
     assert all(item["semantic_type"] for item in report["facilities"])
-    assert any(
-        event["code"] == "facility_semantic_normalization"
-        for event in report["data_quality"]["events"]
-    )
+    assert any(event["code"] == "facility_semantic_normalization" for event in report["data_quality"]["events"])
     assert report["scoring"]["status"] == "complete"
     assert report["scoring"]["valid_category_count"] == 2
     assert all(len(item["components"]) == 3 for item in report["category_scores"])
@@ -280,10 +284,7 @@ def test_public_report_marks_missing_route_evidence_incomplete_without_blind_spo
     assert report["scoring"]["score"] is None
     assert report["recommendations"] == []
     assert report["recommendation_summary"]["status"] == "calculation_incomplete"
-    assert any(
-        event["code"] == "service_area_calculation_incomplete"
-        for event in report["data_quality"]["events"]
-    )
+    assert any(event["code"] == "service_area_calculation_incomplete" for event in report["data_quality"]["events"])
 
 
 def test_partial_grid_walking_result_is_disclosed_without_failing_whole_report(tmp_path):
@@ -463,8 +464,7 @@ def test_report_recommendations_trace_back_to_actual_critical_regions():
     for recommendation in report["recommendations"]:
         assert set(recommendation["target_region_ids"]) <= actual_critical_ids
         assert all(
-            region_id.startswith(f"{recommendation['category']}-")
-            for region_id in recommendation["target_region_ids"]
+            region_id.startswith(f"{recommendation['category']}-") for region_id in recommendation["target_region_ids"]
         )
         assert recommendation["priority_level"] in {"high", "medium"}
         assert recommendation["problem_basis"]

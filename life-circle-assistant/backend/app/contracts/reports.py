@@ -5,7 +5,6 @@ from typing import Any
 from ..maps.provider import ProviderDescriptor
 from .sources import source_label
 
-
 REPORT_SCHEMA_VERSION = "2.0"
 
 
@@ -38,7 +37,9 @@ def build_quality_summary(
     partial_failures: list[dict[str, Any]],
 ) -> dict[str, Any]:
     degraded_sources = {"local_snapshot", "interpolation", "degraded_estimate"}
-    used_degraded = descriptor.source in degraded_sources or any(event["source"] in degraded_sources for event in events)
+    used_degraded = descriptor.source in degraded_sources or any(
+        event["source"] in degraded_sources for event in events
+    )
     if partial_failures:
         overall_status = "partial"
     elif used_degraded:

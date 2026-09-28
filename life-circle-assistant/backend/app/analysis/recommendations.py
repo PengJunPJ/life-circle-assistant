@@ -5,7 +5,6 @@ import re
 from collections import defaultdict
 from typing import Any
 
-
 PRIORITY_LABELS = {"high": "高", "medium": "中"}
 
 
@@ -64,10 +63,7 @@ def _build_category_recommendation(
     ordered_features = sorted(features, key=lambda item: item["properties"]["grid_id"])
     region_ids = [item["properties"]["grid_id"] for item in ordered_features]
     clusters = _connected_clusters(ordered_features)
-    candidates = [
-        _candidate_for_cluster(score, cluster, index)
-        for index, cluster in enumerate(clusters, start=1)
-    ]
+    candidates = [_candidate_for_cluster(score, cluster, index) for index, cluster in enumerate(clusters, start=1)]
     area_sqm = round(sum(_polygon_area_sqm(item["geometry"]["coordinates"][0]) for item in ordered_features))
     nearest = _nearest_facility_evidence(ordered_features)
     priority_level = _priority_level(score, ordered_features)
@@ -92,9 +88,7 @@ def _build_category_recommendation(
         "priority_rank": 1 if priority_level == "high" else 2,
         "title": f"补充{score['label']}服务点",
         "body": f"{score_text}，共识别 {len(region_ids)} 个重点服务盲区。{nearest_text}",
-        "problem_basis": (
-            f"{score.get('status_explanation', '')} 区域判定示例：{example_basis}"
-        ).strip(),
+        "problem_basis": (f"{score.get('status_explanation', '')} 区域判定示例：{example_basis}").strip(),
         "nearest_facility": nearest,
         "target_region_ids": region_ids,
         "target_improvement": {
@@ -111,7 +105,12 @@ def _build_category_recommendation(
 def _priority_level(score: dict[str, Any], features: list[dict[str, Any]]) -> str:
     has_no_candidate = any(item["properties"].get("candidate_facility_count") == 0 for item in features)
     numeric_score = score.get("score")
-    if score.get("count") == 0 or has_no_candidate or len(features) >= 4 or (numeric_score is not None and numeric_score < 40):
+    if (
+        score.get("count") == 0
+        or has_no_candidate
+        or len(features) >= 4
+        or (numeric_score is not None and numeric_score < 40)
+    ):
         return "high"
     return "medium"
 
@@ -133,7 +132,9 @@ def _nearest_facility_evidence(features: list[dict[str, Any]]) -> dict[str, Any]
             "source_region_id": None,
             "message": "目标盲区没有可核验的最近同类设施。",
         }
-    nearest = min(available, key=lambda item: (item["nearest_walk_minutes"], item.get("nearest_walk_distance_m") or math.inf))
+    nearest = min(
+        available, key=lambda item: (item["nearest_walk_minutes"], item.get("nearest_walk_distance_m") or math.inf)
+    )
     return {
         "status": "available",
         "id": nearest["nearest_facility_id"],
@@ -158,11 +159,7 @@ def _connected_clusters(features: list[dict[str, Any]]) -> list[list[dict[str, A
             current_position = _grid_position(current["properties"]["grid_id"])
             if current_position is None:
                 continue
-            adjacent_ids = [
-                grid_id
-                for grid_id in remaining
-                if _is_adjacent(current_position, _grid_position(grid_id))
-            ]
+            adjacent_ids = [grid_id for grid_id in remaining if _is_adjacent(current_position, _grid_position(grid_id))]
             queue.extend(remaining.pop(grid_id) for grid_id in adjacent_ids)
         clusters.append(sorted(cluster, key=lambda item: item["properties"]["grid_id"]))
     return clusters
@@ -218,17 +215,17 @@ def _polygon_area_sqm(coordinates: list[list[float]]) -> float:
     if len(points) < 3:
         return 0
     latitude = sum(point[1] for point in points) / len(points)
-    projected = [
-        (lng * 111_320 * math.cos(math.radians(latitude)), lat * 111_320)
-        for lng, lat in points
-    ]
-    return abs(
-        sum(
-            projected[index][0] * projected[(index + 1) % len(projected)][1]
-            - projected[(index + 1) % len(projected)][0] * projected[index][1]
-            for index in range(len(projected))
+    projected = [(lng * 111_320 * math.cos(math.radians(latitude)), lat * 111_320) for lng, lat in points]
+    return (
+        abs(
+            sum(
+                projected[index][0] * projected[(index + 1) % len(projected)][1]
+                - projected[(index + 1) % len(projected)][0] * projected[index][1]
+                for index in range(len(projected))
+            )
         )
-    ) / 2
+        / 2
+    )
 
 
 def _squared_distance(first: tuple[float, float], second: tuple[float, float]) -> float:

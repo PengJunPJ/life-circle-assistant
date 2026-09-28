@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -53,7 +53,7 @@ def seed_walking_cache_if_empty(
         return 0
     from ..maps.provider import WalkingResult
 
-    created = now or datetime.now(timezone.utc)
+    created = now or datetime.now(UTC)
     inserted = 0
     for row in rows:
         try:

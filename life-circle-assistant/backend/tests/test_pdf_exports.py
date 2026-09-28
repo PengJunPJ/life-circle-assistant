@@ -4,7 +4,6 @@ import shutil
 import struct
 import subprocess
 from io import BytesIO
-from pathlib import Path
 
 from fastapi.testclient import TestClient
 from pypdf import PdfReader

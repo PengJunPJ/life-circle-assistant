@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
-
 
 AI_MODE = Literal["rule_template"]
 PROMPT_VERSION = "rule-template-v2"
@@ -127,8 +126,7 @@ def _filter_hallucinated_content(
     all_invalid = len(invalid_refs) > 0 and len(valid_refs) == 0
     if all_invalid:
         result["data_quality_notice"] = (
-            "AI 解读引用的证据无法在当前报告中找到，已降级为仅基于报告摘要的解读。"
-            "原始体检报告仍可正常使用。"
+            "AI 解读引用的证据无法在当前报告中找到，已降级为仅基于报告摘要的解读。原始体检报告仍可正常使用。"
         )
         result["mode"] = "rule_template_degraded"
 
@@ -143,7 +141,7 @@ def _filter_hallucinated_content(
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _category_labels(report: dict[str, Any]) -> dict[str, str]:
@@ -166,7 +164,12 @@ def _quality_notice(report: dict[str, Any]) -> str:
 def _report_evidence(report: dict[str, Any]) -> list[Evidence]:
     summary = report.get("summary") or {}
     return [
-        Evidence("report", str(report.get("report_id") or report.get("id")), "体检报告", f"综合指数 {summary.get('score') if summary.get('score') is not None else '暂不可用'}"),
+        Evidence(
+            "report",
+            str(report.get("report_id") or report.get("id")),
+            "体检报告",
+            f"综合指数 {summary.get('score') if summary.get('score') is not None else '暂不可用'}",
+        ),
     ]
 
 
@@ -175,7 +178,9 @@ def _score_evidence(report: dict[str, Any], category: str) -> Evidence | None:
         if item.get("category") == category:
             label = item.get("label") or category
             score = item.get("score")
-            return Evidence("category_score", category, f"{label}评分", f"评分 {score if score is not None else '暂不可用'}")
+            return Evidence(
+                "category_score", category, f"{label}评分", f"评分 {score if score is not None else '暂不可用'}"
+            )
     return None
 
 
@@ -189,7 +194,9 @@ def _area_evidence(area: dict[str, Any]) -> Evidence:
     )
 
 
-def _areas(report: dict[str, Any], *, kind: str | None = None, grid_id: str | None = None, category: str | None = None) -> list[dict[str, Any]]:
+def _areas(
+    report: dict[str, Any], *, kind: str | None = None, grid_id: str | None = None, category: str | None = None
+) -> list[dict[str, Any]]:
     features = (report.get("service_areas") or report.get("zones") or {}).get("features", [])
     result = []
     for feature in features:
@@ -228,13 +235,27 @@ def _top_issues(report: dict[str, Any]) -> list[tuple[str, str, list[Evidence]]]
         score = _score_evidence(report, str(props.get("category")))
         if score:
             evidence.append(score)
-        issues.append((f"{category}存在重点服务盲区", str(props.get("basis") or "最近同类设施步行时间或周边设施数量未满足要求。"), evidence))
-    for score in sorted(report.get("category_scores", []), key=lambda item: item.get("score") if item.get("score") is not None else 101)[:2]:
+        issues.append(
+            (
+                f"{category}存在重点服务盲区",
+                str(props.get("basis") or "最近同类设施步行时间或周边设施数量未满足要求。"),
+                evidence,
+            )
+        )
+    for score in sorted(
+        report.get("category_scores", []), key=lambda item: item.get("score") if item.get("score") is not None else 101
+    )[:2]:
         if score.get("score") is None:
             continue
         category = str(score.get("label") or score.get("category"))
         evidence = [_score_evidence(report, str(score.get("category")))]
-        issues.append((f"{category}服务水平需要关注", str(score.get("status_explanation") or f"当前类别评分为 {score.get('score')}。"), [item for item in evidence if item]))
+        issues.append(
+            (
+                f"{category}服务水平需要关注",
+                str(score.get("status_explanation") or f"当前类别评分为 {score.get('score')}。"),
+                [item for item in evidence if item],
+            )
+        )
     return issues[:4]
 
 
@@ -249,19 +270,25 @@ def _recommendations(report: dict[str, Any]) -> list[dict[str, Any]]:
         score = _score_evidence(report, str(item.get("category")))
         if score:
             evidence.append(score)
-        result.append({
-            "title": item.get("title") or "关注重点服务区域",
-            "text": item.get("rationale") or item.get("description") or "结合报告中的服务区域和类别评分进行优先研判。",
-            "priority": item.get("priority") or "medium",
-            "evidence_refs": [ref.as_dict() for ref in evidence],
-        })
+        result.append(
+            {
+                "title": item.get("title") or "关注重点服务区域",
+                "text": item.get("rationale")
+                or item.get("description")
+                or "结合报告中的服务区域和类别评分进行优先研判。",
+                "priority": item.get("priority") or "medium",
+                "evidence_refs": [ref.as_dict() for ref in evidence],
+            }
+        )
     if not result:
-        result.append({
-            "title": "保持现有服务覆盖并持续复核",
-            "text": "当前报告没有形成可直接引用的重点规划建议，建议结合人口、容量和现场通行条件继续核验。",
-            "priority": "low",
-            "evidence_refs": [ref.as_dict() for ref in _report_evidence(report)],
-        })
+        result.append(
+            {
+                "title": "保持现有服务覆盖并持续复核",
+                "text": "当前报告没有形成可直接引用的重点规划建议，建议结合人口、容量和现场通行条件继续核验。",
+                "priority": "low",
+                "evidence_refs": [ref.as_dict() for ref in _report_evidence(report)],
+            }
+        )
     return result
 
 
@@ -274,14 +301,16 @@ def _priority_ranking(report: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         critical_count = len(_areas(report, kind="critical", category=category))
         sparse_count = len(_areas(report, kind="sparse", category=category))
-        ranking.append({
-            "category": category,
-            "label": str(item.get("label") or category),
-            "score": item.get("score"),
-            "critical_count": critical_count,
-            "sparse_count": sparse_count,
-            "status_explanation": str(item.get("status_explanation") or ""),
-        })
+        ranking.append(
+            {
+                "category": category,
+                "label": str(item.get("label") or category),
+                "score": item.get("score"),
+                "critical_count": critical_count,
+                "sparse_count": sparse_count,
+                "status_explanation": str(item.get("status_explanation") or ""),
+            }
+        )
 
     def sort_key(entry: dict[str, Any]) -> tuple[int, int, int]:
         score = entry["score"]
@@ -349,12 +378,14 @@ def _build_priority_result(
         rationale = "；".join(detail_bits)
         if entry["status_explanation"]:
             rationale = f"{rationale}；{entry['status_explanation']}"
-        recommendations.append({
-            "title": f"{'优先补充' if _priority_priority_label(index, entry) == 'high' else '关注'}{entry['label']}",
-            "text": rationale,
-            "priority": _priority_priority_label(index, entry),
-            "evidence_refs": [ref.as_dict() for ref in entry_evidence],
-        })
+        recommendations.append(
+            {
+                "title": f"{'优先补充' if _priority_priority_label(index, entry) == 'high' else '关注'}{entry['label']}",
+                "text": rationale,
+                "priority": _priority_priority_label(index, entry),
+                "evidence_refs": [ref.as_dict() for ref in entry_evidence],
+            }
+        )
 
     head = ranking[0]
     tail_hint = ""
@@ -450,7 +481,11 @@ def _build_simulation_result(
     if not change_bits:
         summary = f"针对{label}的模拟已完成，但报告未提供可展示的评分或覆盖变化，建议在方案比较中直接引用模拟原始结果。"
     else:
-        summary = f"针对{label}的候选设施模拟显示：" + "；".join(change_bits) + "。以上数值全部来自报告中已完成的模拟结果，AI 不会自行估算新的改善数值。"
+        summary = (
+            f"针对{label}的候选设施模拟显示："
+            + "；".join(change_bits)
+            + "。以上数值全部来自报告中已完成的模拟结果，AI 不会自行估算新的改善数值。"
+        )
 
     sim_evidence = _simulation_evidence(simulation)
     evidence: list[Evidence] = [sim_evidence]
@@ -458,13 +493,17 @@ def _build_simulation_result(
     if score_ref:
         evidence.append(score_ref)
 
-    disclosure = ((simulation.get("data_quality") or {}).get("disclosure")) or "模拟结果仅用于方案比较，不修改来源设施或原始体检报告。"
-    recommendations = [{
-        "title": "结合规划建议与现场条件复核",
-        "text": f"{disclosure}建议核对候选点用地可行性、步行路径真实通行条件，再决定是否纳入规划。",
-        "priority": "medium",
-        "evidence_refs": [sim_evidence.as_dict()],
-    }]
+    disclosure = (
+        (simulation.get("data_quality") or {}).get("disclosure")
+    ) or "模拟结果仅用于方案比较，不修改来源设施或原始体检报告。"
+    recommendations = [
+        {
+            "title": "结合规划建议与现场条件复核",
+            "text": f"{disclosure}建议核对候选点用地可行性、步行路径真实通行条件，再决定是否纳入规划。",
+            "priority": "medium",
+            "evidence_refs": [sim_evidence.as_dict()],
+        }
+    ]
 
     return _base_result(
         report,
@@ -527,7 +566,14 @@ def _build_brief_result(report: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def _base_result(report: dict[str, Any], *, intent: str, summary: str, recommendations: list[dict[str, Any]], evidence: list[Evidence]) -> dict[str, Any]:
+def _base_result(
+    report: dict[str, Any],
+    *,
+    intent: str,
+    summary: str,
+    recommendations: list[dict[str, Any]],
+    evidence: list[Evidence],
+) -> dict[str, Any]:
     return {
         "intent": intent,
         "summary": summary,
@@ -570,7 +616,14 @@ def build_ai_interpretation(
             report,
             intent=intent,
             summary=f"{props.get('category_label', labels.get(str(props.get('category')), '该类别'))}的{props.get('label', '服务区域')}：{props.get('basis') or '报告未提供更细的分类依据。'}",
-            recommendations=[{"title": "结合现场条件复核", "text": "重点核对社区出入口、围墙、道路过街和设施实际开放情况，再决定是否需要规划干预。", "priority": "medium", "evidence_refs": [item.as_dict() for item in evidence]}],
+            recommendations=[
+                {
+                    "title": "结合现场条件复核",
+                    "text": "重点核对社区出入口、围墙、道路过街和设施实际开放情况，再决定是否需要规划干预。",
+                    "priority": "medium",
+                    "evidence_refs": [item.as_dict() for item in evidence],
+                }
+            ],
             evidence=evidence,
         )
     elif intent == "priority":
@@ -584,9 +637,17 @@ def build_ai_interpretation(
         if any(word in normalized for word in ("为什么", "盲区", "网格")):
             critical = _areas(report, kind="critical")
             if critical:
-                result = build_ai_interpretation(report, intent="area_explanation", grid_id=critical[0]["properties"].get("grid_id"))
+                result = build_ai_interpretation(
+                    report, intent="area_explanation", grid_id=critical[0]["properties"].get("grid_id")
+                )
             else:
-                result = _base_result(report, intent=intent, summary="当前报告没有识别到重点服务盲区，无法解释盲区原因。", recommendations=[], evidence=_report_evidence(report))
+                result = _base_result(
+                    report,
+                    intent=intent,
+                    summary="当前报告没有识别到重点服务盲区，无法解释盲区原因。",
+                    recommendations=[],
+                    evidence=_report_evidence(report),
+                )
         elif any(word in normalized for word in ("模拟", "新增", "改善")):
             result = _build_simulation_result(report)
         elif any(word in normalized for word in ("汇报", "报告一下", "简报", "街道")):
@@ -594,7 +655,13 @@ def build_ai_interpretation(
         elif any(word in normalized for word in ("补什么", "优先", "设施", "排序")):
             result = _build_priority_result(report, category=category)
         else:
-            result = _base_result(report, intent=intent, summary="我目前只能基于本次报告回答摘要、盲区原因、类别优先级、候选设施模拟和汇报摘要等问题。请从示例问题中选择一个方向。", recommendations=[], evidence=_report_evidence(report))
+            result = _base_result(
+                report,
+                intent=intent,
+                summary="我目前只能基于本次报告回答摘要、盲区原因、类别优先级、候选设施模拟和汇报摘要等问题。请从示例问题中选择一个方向。",
+                recommendations=[],
+                evidence=_report_evidence(report),
+            )
     else:
         # summary intent
         issues = _top_issues(report)
@@ -603,7 +670,9 @@ def build_ai_interpretation(
         evidence = _report_evidence(report)
         for _, _, refs in issues:
             evidence.extend(refs)
-        result = _base_result(report, intent="summary", summary=summary, recommendations=_recommendations(report), evidence=evidence[:10])
+        result = _base_result(
+            report, intent="summary", summary=summary, recommendations=_recommendations(report), evidence=evidence[:10]
+        )
 
     # 出口统一校验：过滤幻觉内容
     return _filter_hallucinated_content(result, report)

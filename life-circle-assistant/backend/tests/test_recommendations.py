@@ -26,13 +26,15 @@ def area_feature(
         },
         "geometry": {
             "type": "Polygon",
-            "coordinates": [[
-                [lng, lat],
-                [lng + size, lat],
-                [lng + size, lat + size],
-                [lng, lat + size],
-                [lng, lat],
-            ]],
+            "coordinates": [
+                [
+                    [lng, lat],
+                    [lng + size, lat],
+                    [lng + size, lat + size],
+                    [lng, lat + size],
+                    [lng, lat],
+                ]
+            ],
         },
     }
 

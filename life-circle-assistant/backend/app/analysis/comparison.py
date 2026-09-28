@@ -4,7 +4,6 @@ from typing import Any
 
 from ..mock_data import CATEGORIES
 
-
 REGION_KINDS = ("normal", "sparse", "critical")
 
 

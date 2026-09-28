@@ -3,12 +3,11 @@ from __future__ import annotations
 import asyncio
 import os
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass, replace
-from typing import Awaitable, Callable
 
 from ..storage.walking_cache import WalkingCacheRepository
 from .provider import MapProvider, MapProviderError, WalkingResult
-
 
 Sleep = Callable[[float], Awaitable[None]]
 Coordinate = tuple[float, float]
@@ -25,7 +24,7 @@ class WalkingSettings:
     retry_base_seconds: float = 0.25
 
     @classmethod
-    def from_env(cls) -> "WalkingSettings":
+    def from_env(cls) -> WalkingSettings:
         return cls(
             cache_ttl_seconds=max(1, int(os.getenv("WALKING_CACHE_TTL_SECONDS", "86400"))),
             max_concurrency=max(1, int(os.getenv("WALKING_MAX_CONCURRENCY", "6"))),
@@ -97,11 +96,7 @@ class WalkingService:
         results: dict[Pair, WalkingResult] = {}
         misses: list[Pair] = []
         for pair in dict.fromkeys(pairs):
-            lookup = (
-                self.cache.get(self.provider.descriptor.id, pair[0], pair[1])
-                if self.cache is not None
-                else None
-            )
+            lookup = self.cache.get(self.provider.descriptor.id, pair[0], pair[1]) if self.cache is not None else None
             if lookup is not None and lookup.status == "hit" and lookup.result is not None:
                 self.metrics.cache_hits += 1
                 results[pair] = lookup.result
@@ -129,7 +124,10 @@ class WalkingService:
 
         self.metrics.duration_ms += round((time.perf_counter() - started) * 1_000)
         return [
-            [results.get((origin, destination)) or self._failure(origin, destination, "format_error", "步行结果缺失") for destination in destinations]
+            [
+                results.get((origin, destination)) or self._failure(origin, destination, "format_error", "步行结果缺失")
+                for destination in destinations
+            ]
             for origin in origins
         ]
 
@@ -155,10 +153,7 @@ class WalkingService:
                 if exc.code == "batch_not_supported":
                     fetched = await self._fetch_concurrently(pairs)
                 else:
-                    fetched = {
-                        pair: self._failure(pair[0], pair[1], exc.code, str(exc))
-                        for pair in pairs
-                    }
+                    fetched = {pair: self._failure(pair[0], pair[1], exc.code, str(exc)) for pair in pairs}
                     return fetched
             return await self._retry_failed_results(fetched)
 
@@ -187,7 +182,9 @@ class WalkingService:
         return await self._retry_failed_results(fetched)
 
     async def _retry_failed_results(self, fetched: dict[Pair, WalkingResult]) -> dict[Pair, WalkingResult]:
-        retry_pairs = [pair for pair, result in fetched.items() if not result.success and _is_retryable_code(result.error_code)]
+        retry_pairs = [
+            pair for pair, result in fetched.items() if not result.success and _is_retryable_code(result.error_code)
+        ]
         if retry_pairs:
             semaphore = asyncio.Semaphore(self.settings.max_concurrency)
 
@@ -245,9 +242,7 @@ class WalkingService:
             except MapProviderError as exc:
                 result = self._failure(pair[0], pair[1], exc.code, str(exc))
             else:
-                result = result_map.get(pair) or self._failure(
-                    pair[0], pair[1], "format_error", "重试未返回坐标对结果"
-                )
+                result = result_map.get(pair) or self._failure(pair[0], pair[1], "format_error", "重试未返回坐标对结果")
             if result.success or not _is_retryable_code(result.error_code):
                 break
         return result
@@ -270,7 +265,7 @@ class WalkingService:
                 self.provider.walking_matrix(origins, destinations),
                 timeout=self.settings.timeout_seconds,
             )
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             self.metrics.timeouts += 1
             raise MapProviderError(
                 f"步行请求超过 {self.settings.timeout_seconds:g} 秒超时",

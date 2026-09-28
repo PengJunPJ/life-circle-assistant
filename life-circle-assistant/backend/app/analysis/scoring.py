@@ -4,7 +4,6 @@ from typing import Any
 
 from ..mock_data import CATEGORIES
 
-
 COMPONENT_WEIGHTS = {
     "quantity": 0.4,
     "walking_time": 0.4,
@@ -76,8 +75,7 @@ def aggregate_overall_score(category_scores: list[dict[str, Any]]) -> dict[str, 
         "selected_category_count": len(category_scores),
         "valid_category_count": len(valid_scores),
         "component_weights": {
-            key: {"weight": weight, "weight_percent": round(weight * 100)}
-            for key, weight in COMPONENT_WEIGHTS.items()
+            key: {"weight": weight, "weight_percent": round(weight * 100)} for key, weight in COMPONENT_WEIGHTS.items()
         },
         "category_weights": [
             {
@@ -104,11 +102,7 @@ def score_category(
 ) -> dict[str, Any]:
     category_config = CATEGORIES[category]
     count = len(facilities)
-    walking_values = [
-        float(item["walk_minutes"])
-        for item in facilities
-        if item.get("walk_minutes") is not None
-    ]
+    walking_values = [float(item["walk_minutes"]) for item in facilities if item.get("walk_minutes") is not None]
     nearest = min(walking_values, default=None)
     missing_walking_count = count - len(walking_values)
 
@@ -130,10 +124,7 @@ def score_category(
     elif missing_walking_count:
         status = "calculation_incomplete"
         status_label = "计算不完整"
-        status_explanation = (
-            f"{count} 个设施中有 {missing_walking_count} 个缺少步行结果，"
-            "该类别不纳入综合分。"
-        )
+        status_explanation = f"{count} 个设施中有 {missing_walking_count} 个缺少步行结果，该类别不纳入综合分。"
         valid_for_overall = False
     else:
         status = "valid"
@@ -282,10 +273,7 @@ def _distribution_component(
 
     occupied_quadrants = len({_quadrant(item, center) for item in facilities})
     score = round((occupied_quadrants / 4) * 80 + (min(len(facilities), 4) / 4) * 20)
-    reason = (
-        f"{len(facilities)} 个设施覆盖中心点周边 4 个方向象限中的 "
-        f"{occupied_quadrants} 个，空间分布计 {score} 分。"
-    )
+    reason = f"{len(facilities)} 个设施覆盖中心点周边 4 个方向象限中的 {occupied_quadrants} 个，空间分布计 {score} 分。"
     return _component(
         "spatial_distribution",
         "空间分布",

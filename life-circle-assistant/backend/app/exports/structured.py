@@ -11,7 +11,6 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import quote
 
-
 CSV_COLUMNS = [
     "记录类型",
     "报告标识",
@@ -82,10 +81,7 @@ def build_csv_export(report: dict[str, Any]) -> ExportArtifact:
     writer = csv.DictWriter(output, fieldnames=CSV_COLUMNS, extrasaction="ignore", lineterminator="\r\n")
     writer.writeheader()
     common = _csv_common_fields(report)
-    category_labels = {
-        score.get("category"): score.get("label")
-        for score in report.get("category_scores", [])
-    }
+    category_labels = {score.get("category"): score.get("label") for score in report.get("category_scores", [])}
 
     summary_labels = {
         "score": "综合生活圈指数",

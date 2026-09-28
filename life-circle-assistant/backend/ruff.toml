@@ -1,0 +1,17 @@
+# 后端 lint 与格式化门禁配置（CI 与本地 make quality 共用）。
+# 规则集保持克制：错误类 + 导入 hygiene + 现代语法建议，避免风格噪音淹没真实问题。
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = [
+  "E4", # 导入相关错误
+  "E7", # 语句级错误
+  "E9", # 运行时错误
+  "F",  # pyflakes：未使用导入/变量、未定义名称等
+  "I",  # import 排序
+  "UP", # pyupgrade：过时语法与导入
+]
+
+[lint.isort]
+known-first-party = ["app"]

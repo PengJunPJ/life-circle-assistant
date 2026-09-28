@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
-
 DataSourceKind = Literal["real_api", "cache", "local_snapshot", "interpolation", "degraded_estimate"]
 
 

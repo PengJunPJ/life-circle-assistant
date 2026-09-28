@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
-from typing import AsyncIterator, Literal
+from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from .analysis import AnalysisApplicationService, compare_reports
 from .ai_assistant import build_ai_interpretation
+from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
 from .bootstrap import configure_runtime
 from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
@@ -21,7 +22,6 @@ from .maps.walking import WalkingService
 from .mock_data import CATEGORIES, CENTER
 from .schemas import AnalyzeRequest, ReportComparisonRequest, SimulationRequest
 from .storage import ReportRepository, TaskRepository
-
 
 load_dotenv()
 

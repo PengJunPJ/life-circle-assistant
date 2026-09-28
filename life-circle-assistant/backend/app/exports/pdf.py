@@ -3,9 +3,10 @@ from __future__ import annotations
 import io
 import os
 from collections import Counter
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -28,9 +29,7 @@ from reportlab.platypus import (
 )
 
 from ..contracts.sources import source_label
-
 from .structured import ExportArtifact, _filename
-
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
 FONT_NAME = "LifeCircleChinese"
@@ -309,37 +308,64 @@ def _ai_interpretation_section(report: dict[str, Any], styles: dict[str, Paragra
         return []
     result = interpretations[0]
     story: list[Flowable] = [PageBreak(), Paragraph("AI 解读与证据", styles["section"])]
-    story.append(Paragraph("以下内容是对本次结构化体检报告的辅助解读，不会修改原始评分、路线和设施数据。", styles["body"]))
-    story.append(Paragraph(f"生成方式：{_escape(result.get('model') or result.get('mode') or '未知')}；提示词版本：{_escape(result.get('prompt_version') or '-')}", styles["small"]))
+    story.append(
+        Paragraph("以下内容是对本次结构化体检报告的辅助解读，不会修改原始评分、路线和设施数据。", styles["body"])
+    )
+    story.append(
+        Paragraph(
+            f"生成方式：{_escape(result.get('model') or result.get('mode') or '未知')}；提示词版本：{_escape(result.get('prompt_version') or '-')}",
+            styles["small"],
+        )
+    )
     story.append(Spacer(1, 4 * mm))
     story.append(Paragraph(_escape(result.get("summary") or "未提供 AI 摘要。"), styles["body"]))
     recommendations = result.get("recommendations") or []
     if recommendations:
         story.append(Spacer(1, 4 * mm))
         story.append(Paragraph("优先行动", styles["subsection"]))
-        rows = [[Paragraph("建议", styles["small"]), Paragraph("优先级", styles["small"]), Paragraph("内容", styles["small"])]]
+        rows = [
+            [
+                Paragraph("建议", styles["small"]),
+                Paragraph("优先级", styles["small"]),
+                Paragraph("内容", styles["small"]),
+            ]
+        ]
         for item in recommendations[:6]:
-            rows.append([
-                Paragraph(_escape(item.get("title") or "-"), styles["small"]),
-                Paragraph(_escape(item.get("priority") or "-"), styles["small"]),
-                Paragraph(_escape(item.get("text") or "-"), styles["small"]),
-            ])
+            rows.append(
+                [
+                    Paragraph(_escape(item.get("title") or "-"), styles["small"]),
+                    Paragraph(_escape(item.get("priority") or "-"), styles["small"]),
+                    Paragraph(_escape(item.get("text") or "-"), styles["small"]),
+                ]
+            )
         table = Table(rows, colWidths=[38 * mm, 22 * mm, 106 * mm], repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), GREEN_LIGHT),
-            ("GRID", (0, 0), (-1, -1), 0.4, LINE),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-            ("TOPPADDING", (0, 0), (-1, -1), 5),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ]))
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), GREEN_LIGHT),
+                    ("GRID", (0, 0), (-1, -1), 0.4, LINE),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ]
+            )
+        )
         story.append(table)
     refs = result.get("evidence_refs") or []
     if refs:
         story.append(Spacer(1, 4 * mm))
         story.append(Paragraph("证据引用", styles["subsection"]))
-        story.append(Paragraph("；".join(f"{_escape(item.get('label') or item.get('id') or '-')}: {_escape(item.get('detail') or '-') }" for item in refs[:10]), styles["small"]))
+        story.append(
+            Paragraph(
+                "；".join(
+                    f"{_escape(item.get('label') or item.get('id') or '-')}: {_escape(item.get('detail') or '-')}"
+                    for item in refs[:10]
+                ),
+                styles["small"],
+            )
+        )
     story.append(Spacer(1, 4 * mm))
     story.append(Paragraph(_escape(result.get("data_quality_notice") or "未提供 AI 数据质量说明。"), styles["small"]))
     return story
@@ -397,7 +423,10 @@ def _metric_table(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> 
         (_format_integer(summary.get("sparse_zone_count")), "设施稀疏区"),
         (_format_area(summary.get("area_sqm")), "可达面积"),
     ]
-    data = [[Paragraph(value, styles["metric"]) for value, _ in values], [Paragraph(label, styles["metric_label"]) for _, label in values]]
+    data = [
+        [Paragraph(value, styles["metric"]) for value, _ in values],
+        [Paragraph(label, styles["metric_label"]) for _, label in values],
+    ]
     table = Table(data, colWidths=[31.2 * mm] * 5)
     table.setStyle(
         TableStyle(
@@ -442,8 +471,18 @@ def _score_table(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> T
                 _cell(_percent(score.get("applied_weight")), styles),
             ]
         )
-        rows.append([_cell(f"状态：{score.get('status_label') or score.get('status') or '-'}。{score.get('status_explanation') or ''}", styles)] + [""] * 7)
-    table = Table(rows, colWidths=[23 * mm, 18 * mm, 18 * mm, 20 * mm, 20 * mm, 20 * mm, 20 * mm, 20 * mm], repeatRows=1)
+        rows.append(
+            [
+                _cell(
+                    f"状态：{score.get('status_label') or score.get('status') or '-'}。{score.get('status_explanation') or ''}",
+                    styles,
+                )
+            ]
+            + [""] * 7
+        )
+    table = Table(
+        rows, colWidths=[23 * mm, 18 * mm, 18 * mm, 20 * mm, 20 * mm, 20 * mm, 20 * mm, 20 * mm], repeatRows=1
+    )
     commands = _table_commands()
     for row_index in range(2, len(rows), 2):
         commands.extend(
@@ -461,18 +500,24 @@ def _blind_spot_table(report: dict[str, Any], styles: dict[str, ParagraphStyle])
     spots = [
         feature.get("properties") or {}
         for feature in (report.get("service_areas") or report.get("zones") or {}).get("features", [])
-        if (feature.get("properties") or {}).get("region_type", (feature.get("properties") or {}).get("kind")) == "critical"
+        if (feature.get("properties") or {}).get("region_type", (feature.get("properties") or {}).get("kind"))
+        == "critical"
     ]
     if not spots:
         return Paragraph("未识别到重点服务盲区。", styles["body"])
-    rows: list[list[Any]] = [[_header_cell(item, styles) for item in ["区域", "设施类别", "最近同类设施", "步行时间/距离", "判定依据"]]]
+    rows: list[list[Any]] = [
+        [_header_cell(item, styles) for item in ["区域", "设施类别", "最近同类设施", "步行时间/距离", "判定依据"]]
+    ]
     for spot in spots:
         rows.append(
             [
                 _cell(spot.get("grid_id") or "-", styles),
                 _cell(spot.get("category_label") or spot.get("category") or "-", styles),
                 _cell(spot.get("nearest_facility_name") or "未找到", styles),
-                _cell(f"{_minutes(spot.get('nearest_walk_minutes'))} / {_meters(spot.get('nearest_walk_distance_m'))}", styles),
+                _cell(
+                    f"{_minutes(spot.get('nearest_walk_minutes'))} / {_meters(spot.get('nearest_walk_distance_m'))}",
+                    styles,
+                ),
                 _cell(spot.get("basis") or "未提供判定依据", styles),
             ]
         )
@@ -488,10 +533,13 @@ def _recommendation_flows(report: dict[str, Any], styles: dict[str, ParagraphSty
     flows: list[Flowable] = []
     for index, item in enumerate(recommendations, start=1):
         candidates = item.get("candidate_locations") or []
-        candidate_text = "；".join(
-            f"{candidate.get('id', '候选点')} ({_number(candidate.get('lng'), 6)}, {_number(candidate.get('lat'), 6)}) - {candidate.get('reason', '')}"
-            for candidate in candidates
-        ) or "未生成候选位置"
+        candidate_text = (
+            "；".join(
+                f"{candidate.get('id', '候选点')} ({_number(candidate.get('lng'), 6)}, {_number(candidate.get('lat'), 6)}) - {candidate.get('reason', '')}"
+                for candidate in candidates
+            )
+            or "未生成候选位置"
+        )
         improvement = item.get("target_improvement") or {}
         block = [
             Paragraph(f"{index}. {_escape(item.get('title') or '规划建议')}", styles["subsection"]),
@@ -602,8 +650,14 @@ def _execution_table(report: dict[str, Any], styles: dict[str, ParagraphStyle]) 
         ["总耗时", f"{_number(execution.get('total_duration_ms'), 0)} ms"],
         ["地图提供方调用", _format_integer(metrics.get("walking_provider_calls"))],
         ["真实 API 调用", _format_integer(metrics.get("walking_api_calls"))],
-        ["缓存命中/未命中", f"{_format_integer(metrics.get('walking_cache_hits'))} / {_format_integer(metrics.get('walking_cache_misses'))}"],
-        ["重试/超时/失败", f"{_format_integer(metrics.get('walking_retries'))} / {_format_integer(metrics.get('walking_timeouts'))} / {_format_integer(metrics.get('walking_failures'))}"],
+        [
+            "缓存命中/未命中",
+            f"{_format_integer(metrics.get('walking_cache_hits'))} / {_format_integer(metrics.get('walking_cache_misses'))}",
+        ],
+        [
+            "重试/超时/失败",
+            f"{_format_integer(metrics.get('walking_retries'))} / {_format_integer(metrics.get('walking_timeouts'))} / {_format_integer(metrics.get('walking_failures'))}",
+        ],
         ["降级估算结果", _format_integer(metrics.get("walking_degraded_results"))],
         ["部分失败数量", _format_integer(metrics.get("partial_failure_count"))],
     ]
@@ -623,7 +677,15 @@ def _map_legend(styles: dict[str, ParagraphStyle]) -> Table:
     for label, color in entries:
         cells.extend([ColorSwatch(color), Paragraph(label, styles["small"])])
     table = Table([cells], colWidths=[7 * mm, 19 * mm] * len(entries))
-    table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2)]))
+    table.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 2),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
     return table
 
 
@@ -759,7 +821,10 @@ def _draw_geometry(
 
 
 def _all_coordinates(report: dict[str, Any]) -> Iterable[tuple[float, float]]:
-    for feature in [report.get("isochrone"), *((report.get("service_areas") or report.get("zones") or {}).get("features", []))]:
+    for feature in [
+        report.get("isochrone"),
+        *((report.get("service_areas") or report.get("zones") or {}).get("features", [])),
+    ]:
         if not feature:
             continue
         geometry = feature.get("geometry") or {}
@@ -796,7 +861,9 @@ def _draw_page(canvas: Canvas, doc: Any, report: dict[str, Any], font_name: str)
     canvas.setFont(font_name, 7)
     canvas.setFillColor(MUTED)
     canvas.drawString(18 * mm, PAGE_HEIGHT - 10 * mm, "15分钟生活圈体检报告")
-    canvas.drawRightString(PAGE_WIDTH - 18 * mm, PAGE_HEIGHT - 10 * mm, str(report.get("report_id") or report.get("id") or "-")[:18])
+    canvas.drawRightString(
+        PAGE_WIDTH - 18 * mm, PAGE_HEIGHT - 10 * mm, str(report.get("report_id") or report.get("id") or "-")[:18]
+    )
     canvas.line(18 * mm, 12 * mm, PAGE_WIDTH - 18 * mm, 12 * mm)
     canvas.drawString(18 * mm, 8 * mm, "坐标系 BD-09 - 生成结果以持久化标准报告为准")
     canvas.drawRightString(PAGE_WIDTH - 18 * mm, 8 * mm, f"第 {doc.page} 页")
@@ -804,7 +871,9 @@ def _draw_page(canvas: Canvas, doc: Any, report: dict[str, Any], font_name: str)
 
 
 def _key_value_table(rows: list[list[Any]], styles: dict[str, ParagraphStyle]) -> Table:
-    formatted = [[Paragraph(_escape(label), styles["small"]), Paragraph(_escape(value), styles["body"])] for label, value in rows]
+    formatted = [
+        [Paragraph(_escape(label), styles["small"]), Paragraph(_escape(value), styles["body"])] for label, value in rows
+    ]
     table = Table(formatted, colWidths=[34 * mm, 123 * mm])
     table.setStyle(
         TableStyle(
@@ -879,10 +948,17 @@ def _scoring_explanation(report: dict[str, Any]) -> str:
 
 def _blind_spot_summary(report: dict[str, Any]) -> str:
     features = (report.get("service_areas") or report.get("zones") or {}).get("features", [])
-    spots = [feature.get("properties") or {} for feature in features if (feature.get("properties") or {}).get("region_type", (feature.get("properties") or {}).get("kind")) == "critical"]
+    spots = [
+        feature.get("properties") or {}
+        for feature in features
+        if (feature.get("properties") or {}).get("region_type", (feature.get("properties") or {}).get("kind"))
+        == "critical"
+    ]
     counts = Counter(spot.get("category_label") or spot.get("category") or "未分类" for spot in spots)
     detail = "、".join(f"{label} {count} 个" for label, count in sorted(counts.items())) or "无"
-    return _escape(f"共识别 {len(spots)} 个重点服务盲区，按设施类别统计为：{detail}。下表保留每个盲区的最近同类设施和判定依据。")
+    return _escape(
+        f"共识别 {len(spots)} 个重点服务盲区，按设施类别统计为：{detail}。下表保留每个盲区的最近同类设施和判定依据。"
+    )
 
 
 def _component_score(components: dict[str, dict[str, Any]], key: str) -> str:
@@ -895,7 +971,9 @@ def _quality_status_label(status: Any) -> str:
 
 
 def _mode_label(mode: Any) -> str:
-    return {"demo": "快速分析", "analysis": "正式分析", "snapshot": "本地快照模式", "real": "真实地图模式"}.get(str(mode), str(mode or "未提供"))
+    return {"demo": "快速分析", "analysis": "正式分析", "snapshot": "本地快照模式", "real": "真实地图模式"}.get(
+        str(mode), str(mode or "未提供")
+    )
 
 
 def _source_label(source: Any) -> str:

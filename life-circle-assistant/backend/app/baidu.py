@@ -2,10 +2,10 @@ import asyncio
 import math
 import os
 import time
-from typing import Any, Awaitable, Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
+from typing import Any
 
 import httpx
-
 
 Sleep = Callable[[float], Awaitable[None]]
 Monotonic = Callable[[], float]
@@ -80,7 +80,7 @@ class BaiduMapClient:
                         rate_limited=rate_limited,
                     )
                 return payload
-            except httpx.TimeoutException as exc:
+            except httpx.TimeoutException:
                 last_error = BaiduMapError("百度地图请求超时", code="timeout", retryable=True)
                 if attempt < 2:
                     await asyncio.sleep(0.4 * (2**attempt))
@@ -131,7 +131,11 @@ class BaiduMapClient:
         location = result.get("location") or {}
         if "lng" not in location or "lat" not in location:
             raise BaiduMapError("地址没有解析出有效坐标")
-        return {"lng": float(location["lng"]), "lat": float(location["lat"]), "address": result.get("formatted_address") or address}
+        return {
+            "lng": float(location["lng"]),
+            "lat": float(location["lat"]),
+            "address": result.get("formatted_address") or address,
+        }
 
     async def reverse_geocode(self, lng: float, lat: float) -> dict[str, Any]:
         payload = await self._request("/reverse_geocoding/v3/", {"location": f"{lat},{lng}", "extensions_poi": 0})
@@ -146,18 +150,28 @@ class BaiduMapClient:
         }
 
     async def search_poi(self, query: str, lng: float, lat: float, radius: int = 1000) -> list[dict[str, Any]]:
-        payload = await self._request("/place/v2/search", {"query": query, "location": f"{lat},{lng}", "radius": radius, "scope": 2, "page_size": 20})
+        payload = await self._request(
+            "/place/v2/search",
+            {"query": query, "location": f"{lat},{lng}", "radius": radius, "scope": 2, "page_size": 20},
+        )
         return payload.get("results") or []
 
     async def walking_route(self, origin: tuple[float, float], destination: tuple[float, float]) -> dict[str, Any]:
         self.walking_request_count += 1
-        payload = await self._request("/directionlite/v1/walking", {"origin": f"{origin[1]},{origin[0]}", "destination": f"{destination[1]},{destination[0]}"})
+        payload = await self._request(
+            "/directionlite/v1/walking",
+            {"origin": f"{origin[1]},{origin[0]}", "destination": f"{destination[1]},{destination[0]}"},
+        )
         result = payload.get("result") or {}
         routes = result.get("routes") or []
         if not routes:
             raise BaiduMapError("两点之间没有可用步行路线")
         route = routes[0]
-        return {"distance_m": float(route.get("distance", 0)), "duration_s": float(route.get("duration", 0)), "steps": route.get("steps") or []}
+        return {
+            "distance_m": float(route.get("distance", 0)),
+            "duration_s": float(route.get("duration", 0)),
+            "steps": route.get("steps") or [],
+        }
 
     async def batch_walking(
         self,
@@ -199,7 +213,9 @@ class BaiduMapClient:
             )
         return parsed
 
-    async def walking_routes(self, origin: tuple[float, float], destinations: Iterable[tuple[float, float]], concurrency: int = 6) -> list[dict[str, Any] | None]:
+    async def walking_routes(
+        self, origin: tuple[float, float], destinations: Iterable[tuple[float, float]], concurrency: int = 6
+    ) -> list[dict[str, Any] | None]:
         semaphore = asyncio.Semaphore(concurrency)
 
         async def request(destination: tuple[float, float]) -> dict[str, Any] | None:
