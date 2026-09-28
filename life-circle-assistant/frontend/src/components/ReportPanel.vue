@@ -9,6 +9,9 @@
       :items="historyItems"
       :total="historyTotal"
       :loading="historyLoading"
+      :loading-more="historyLoadingMore"
+      :has-more="historyHasMore"
+      :query="historyQuery"
       :error="historyError"
       :opening-report-id="openingReportId"
       :rerunning-report-id="rerunningReportId"
@@ -20,6 +23,8 @@
       @rerun="emit('rerun-history', $event)"
       @toggle-comparison="emit('toggle-comparison', $event)"
       @compare="emit('compare-history')"
+      @search="emit('search-history', $event)"
+      @load-more="emit('load-more-history')"
     />
     <div v-if="report" class="report-content">
       <div class="quality-banner" role="status">
@@ -95,6 +100,9 @@ const props = defineProps<{
   historyItems: HistoryReportItem[]
   historyTotal: number
   historyLoading: boolean
+  historyLoadingMore: boolean
+  historyHasMore: boolean
+  historyQuery: string
   historyError: string
   openingReportId: string
   rerunningReportId: string
@@ -116,6 +124,8 @@ const emit = defineEmits<{
   'locate-recommendation': [recommendationId: string]
   'toggle-comparison': [reportId: string]
   'compare-history': []
+  'search-history': [keyword: string]
+  'load-more-history': []
   'simulate-candidate': [category: string, candidate: RecommendationCandidate]
   'update:simulation-category': [category: string]
   'pick-simulation-location': []

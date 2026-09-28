@@ -126,6 +126,14 @@ button { border: 0; cursor: pointer; }
 .history-state.error { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f7e9e5; color: #9f523f; }
 .history-state button { flex: 0 0 auto; padding: 3px 6px; border-radius: 3px; background: #fff; color: #9f523f; font-size: 9px; }
 .history-list { display: grid; gap: 6px; max-height: 156px; margin-top: 9px; overflow: auto; }
+.history-search { position: relative; display: flex; align-items: center; margin-top: 8px; }
+.history-search-input { flex: 1; min-width: 0; padding: 5px 22px 5px 8px; border: 1px solid #dce6e0; border-radius: 4px; background: #fff; color: #36564f; font-size: 10px; line-height: 1.4; }
+.history-search-input:focus { outline: none; border-color: #4c7d72; box-shadow: 0 0 0 2px rgba(76,125,114,.12); }
+.history-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.history-search-clear { position: absolute; right: 4px; padding: 0 4px; background: transparent; border: 0; color: #8a9894; font-size: 12px; line-height: 1; cursor: pointer; }
+.history-search-clear:hover { color: #4c7d72; }
+.history-load-state { padding: 6px 4px; text-align: center; color: #4c7d72; font-size: 9px; }
+.history-load-state.muted { color: #8a9894; }
 .history-item { display: flex; align-items: stretch; border: 1px solid #dce6e0; border-radius: 4px; background: #fff; }
 .history-open { min-width: 0; flex: 1; padding: 8px; background: transparent; color: #36564f; text-align: left; }
 .history-open strong, .history-open span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -585,6 +593,12 @@ html[data-theme="dark"] .history-state { background: rgba(20,32,44,.6); color: #
 html[data-theme="dark"] .history-state.error { background: rgba(255,107,87,.12); color: #ff9d8d; }
 html[data-theme="dark"] .history-state button { background: rgba(30,48,66,.9); color: #ff9d8d; }
 html[data-theme="dark"] .history-item { border-color: rgba(126,214,199,.16); background: rgba(30,48,66,.7); }
+html[data-theme="dark"] .history-search-input { border-color: rgba(126,214,199,.16); background: rgba(20,32,44,.6); color: #cfe7e1; }
+html[data-theme="dark"] .history-search-input:focus { border-color: #7ff0da; box-shadow: 0 0 0 2px rgba(127,240,218,.15); }
+html[data-theme="dark"] .history-search-clear { color: #6f8b90; }
+html[data-theme="dark"] .history-search-clear:hover { color: #7ff0da; }
+html[data-theme="dark"] .history-load-state { color: #7ff0da; }
+html[data-theme="dark"] .history-load-state.muted { color: #6f8b90; }
 html[data-theme="dark"] .history-open { color: #cfe7e1; }
 html[data-theme="dark"] .history-open span { color: #6f8b90; }
 html[data-theme="dark"] .history-rerun { border-left-color: rgba(126,214,199,.1); background: rgba(46,230,197,.06); color: #7ff0da; }

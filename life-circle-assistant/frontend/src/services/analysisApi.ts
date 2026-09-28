@@ -75,9 +75,12 @@ export async function getAnalysisTask(taskId: string) {
   return parseResponse<AnalysisTask>(await fetch(`${API_BASE_URL}/api/analyze/${taskId}`))
 }
 
-export async function fetchReportHistory(limit = 20, offset = 0) {
+export async function fetchReportHistory(limit = 20, offset = 0, q?: string) {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+  const keyword = q?.trim()
+  if (keyword) params.set('q', keyword)
   return parseResponse<ReportHistoryResponse>(
-    await fetch(`${API_BASE_URL}/api/reports/history?limit=${limit}&offset=${offset}`),
+    await fetch(`${API_BASE_URL}/api/reports/history?${params.toString()}`),
   )
 }
 

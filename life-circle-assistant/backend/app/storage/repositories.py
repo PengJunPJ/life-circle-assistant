@@ -184,18 +184,29 @@ class ReportRepository:
             ).fetchone()
         return json.loads(row["report_json"]) if row else None
 
-    def list_history(self, *, limit: int = 20, offset: int = 0) -> dict[str, Any]:
+    def list_history(self, *, limit: int = 20, offset: int = 0, q: str | None = None) -> dict[str, Any]:
+        keyword = (q or "").strip()
+        where_clause = ""
+        params: list[Any] = []
+        if keyword:
+            escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            where_clause = "WHERE center_address LIKE ? ESCAPE '\\'"
+            params.append(f"%{escaped}%")
         with self.database.connect() as connection:
-            total = connection.execute("SELECT COUNT(*) AS total FROM analysis_reports").fetchone()["total"]
+            total = connection.execute(
+                f"SELECT COUNT(*) AS total FROM analysis_reports {where_clause}",
+                params,
+            ).fetchone()["total"]
             rows = connection.execute(
-                """
+                f"""
                 SELECT id, task_id, schema_version, created_at, completed_at,
                        center_address, center_lng, center_lat, minutes, mode, categories_json
                 FROM analysis_reports
+                {where_clause}
                 ORDER BY completed_at DESC, id DESC
                 LIMIT ? OFFSET ?
                 """,
-                (limit, offset),
+                [*params, limit, offset],
             ).fetchall()
         return {
             "items": [

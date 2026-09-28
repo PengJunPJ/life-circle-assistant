@@ -85,6 +85,9 @@
         :history-items="historyItems"
         :history-total="historyTotal"
         :history-loading="historyLoading"
+        :history-loading-more="historyLoadingMore"
+        :history-has-more="historyHasMore"
+        :history-query="historyQuery"
         :history-error="historyError"
         :opening-report-id="openingReportId"
         :rerunning-report-id="rerunningReportId"
@@ -103,6 +106,8 @@
         @rerun-history="handleRerunHistory"
         @toggle-comparison="toggleComparisonReport"
         @compare-history="compareSelection"
+        @search-history="searchHistory"
+        @load-more-history="loadMoreHistory"
         @simulate-candidate="simulateRecommendationCandidate"
         @update:simulation-category="selectSimulationCategory"
         @pick-simulation-location="beginSimulationMapPick"
@@ -302,10 +307,15 @@ const {
   items: historyItems,
   total: historyTotal,
   loading: historyLoading,
+  loadingMore: historyLoadingMore,
+  hasMore: historyHasMore,
+  query: historyQuery,
   error: historyError,
   openingReportId,
   rerunningReportId,
   loadHistory,
+  loadMoreHistory,
+  searchHistory,
   openHistory,
   rerunHistory,
 } = useReportHistory()

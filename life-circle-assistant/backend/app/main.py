@@ -285,9 +285,10 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
     def list_report_history(
         limit: int = Query(default=20, ge=1, le=100),
         offset: int = Query(default=0, ge=0),
+        q: str | None = Query(default=None, max_length=64),
         report_repository: ReportRepository = Depends(get_report_repository),
     ):
-        return report_repository.list_history(limit=limit, offset=offset)
+        return report_repository.list_history(limit=limit, offset=offset, q=q)
 
     @app.post("/api/reports/compare")
     def compare_completed_reports(

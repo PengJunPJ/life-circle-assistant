@@ -473,3 +473,67 @@ def test_report_recommendations_trace_back_to_actual_critical_regions():
             candidate["region_id"] in recommendation["target_region_ids"]
             for candidate in recommendation["candidate_locations"]
         )
+
+
+def test_report_history_supports_keyword_filter_and_pagination(tmp_path):
+    database_path = tmp_path / "history-search.db"
+    provider = FixtureMapProvider()
+    client = TestClient(create_app(provider, database_path))
+
+    addresses = [
+        "广州市黄埔区红山街道海韵东路",
+        "广州市黄埔区大沙地东路",
+        "深圳市南山区科技园",
+    ]
+    report_ids: list[str] = []
+    for index, address in enumerate(addresses):
+        created = client.post(
+            "/api/analyze",
+            json={
+                "lng": 113.51 + index * 0.001,
+                "lat": 23.11,
+                "minutes": 15,
+                "mode": "analysis",
+                "categories": ["market"],
+                "center_address": address,
+                "center_selection_method": "address",
+            },
+        ).json()
+        task = client.get(f"/api/analyze/{created['id']}").json()
+        assert task["status"] == "completed"
+        report_ids.append(task["report_id"])
+
+    all_history = client.get("/api/reports/history").json()
+    assert all_history["total"] == 3
+
+    huangpu = client.get("/api/reports/history", params={"q": "黄埔"}).json()
+    assert huangpu["total"] == 2
+    assert {item["center"]["address"] for item in huangpu["items"]} == set(addresses[:2])
+
+    haiyun = client.get("/api/reports/history", params={"q": "海韵东路"}).json()
+    assert haiyun["total"] == 1
+    assert haiyun["items"][0]["report_id"] == report_ids[0]
+
+    shenzhen = client.get("/api/reports/history", params={"q": "深圳"}).json()
+    assert shenzhen["total"] == 1
+    assert shenzhen["items"][0]["report_id"] == report_ids[2]
+
+    no_match = client.get("/api/reports/history", params={"q": "不存在的地址"}).json()
+    assert no_match["total"] == 0
+    assert no_match["items"] == []
+
+    blank = client.get("/api/reports/history", params={"q": "   "}).json()
+    assert blank["total"] == 3
+
+    paginated = client.get("/api/reports/history", params={"q": "黄埔", "limit": 1, "offset": 0}).json()
+    assert paginated["total"] == 2
+    assert len(paginated["items"]) == 1
+    paginated_next = client.get("/api/reports/history", params={"q": "黄埔", "limit": 1, "offset": 1}).json()
+    assert paginated_next["total"] == 2
+    assert len(paginated_next["items"]) == 1
+    assert paginated_next["items"][0]["report_id"] != paginated["items"][0]["report_id"]
+
+    escaped = client.get("/api/reports/history", params={"q": "%"}).json()
+    assert escaped["total"] == 0
+    underscore = client.get("/api/reports/history", params={"q": "_"}).json()
+    assert underscore["total"] == 0

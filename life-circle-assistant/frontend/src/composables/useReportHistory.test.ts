@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useReportHistory } from './useReportHistory'
 import { fetchReportHistory, getHistoricalReport, rerunHistoricalReport, waitForAnalysis } from '../services/analysisApi'
 
@@ -21,8 +21,18 @@ const historyItem = {
   categories: ['market'],
 }
 
+function makeItem(id: string, address: string) {
+  return { ...historyItem, report_id: id, task_id: `task-${id}`, center: { ...historyItem.center, address } }
+}
+
 describe('useReportHistory', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   it('区分空状态、成功列表和加载失败状态', async () => {
     const history = useReportHistory()
@@ -53,5 +63,71 @@ describe('useReportHistory', () => {
     expect(await history.rerunHistory('report-1', vi.fn())).toBe(rerunReport)
     expect(rerunHistoricalReport).toHaveBeenCalledWith('report-1')
     expect(history.rerunningReportId.value).toBe('')
+  })
+
+  it('触底加载下一页时追加并去重', async () => {
+    const history = useReportHistory()
+    const page1 = Array.from({ length: 20 }, (_, i) => makeItem(`r${i}`, `地址${i}`))
+    const page2 = [page1[19], makeItem('r20', '地址20'), makeItem('r21', '地址21')]
+    vi.mocked(fetchReportHistory)
+      .mockResolvedValueOnce({ items: page1, total: 22, limit: 20, offset: 0 })
+      .mockResolvedValueOnce({ items: page2, total: 22, limit: 20, offset: 20 })
+
+    await history.loadHistory()
+    expect(history.items.value).toHaveLength(20)
+    expect(history.hasMore.value).toBe(true)
+
+    await history.loadMoreHistory()
+    expect(fetchReportHistory).toHaveBeenLastCalledWith(20, 20, undefined)
+    expect(history.items.value).toHaveLength(22)
+    expect(history.items.value.map((i) => i.report_id)).toEqual([
+      ...page1.map((i) => i.report_id),
+      'r20',
+      'r21',
+    ])
+    expect(history.hasMore.value).toBe(false)
+    expect(history.loadingMore.value).toBe(false)
+
+    await history.loadMoreHistory()
+    expect(fetchReportHistory).toHaveBeenCalledTimes(2)
+  })
+
+  it('搜索关键词防抖后重新拉取第一页', async () => {
+    const history = useReportHistory()
+    vi.mocked(fetchReportHistory).mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 })
+
+    history.searchHistory('海淀')
+    expect(fetchReportHistory).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(299)
+    expect(fetchReportHistory).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    await Promise.resolve()
+    expect(fetchReportHistory).toHaveBeenCalledWith(20, 0, '海淀')
+    expect(history.query.value).toBe('海淀')
+  })
+
+  it('连续输入只触发一次搜索请求', async () => {
+    const history = useReportHistory()
+    vi.mocked(fetchReportHistory).mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 })
+
+    history.searchHistory('海')
+    vi.advanceTimersByTime(100)
+    history.searchHistory('海淀')
+    vi.advanceTimersByTime(100)
+    history.searchHistory('海淀区')
+    vi.advanceTimersByTime(300)
+    await Promise.resolve()
+    expect(fetchReportHistory).toHaveBeenCalledTimes(1)
+    expect(fetchReportHistory).toHaveBeenCalledWith(20, 0, '海淀区')
+    expect(history.query.value).toBe('海淀区')
+  })
+
+  it('空关键词不传 q 参数', async () => {
+    const history = useReportHistory()
+    vi.mocked(fetchReportHistory).mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 })
+    history.searchHistory('   ')
+    vi.advanceTimersByTime(300)
+    await Promise.resolve()
+    expect(fetchReportHistory).toHaveBeenCalledWith(20, 0, undefined)
   })
 })

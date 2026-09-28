@@ -4,13 +4,38 @@
       <span id="history-title">历史报告</span>
       <button :disabled="loading" @click="emit('refresh')">{{ loading ? '加载中…' : `刷新 · ${total}` }}</button>
     </div>
+    <div class="history-search">
+      <input
+        type="search"
+        class="history-search-input"
+        :value="query"
+        placeholder="搜索地址关键词…"
+        aria-label="搜索历史报告地址"
+        @input="emit('search', ($event.target as HTMLInputElement).value)"
+      />
+      <button
+        v-if="query"
+        type="button"
+        class="history-search-clear"
+        aria-label="清除搜索关键词"
+        @click="emit('search', '')"
+      >×</button>
+    </div>
     <div v-if="loading && !items.length" class="history-state" aria-live="polite">正在加载历史报告…</div>
     <div v-else-if="error" class="history-state error" role="alert">
       <span>{{ error }}</span><button @click="emit('refresh')">重试</button>
     </div>
-    <div v-else-if="!items.length" class="history-state">尚无历史报告，完成一次分析后会显示在这里。</div>
-    <div v-else class="history-list">
-      <article v-for="item in items" :key="item.report_id" class="history-item">
+    <div v-else-if="!items.length" class="history-state">
+      {{ query ? `没有匹配「${query}」的历史报告` : '尚无历史报告，完成一次分析后会显示在这里。' }}
+    </div>
+    <div
+      v-else
+      ref="listRef"
+      class="history-list"
+      role="list"
+      @scroll.passive="handleScroll"
+    >
+      <article v-for="item in items" :key="item.report_id" class="history-item" role="listitem">
         <button
           class="history-select"
           :class="{ active: selectedReportIds.includes(item.report_id) }"
@@ -29,6 +54,9 @@
           @click="emit('rerun', item.report_id)"
         >{{ rerunningReportId === item.report_id ? '运行中' : '重跑' }}</button>
       </article>
+      <div v-if="loadingMore" class="history-load-state" aria-live="polite">加载更多…</div>
+      <div v-else-if="hasMore" class="history-load-state muted">滚动加载更多</div>
+      <div v-else class="history-load-state muted">已到底部 · 共 {{ total }} 条{{ query ? `（匹配「${query}」）` : '' }}</div>
     </div>
     <div v-if="items.length" class="history-compare-actions">
       <span>已选 {{ selectedReportIds.length }}/2</span>
@@ -41,12 +69,16 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { HistoryReportItem } from '../types/history'
 
 defineProps<{
   items: HistoryReportItem[]
   total: number
   loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  query: string
   error: string
   openingReportId: string
   rerunningReportId: string
@@ -61,7 +93,20 @@ const emit = defineEmits<{
   rerun: [reportId: string]
   'toggle-comparison': [reportId: string]
   compare: []
+  search: [keyword: string]
+  'load-more': []
 }>()
+
+const listRef = ref<HTMLElement | null>(null)
+const SCROLL_THRESHOLD_PX = 24
+
+function handleScroll(event: Event) {
+  const el = event.target as HTMLElement | null
+  if (!el) return
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - SCROLL_THRESHOLD_PX) {
+    emit('load-more')
+  }
+}
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat('zh-CN', {
