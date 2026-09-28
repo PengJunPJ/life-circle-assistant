@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from .maps import MapProvider, create_map_provider
 from .maps.walking import WalkingSettings
 from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
+from .storage.walking_cache_seed import seed_from_env
 
 
 def configure_runtime(
@@ -40,6 +41,11 @@ def configure_runtime(
     app.state.report_repository = ReportRepository(database)
     app.state.walking_cache_repository = WalkingCacheRepository(database)
     app.state.walking_settings = WalkingSettings.from_env()
+    # 干净环境首跑不必现场消耗百度配额：缓存为空时导入默认中心种子并重盖 TTL。
+    app.state.seeded_walking_cache_count = seed_from_env(
+        app.state.walking_cache_repository,
+        app.state.walking_settings.cache_ttl_seconds,
+    )
     # 服务重启后，之前未完成的任务不可能继续执行，统一标记为中断。
     app.state.recovered_task_count = app.state.task_repository.recover_interrupted()
     return resolved_provider

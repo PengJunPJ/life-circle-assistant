@@ -25,7 +25,7 @@ from .storage import ReportRepository, TaskRepository
 
 load_dotenv()
 
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.1.1"
 
 
 def get_map_provider(request: Request) -> MapProvider:
@@ -87,7 +87,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
     resolved_provider = configure_runtime(app, provider=provider, database_path=database_path)
 
     @app.get("/api/health")
-    def health(map_provider: MapProvider = Depends(get_map_provider)):
+    def health(request: Request, map_provider: MapProvider = Depends(get_map_provider)):
         descriptor = map_provider.descriptor
         return {
             "status": "ok",
@@ -95,6 +95,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             "mode": "real" if descriptor.mode == "real" else "mock",
             "provider_mode": descriptor.mode,
             "real_api_available": descriptor.source == "real_api",
+            "seeded_walking_cache": getattr(request.app.state, "seeded_walking_cache_count", 0),
         }
 
     @app.get("/api/map/status")

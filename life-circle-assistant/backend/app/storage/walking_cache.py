@@ -113,6 +113,11 @@ class WalkingCacheRepository:
             )
             connection.commit()
 
+    def count(self) -> int:
+        with self.database.connect() as connection:
+            row = connection.execute("SELECT COUNT(*) AS total FROM walking_cache").fetchone()
+        return int(row["total"]) if row else 0
+
     @staticmethod
     def make_key(
         provider_id: str,
