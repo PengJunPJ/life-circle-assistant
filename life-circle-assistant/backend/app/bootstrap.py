@@ -12,6 +12,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
+from .llm import create_llm_provider
 from .maps import MapProvider, create_map_provider
 from .maps.walking import WalkingSettings
 from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
@@ -41,6 +42,7 @@ def configure_runtime(
     app.state.report_repository = ReportRepository(database)
     app.state.walking_cache_repository = WalkingCacheRepository(database)
     app.state.walking_settings = WalkingSettings.from_env()
+    app.state.llm_provider = create_llm_provider()
     # 干净环境首跑不必现场消耗百度配额：缓存为空时导入默认中心种子并重盖 TTL。
     app.state.seeded_walking_cache_count = seed_from_env(
         app.state.walking_cache_repository,

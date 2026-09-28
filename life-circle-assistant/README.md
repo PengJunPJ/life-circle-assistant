@@ -74,8 +74,29 @@ npm run dev
 | `VITE_BAIDU_MAP_AK` | 浏览器底图 AK | 限制域名白名单，不与 Secret 混用 |
 | `LIFE_CIRCLE_DATABASE_PATH` | SQLite 数据库路径 | 开发可指向 `/tmp` 独立文件 |
 | `WALKING_*` | 步行缓存、并发、QPS、超时与重试 | 真实 API 按配额调整，离线模式保持默认值 |
+| `LLM_ENABLED` | 是否启用大模型解读 | 默认 `false`；未配置完整凭证时自动使用规则模板 |
+| `LLM_PROVIDER` | 模型适配器 | 当前支持 `openai_compatible` |
+| `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` | OpenAI-compatible Chat Completions 配置 | 只放在本地 `.env` 或密钥管理器 |
+| `LLM_TIMEOUT_SECONDS` / `LLM_MAX_TOKENS` | 模型请求超时与输出上限 | 默认 `30` 秒 / `1200` tokens |
 
 离线快照标记为合成样例，不代表当前真实 POI。如需更新快照，只能在不输出凭证的本地环境执行抓取脚本。
+
+### 大模型解读
+
+大模型只负责把报告事实转换成自然语言，不负责评分、路线、盲区分类或模拟计算。后端先生成确定性的规则解读，再把去除地图几何的报告上下文发送给模型；模型返回结构化 JSON 后，服务端会校验证据引用，并在模型超时、调用失败或输出不合格时自动降级到规则模板。
+
+启用方式示例：
+
+```bash
+LLM_ENABLED=true \
+LLM_PROVIDER=openai_compatible \
+LLM_BASE_URL=https://api.openai.com/v1 \
+LLM_API_KEY=your-key \
+LLM_MODEL=your-model \
+uvicorn app.main:app --reload --port 8000
+```
+
+兼容 OpenAI Chat Completions 协议的模型服务也可以直接使用 `LLM_BASE_URL` 切换。API Key 不会返回浏览器，也不会写入报告。
 
 ## V2 报告契约兼容说明
 

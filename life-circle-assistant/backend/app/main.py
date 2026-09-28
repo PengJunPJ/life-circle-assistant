@@ -16,6 +16,7 @@ from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
 from .bootstrap import configure_runtime
 from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
+from .llm import enhance_interpretation
 from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService
@@ -74,6 +75,9 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             close = getattr(client, "aclose", None)
             if close is not None:
                 await close()
+            llm_provider = getattr(_app.state, "llm_provider", None)
+            if llm_provider is not None:
+                await llm_provider.close()
 
     app = FastAPI(title="15分钟生活圈智能体检与规划助手", version=APP_VERSION, lifespan=lifespan)
     app.add_middleware(
@@ -345,7 +349,8 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             raise HTTPException(status_code=422, detail=f"假设设施位置不可用：{exc}") from exc
 
     @app.post("/api/reports/{report_id}/ai/interpret")
-    def interpret_report(
+    async def interpret_report(
+        request: Request,
         report_id: str,
         payload: dict[str, str] | None = None,
         report_repository: ReportRepository = Depends(get_report_repository),
@@ -367,6 +372,12 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
                 simulation_id=request_payload.get("simulation_id"),
             )
             question = request_payload.get("question")
+            result = await enhance_interpretation(
+                request.app.state.llm_provider,
+                report,
+                result,
+                question=question,
+            )
             saved = report_repository.save_ai_interpretation(report_id, result, question=question)
             return saved
         except ValueError as exc:
