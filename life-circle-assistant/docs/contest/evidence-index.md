@@ -14,7 +14,7 @@
 | E-08 | 多源 POI 数据清洗与同址归并 | [../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md) | ✅ | — |
 | E-09 | 服务盲区识别算法与分级网格口径 | [../../../docs/adr/0006-mvp设施类别与盲区判定标准.md](../../../docs/adr/0006-mvp设施类别与盲区判定标准.md) | ✅ | — |
 | E-10 | 真实社区对比核查（地址/坐标/口径一致性修复记录） | [../validation/v2-real-community-comparison.md](../validation/v2-real-community-comparison.md) | ✅ | — |
-| E-11 | 64 网格人工基准 → verified 指标（准确率/精确率/召回率/F1/混淆矩阵） | [../validation/benchmarks/](../validation/benchmarks/)、[../validation/v2.1-benchmark-evaluation.md](../validation/v2.1-benchmark-evaluation.md) | ⬜ draft，64 格待人工核查 | 人工为主 |
+| E-11 | 64 网格人工基准 → verified 指标（准确率/精确率/召回率/F1/混淆矩阵） | [../validation/benchmarks/](../validation/benchmarks/)、[../validation/results/shachong-changsheng-20261004.md](../validation/results/shachong-changsheng-20261004.md)、[../validation/v2.1-benchmark-evaluation.md](../validation/v2.1-benchmark-evaluation.md) | 🟡 沙涌长盛花园 64/64 已完成；与系统同源同规则，仅作一致性证据；红山基准仍为 draft | 自动+人工 |
 | E-12 | 性能三档实测（冷 124s / 种子 19s / 全缓存 12.5s）与批量对照 | [../performance/v2-baseline.md](../performance/v2-baseline.md) | ✅ | — |
 | E-13 | 容错与降级证据（限流/超时/重试/部分失败/降级估算披露） | 报告 `data_quality` 区；[../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md) | ✅ | — |
 | E-14 | 可视化与交互（等时圈、网格色块、柱状+tooltip、雷达图、七类图层） | [../releases/v2.1.1.md](../releases/v2.1.1.md)；截图待补 | 🟡 截图待补 | 自动 |

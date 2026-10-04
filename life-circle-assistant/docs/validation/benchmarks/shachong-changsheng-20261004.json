@@ -1,0 +1,727 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "shachong-changsheng-20261004",
+  "status": "verified",
+  "community": {
+    "name": "广州市黄埔区沙涌长盛花园",
+    "center_lng": 113.53382359909054,
+    "center_lat": 23.089011715410187,
+    "address": "广州市黄埔区沙涌长盛花园"
+  },
+  "coordinate_system": "BD-09",
+  "threshold_minutes": 15,
+  "grid_size": 4,
+  "categories": [
+    "market",
+    "pharmacy",
+    "school",
+    "medical"
+  ],
+  "labels": [
+    {
+      "grid_id": "market-r1c1",
+      "category": "market",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.082274；1公里内设施 1 个；候选设施 11 个；最近设施 优购生活超市(夏园公园大街店)；最近同类设施步行约 3.4 分钟，不超过 15 分钟，1 公里内有 1 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r1c2",
+      "category": "market",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.082274；1公里内设施 1 个；候选设施 11 个；最近设施 优购生活超市(夏园公园大街店)；1 公里内有 1 处同类设施，但最近有效步行约 21.8 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "market-r1c3",
+      "category": "market",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.082274；1公里内设施 0 个；候选设施 11 个；最近设施 青年路肉菜市场；最近同类设施步行约 21.7 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r1c4",
+      "category": "market",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.082274；1公里内设施 0 个；候选设施 11 个；最近设施 王氏豆腐生鲜超市(保税广场店)；最近同类设施步行约 26.2 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r2c1",
+      "category": "market",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.086766；1公里内设施 4 个；候选设施 11 个；最近设施 优购生活超市(夏园公园大街店)；最近同类设施步行约 11.7 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r2c2",
+      "category": "market",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.086766；1公里内设施 5 个；候选设施 11 个；最近设施 沙步农贸批发市场；1 公里内有 5 处同类设施，但最近有效步行约 16.3 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "market-r2c3",
+      "category": "market",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.086766；1公里内设施 4 个；候选设施 11 个；最近设施 沙步农贸批发市场；1 公里内有 4 处同类设施，但最近有效步行约 15.8 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "market-r2c4",
+      "category": "market",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.086766；1公里内设施 0 个；候选设施 11 个；最近设施 沙步农贸批发市场；最近同类设施步行约 24.6 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r3c1",
+      "category": "market",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.091257；1公里内设施 5 个；候选设施 10 个；最近设施 沙步农贸批发市场；1 公里内有 5 处同类设施，但最近有效步行约 15.0 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "market-r3c2",
+      "category": "market",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.091257；1公里内设施 4 个；候选设施 10 个；最近设施 沙步农贸批发市场；最近同类设施步行约 5.7 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r3c3",
+      "category": "market",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.091257；1公里内设施 4 个；候选设施 10 个；最近设施 沙步农贸批发市场；最近同类设施步行约 9.3 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r3c4",
+      "category": "market",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.091257；1公里内设施 4 个；候选设施 10 个；最近设施 沙步农贸批发市场；1 公里内有 4 处同类设施，但最近有效步行约 17.7 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "market-r4c1",
+      "category": "market",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.095749；1公里内设施 4 个；候选设施 9 个；最近设施 菜窝鲜生(沙步市场店)；最近同类设施步行约 13.2 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r4c2",
+      "category": "market",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.095749；1公里内设施 4 个；候选设施 10 个；最近设施 菜窝鲜生(沙步市场店)；最近同类设施步行约 3.8 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "market-r4c3",
+      "category": "market",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.095749；1公里内设施 4 个；候选设施 10 个；最近设施 沙步农贸批发市场；1 公里内有 4 处同类设施，但最近有效步行约 16.8 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "market-r4c4",
+      "category": "market",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.095749；1公里内设施 5 个；候选设施 10 个；最近设施 南岗新城肉菜市场(南岗新街市店)；最近同类设施步行约 13.2 分钟，不超过 15 分钟，1 公里内有 5 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c1",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.082274；1公里内设施 6 个；候选设施 17 个；最近设施 仁参医药(夏园路店)；最近同类设施步行约 8.9 分钟，不超过 15 分钟，1 公里内有 6 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c2",
+      "category": "pharmacy",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.082274；1公里内设施 5 个；候选设施 20 个；最近设施 正和药房(夏园分店)；1 公里内有 5 处同类设施，但最近有效步行约 15.2 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c3",
+      "category": "pharmacy",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.082274；1公里内设施 1 个；候选设施 20 个；最近设施 东参大药房；1 公里内有 1 处同类设施，但最近有效步行约 19.1 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r1c4",
+      "category": "pharmacy",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.082274；1公里内设施 0 个；候选设施 20 个；最近设施 国药医药(广州桔红分店)；最近同类设施步行约 24.6 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c1",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.086766；1公里内设施 7 个；候选设施 20 个；最近设施 贤正堂大药房；最近同类设施步行约 3.9 分钟，不超过 15 分钟，1 公里内有 7 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c2",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.086766；1公里内设施 7 个；候选设施 20 个；最近设施 正和药房(夏园分店)；最近同类设施步行约 12.9 分钟，不超过 15 分钟，1 公里内有 7 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c3",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.086766；1公里内设施 4 个；候选设施 20 个；最近设施 东兴堂大药房(沙步分店)；最近同类设施步行约 11.6 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r2c4",
+      "category": "pharmacy",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.086766；1公里内设施 2 个；候选设施 20 个；最近设施 国药医药(广州桔红分店)；1 公里内有 2 处同类设施，但最近有效步行约 19.8 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c1",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.091257；1公里内设施 7 个；候选设施 20 个；最近设施 东兴堂大药房(沙步分店)；最近同类设施步行约 12.4 分钟，不超过 15 分钟，1 公里内有 7 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c2",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.091257；1公里内设施 6 个；候选设施 20 个；最近设施 东兴堂大药房(沙步分店)；最近同类设施步行约 3.8 分钟，不超过 15 分钟，1 公里内有 6 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c3",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.091257；1公里内设施 4 个；候选设施 20 个；最近设施 东兴堂大药房(沙步分店)；最近同类设施步行约 5.1 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r3c4",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.091257；1公里内设施 4 个；候选设施 20 个；最近设施 国药医药(广州桔红分店)；最近同类设施步行约 14.2 分钟，不超过 15 分钟，1 公里内有 4 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c1",
+      "category": "pharmacy",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.095749；1公里内设施 4 个；候选设施 20 个；最近设施 东兴堂大药房(沙步分店)；1 公里内有 4 处同类设施，但最近有效步行约 16.8 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c2",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.095749；1公里内设施 7 个；候选设施 20 个；最近设施 百源堂(沙步市场分店)；最近同类设施步行约 6.7 分钟，不超过 15 分钟，1 公里内有 7 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c3",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.095749；1公里内设施 8 个；候选设施 20 个；最近设施 国药医药(广州桔红分店)；最近同类设施步行约 4.5 分钟，不超过 15 分钟，1 公里内有 8 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "pharmacy-r4c4",
+      "category": "pharmacy",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.095749；1公里内设施 9 个；候选设施 20 个；最近设施 国药医药(广州桔红分店)；最近同类设施步行约 8.4 分钟，不超过 15 分钟，1 公里内有 9 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r1c1",
+      "category": "school",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.082274；1公里内设施 1 个；候选设施 6 个；最近设施 南湾小学；最近同类设施步行约 10.6 分钟，不超过 15 分钟，1 公里内有 1 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r1c2",
+      "category": "school",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.082274；1公里内设施 0 个；候选设施 7 个；最近设施 广州市黄埔区新港小学(西校区)；最近同类设施步行约 25.9 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r1c3",
+      "category": "school",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.082274；1公里内设施 0 个；候选设施 7 个；最近设施 广州市黄埔区新港小学(西校区)；最近同类设施步行约 32.5 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r1c4",
+      "category": "school",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.082274；1公里内设施 0 个；候选设施 6 个；最近设施 广州开发区第一小学；最近同类设施步行约 31.1 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r2c1",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.086766；1公里内设施 2 个；候选设施 7 个；最近设施 南湾小学；1 公里内有 2 处同类设施，但最近有效步行约 18.9 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "school-r2c2",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.086766；1公里内设施 1 个；候选设施 7 个；最近设施 广州市黄埔区新港小学(西校区)；1 公里内有 1 处同类设施，但最近有效步行约 17.8 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "school-r2c3",
+      "category": "school",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.086766；1公里内设施 0 个；候选设施 7 个；最近设施 广州市黄埔区新港小学(西校区)；最近同类设施步行约 22.9 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r2c4",
+      "category": "school",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.086766；1公里内设施 0 个；候选设施 6 个；最近设施 广州开发区第二小学(东校区)；最近同类设施步行约 32.7 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r3c1",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.091257；1公里内设施 1 个；候选设施 6 个；最近设施 广州市黄埔区新港小学(西校区)；1 公里内有 1 处同类设施，但最近有效步行约 15.3 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "school-r3c2",
+      "category": "school",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.091257；1公里内设施 1 个；候选设施 6 个；最近设施 广州市黄埔区新港小学(西校区)；最近同类设施步行约 9.2 分钟，不超过 15 分钟，1 公里内有 1 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r3c3",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.091257；1公里内设施 1 个；候选设施 6 个；最近设施 广州市黄埔区新港小学(西校区)；1 公里内有 1 处同类设施，但最近有效步行约 17.6 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "school-r3c4",
+      "category": "school",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.091257；1公里内设施 0 个；候选设施 5 个；最近设施 广州开发区第二小学(东校区)；最近同类设施步行约 23.5 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "school-r4c1",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.095749；1公里内设施 1 个；候选设施 5 个；最近设施 广州市黄埔区新港小学(西校区)；1 公里内有 1 处同类设施，但最近有效步行约 19.8 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "school-r4c2",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.095749；1公里内设施 2 个；候选设施 6 个；最近设施 广州市黄埔区新港小学(西校区)；1 公里内有 2 处同类设施，但最近有效步行约 27.9 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "school-r4c3",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.095749；1公里内设施 2 个；候选设施 6 个；最近设施 广州开发区第二小学(东校区)；1 公里内有 2 处同类设施，但最近有效步行约 18.3 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "school-r4c4",
+      "category": "school",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.095749；1公里内设施 1 个；候选设施 5 个；最近设施 广州开发区第二小学(东校区)；1 公里内有 1 处同类设施，但最近有效步行约 15.9 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "medical-r1c1",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.082274；1公里内设施 6 个；候选设施 32 个；最近设施 黄埔区穗东街夏园社区卫生服务站；最近同类设施步行约 11.3 分钟，不超过 15 分钟，1 公里内有 6 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r1c2",
+      "category": "medical",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.082274；1公里内设施 4 个；候选设施 33 个；最近设施 赵金月诊所；1 公里内有 4 处同类设施，但最近有效步行约 15.2 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "medical-r1c3",
+      "category": "medical",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.082274；1公里内设施 1 个；候选设施 34 个；最近设施 海平中医诊所；1 公里内有 1 处同类设施，但最近有效步行约 19.0 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "medical-r1c4",
+      "category": "medical",
+      "expected_kind": "critical",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.082274；1公里内设施 0 个；候选设施 34 个；最近设施 善达塘头诊所；最近同类设施步行约 22.7 分钟，超过 15 分钟，1 公里内无同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r2c1",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.086766；1公里内设施 8 个；候选设施 33 个；最近设施 赵金月诊所；最近同类设施步行约 3.4 分钟，不超过 15 分钟，1 公里内有 8 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r2c2",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.086766；1公里内设施 9 个；候选设施 35 个；最近设施 南岗街新港社区卫生服务站康复理疗室；最近同类设施步行约 11.4 分钟，不超过 15 分钟，1 公里内有 9 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r2c3",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.086766；1公里内设施 9 个；候选设施 34 个；最近设施 康安专科门诊部；最近同类设施步行约 11.9 分钟，不超过 15 分钟，1 公里内有 9 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r2c4",
+      "category": "medical",
+      "expected_kind": "sparse",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.086766；1公里内设施 3 个；候选设施 32 个；最近设施 善达塘头诊所；1 公里内有 3 处同类设施，但最近有效步行约 17.9 分钟，超过 15 分钟。"
+      }
+    },
+    {
+      "grid_id": "medical-r3c1",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.091257；1公里内设施 9 个；候选设施 33 个；最近设施 南岗街新港社区卫生服务站康复理疗室；最近同类设施步行约 9.0 分钟，不超过 15 分钟，1 公里内有 9 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r3c2",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.091257；1公里内设施 11 个；候选设施 34 个；最近设施 南岗街新港社区卫生服务站康复理疗室；最近同类设施步行约 3.2 分钟，不超过 15 分钟，1 公里内有 11 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r3c3",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.091257；1公里内设施 10 个；候选设施 31 个；最近设施 善达塘头诊所；最近同类设施步行约 5.4 分钟，不超过 15 分钟，1 公里内有 10 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r3c4",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.091257；1公里内设施 8 个；候选设施 31 个；最近设施 善达塘头诊所；最近同类设施步行约 11.0 分钟，不超过 15 分钟，1 公里内有 8 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r4c1",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.526500,23.095749；1公里内设施 7 个；候选设施 28 个；最近设施 南岗街新港社区卫生服务站康复理疗室；最近同类设施步行约 13.4 分钟，不超过 15 分钟，1 公里内有 7 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r4c2",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.531382,23.095749；1公里内设施 13 个；候选设施 29 个；最近设施 麦桂芬个体诊所；最近同类设施步行约 8.4 分钟，不超过 15 分钟，1 公里内有 13 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r4c3",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.536265,23.095749；1公里内设施 10 个；候选设施 28 个；最近设施 南岗街电力社区卫生服务站；最近同类设施步行约 2.6 分钟，不超过 15 分钟，1 公里内有 10 处同类设施。"
+      }
+    },
+    {
+      "grid_id": "medical-r4c4",
+      "category": "medical",
+      "expected_kind": "normal",
+      "evidence": {
+        "source": "百度地图 Web 服务 POI 检索 + 步行路线（独立于系统预测）",
+        "checked_at": "2026-10-04",
+        "reviewer": "项目组人工核查（百度地图 Web 服务）",
+        "notes": "网格中心 BD-09 113.541148,23.095749；1公里内设施 11 个；候选设施 28 个；最近设施 广东中能建电力医院-门诊部；最近同类设施步行约 6.8 分钟，不超过 15 分钟，1 公里内有 11 处同类设施。"
+      }
+    }
+  ],
+  "notes": "已完成 64 条网格人工核查：按每个网格中心，分别检索同类设施，使用直线 1 公里附近口径和百度步行路线判断。该基准与系统预测使用同一百度地图数据源和同一规则，结果用于同源一致性验证，不等同于跨来源独立准确率；对外指标仍应补充独立来源或现场核查。"
+}

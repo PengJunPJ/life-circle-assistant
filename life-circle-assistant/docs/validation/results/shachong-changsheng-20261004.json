@@ -1,0 +1,357 @@
+{
+  "schema_version": "1.0",
+  "evaluated_at": "2026-10-04T15:50:49.159702+00:00",
+  "benchmark": {
+    "benchmark_id": "shachong-changsheng-20261004",
+    "status": "verified",
+    "community": {
+      "name": "广州市黄埔区沙涌长盛花园",
+      "center_lng": 113.53382359909054,
+      "center_lat": 23.089011715410187,
+      "address": "广州市黄埔区沙涌长盛花园"
+    },
+    "coordinate_system": "BD-09",
+    "threshold_minutes": 15,
+    "grid_size": 4,
+    "categories": [
+      "market",
+      "pharmacy",
+      "school",
+      "medical"
+    ]
+  },
+  "completeness": {
+    "expected_label_count": 64,
+    "reviewed_label_count": 64,
+    "review_completion_rate": 1.0,
+    "is_verified_full_grid": true,
+    "missing_prediction_grid_ids": [],
+    "extra_prediction_grid_ids": []
+  },
+  "confusion_matrix": {
+    "normal": {
+      "normal": 32,
+      "sparse": 0,
+      "critical": 0,
+      "unknown": 0
+    },
+    "sparse": {
+      "normal": 0,
+      "sparse": 21,
+      "critical": 0,
+      "unknown": 0
+    },
+    "critical": {
+      "normal": 0,
+      "sparse": 0,
+      "critical": 11,
+      "unknown": 0
+    }
+  },
+  "metrics": {
+    "evaluated_count": 64,
+    "correct_count": 64,
+    "unknown_prediction_count": 0,
+    "accuracy": 1.0,
+    "prediction_coverage": 1.0,
+    "macro_precision": 1.0,
+    "macro_recall": 1.0,
+    "macro_f1": 1.0,
+    "per_kind": {
+      "normal": {
+        "label": "正常覆盖区",
+        "support": 32,
+        "true_positive": 32,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "sparse": {
+        "label": "设施稀疏区",
+        "support": 21,
+        "true_positive": 21,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "critical": {
+        "label": "重点服务盲区",
+        "support": 11,
+        "true_positive": 11,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    }
+  },
+  "category_results": {
+    "market": {
+      "confusion_matrix": {
+        "normal": {
+          "normal": 7,
+          "sparse": 0,
+          "critical": 0,
+          "unknown": 0
+        },
+        "sparse": {
+          "normal": 0,
+          "sparse": 6,
+          "critical": 0,
+          "unknown": 0
+        },
+        "critical": {
+          "normal": 0,
+          "sparse": 0,
+          "critical": 3,
+          "unknown": 0
+        }
+      },
+      "metrics": {
+        "evaluated_count": 16,
+        "correct_count": 16,
+        "unknown_prediction_count": 0,
+        "accuracy": 1.0,
+        "prediction_coverage": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "macro_f1": 1.0,
+        "per_kind": {
+          "normal": {
+            "label": "正常覆盖区",
+            "support": 7,
+            "true_positive": 7,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "sparse": {
+            "label": "设施稀疏区",
+            "support": 6,
+            "true_positive": 6,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "critical": {
+            "label": "重点服务盲区",
+            "support": 3,
+            "true_positive": 3,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        }
+      }
+    },
+    "pharmacy": {
+      "confusion_matrix": {
+        "normal": {
+          "normal": 11,
+          "sparse": 0,
+          "critical": 0,
+          "unknown": 0
+        },
+        "sparse": {
+          "normal": 0,
+          "sparse": 4,
+          "critical": 0,
+          "unknown": 0
+        },
+        "critical": {
+          "normal": 0,
+          "sparse": 0,
+          "critical": 1,
+          "unknown": 0
+        }
+      },
+      "metrics": {
+        "evaluated_count": 16,
+        "correct_count": 16,
+        "unknown_prediction_count": 0,
+        "accuracy": 1.0,
+        "prediction_coverage": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "macro_f1": 1.0,
+        "per_kind": {
+          "normal": {
+            "label": "正常覆盖区",
+            "support": 11,
+            "true_positive": 11,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "sparse": {
+            "label": "设施稀疏区",
+            "support": 4,
+            "true_positive": 4,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "critical": {
+            "label": "重点服务盲区",
+            "support": 1,
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        }
+      }
+    },
+    "school": {
+      "confusion_matrix": {
+        "normal": {
+          "normal": 2,
+          "sparse": 0,
+          "critical": 0,
+          "unknown": 0
+        },
+        "sparse": {
+          "normal": 0,
+          "sparse": 8,
+          "critical": 0,
+          "unknown": 0
+        },
+        "critical": {
+          "normal": 0,
+          "sparse": 0,
+          "critical": 6,
+          "unknown": 0
+        }
+      },
+      "metrics": {
+        "evaluated_count": 16,
+        "correct_count": 16,
+        "unknown_prediction_count": 0,
+        "accuracy": 1.0,
+        "prediction_coverage": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "macro_f1": 1.0,
+        "per_kind": {
+          "normal": {
+            "label": "正常覆盖区",
+            "support": 2,
+            "true_positive": 2,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "sparse": {
+            "label": "设施稀疏区",
+            "support": 8,
+            "true_positive": 8,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "critical": {
+            "label": "重点服务盲区",
+            "support": 6,
+            "true_positive": 6,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        }
+      }
+    },
+    "medical": {
+      "confusion_matrix": {
+        "normal": {
+          "normal": 12,
+          "sparse": 0,
+          "critical": 0,
+          "unknown": 0
+        },
+        "sparse": {
+          "normal": 0,
+          "sparse": 3,
+          "critical": 0,
+          "unknown": 0
+        },
+        "critical": {
+          "normal": 0,
+          "sparse": 0,
+          "critical": 1,
+          "unknown": 0
+        }
+      },
+      "metrics": {
+        "evaluated_count": 16,
+        "correct_count": 16,
+        "unknown_prediction_count": 0,
+        "accuracy": 1.0,
+        "prediction_coverage": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "macro_f1": 1.0,
+        "per_kind": {
+          "normal": {
+            "label": "正常覆盖区",
+            "support": 12,
+            "true_positive": 12,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "sparse": {
+            "label": "设施稀疏区",
+            "support": 3,
+            "true_positive": 3,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "critical": {
+            "label": "重点服务盲区",
+            "support": 1,
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        }
+      }
+    }
+  },
+  "mismatches": [],
+  "prediction_counts": {
+    "normal": 32,
+    "sparse": 21,
+    "critical": 11
+  }
+}
