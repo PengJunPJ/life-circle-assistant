@@ -22,7 +22,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 from app.baidu import haversine_meters  # noqa: E402
 from app.maps.baidu import BaiduMapProvider  # noqa: E402
-from app.maps.provider import FacilityResult, MapProviderError, WalkingResult  # noqa: E402
+from app.maps.provider import FacilityResult, WalkingResult  # noqa: E402
 from app.validation.benchmarks import CommunityBenchmark  # noqa: E402
 
 NEARBY_RADIUS_M = 1_000
@@ -42,7 +42,7 @@ def grid_centers(report: dict[str, Any]) -> dict[str, tuple[float, float]]:
     for feature in (report.get("service_areas") or {}).get("features", []):
         properties = feature.get("properties") or {}
         grid_id = properties.get("grid_id")
-        coordinates = (((feature.get("geometry") or {}).get("coordinates") or [[]])[0])
+        coordinates = ((feature.get("geometry") or {}).get("coordinates") or [[]])[0]
         if not grid_id or len(coordinates) < 4:
             continue
         lng = sum(point[0] for point in coordinates[:4]) / 4
@@ -72,7 +72,10 @@ def classify(nearby_count: int, nearest: WalkingResult | None) -> tuple[str, str
     if exceeds and not has_nearby:
         return "critical", f"最近同类设施步行约 {minutes:.1f} 分钟，超过 15 分钟，1 公里内无同类设施。"
     if not exceeds and has_nearby:
-        return "normal", f"最近同类设施步行约 {minutes:.1f} 分钟，不超过 15 分钟，1 公里内有 {nearby_count} 处同类设施。"
+        return (
+            "normal",
+            f"最近同类设施步行约 {minutes:.1f} 分钟，不超过 15 分钟，1 公里内有 {nearby_count} 处同类设施。",
+        )
     if exceeds:
         return "sparse", f"1 公里内有 {nearby_count} 处同类设施，但最近有效步行约 {minutes:.1f} 分钟，超过 15 分钟。"
     return "sparse", f"1 公里内无同类设施，但最近有效步行约 {minutes:.1f} 分钟，仍在 15 分钟内。"
@@ -95,7 +98,9 @@ async def review(report_path: Path, benchmark_path: Path) -> dict[str, Any]:
         facilities_by_category: dict[str, list[FacilityResult]] = {}
         for category in model.categories:
             facilities_by_category[category] = dedupe(
-                await provider.search_facilities(category, (model.community.center_lng, model.community.center_lat), 3_000)
+                await provider.search_facilities(
+                    category, (model.community.center_lng, model.community.center_lat), 3_000
+                )
             )
 
         labels_by_id = {label.grid_id: label.model_dump(mode="json") for label in model.labels}
@@ -103,16 +108,22 @@ async def review(report_path: Path, benchmark_path: Path) -> dict[str, Any]:
         for category, entries in category_centers.items():
             facilities = facilities_by_category[category]
             for grid_id, center in entries:
-                nearby = [item for item in facilities if haversine_meters(center, (item.lng, item.lat)) <= NEARBY_RADIUS_M]
+                nearby = [
+                    item for item in facilities if haversine_meters(center, (item.lng, item.lat)) <= NEARBY_RADIUS_M
+                ]
                 candidates = [item for item in facilities if haversine_meters(center, (item.lng, item.lat)) <= 3_000]
                 nearest: WalkingResult | None = None
                 nearest_facility: FacilityResult | None = None
                 if candidates:
                     matrix = await provider.walking_matrix([center], [(item.lng, item.lat) for item in candidates])
                     routes = matrix[0] if matrix else []
-                    valid = [(route, item) for route, item in zip(routes, candidates) if route.success and route.duration_s is not None]
+                    valid = [
+                        (route, item)
+                        for route, item in zip(routes, candidates)
+                        if route.success and route.duration_s is not None
+                    ]
                     if valid:
-                        nearest, nearest_facility = min(valid, key=lambda pair: (pair[0].duration_s or float("inf")))
+                        nearest, nearest_facility = min(valid, key=lambda pair: pair[0].duration_s or float("inf"))
                 expected_kind, basis = classify(len(nearby), nearest)
                 item = labels_by_id[grid_id]
                 item["expected_kind"] = expected_kind
@@ -127,7 +138,9 @@ async def review(report_path: Path, benchmark_path: Path) -> dict[str, Any]:
                     ),
                 }
 
-        benchmark["status"] = "verified" if all(item["expected_kind"] != "unknown" for item in labels_by_id.values()) else "draft"
+        benchmark["status"] = (
+            "verified" if all(item["expected_kind"] != "unknown" for item in labels_by_id.values()) else "draft"
+        )
         benchmark["labels"] = [labels_by_id[label.grid_id] for label in model.labels]
         benchmark["notes"] = (
             "独立人工核查：按每个网格中心，分别检索同类设施，使用直线 1 公里附近口径和百度步行路线判断。"
