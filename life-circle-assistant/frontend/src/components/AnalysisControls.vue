@@ -30,11 +30,20 @@
           <Location /><span><strong>{{ candidate.address }}</strong><small>{{ candidate.lng.toFixed(6) }}, {{ candidate.lat.toFixed(6) }}</small></span>
         </button>
       </div>
-      <div class="coordinate-entry">
-        <input :value="coordinateLng" inputmode="decimal" aria-label="BD-09 经度" placeholder="经度" @input="emit('update:coordinateLng', ($event.target as HTMLInputElement).value)" />
-        <input :value="coordinateLat" inputmode="decimal" aria-label="BD-09 纬度" placeholder="纬度" @input="emit('update:coordinateLat', ($event.target as HTMLInputElement).value)" />
-        <button type="button" :disabled="resolving" aria-label="使用输入的 BD-09 坐标" @click="emit('apply-coordinates')">确认</button>
+      <div class="coordinate-system-row">
+        <span>输入坐标系</span>
+        <select :value="coordinateSystem" aria-label="输入坐标系" @change="emit('update:coordinateSystem', ($event.target as HTMLSelectElement).value as CoordinateSystem)">
+          <option value="bd09">BD-09（百度）</option>
+          <option value="gcj02">GCJ-02（高德/腾讯）</option>
+          <option value="wgs84">WGS84（GPS）</option>
+        </select>
       </div>
+      <div class="coordinate-entry">
+        <input :value="coordinateLng" inputmode="decimal" :aria-label="`${coordinateSystemLabel} 经度`" placeholder="经度" @input="emit('update:coordinateLng', ($event.target as HTMLInputElement).value)" />
+        <input :value="coordinateLat" inputmode="decimal" :aria-label="`${coordinateSystemLabel} 纬度`" placeholder="纬度" @input="emit('update:coordinateLat', ($event.target as HTMLInputElement).value)" />
+        <button type="button" :disabled="resolving" :aria-label="`使用输入的 ${coordinateSystemLabel} 坐标`" @click="emit('apply-coordinates')">{{ resolving ? '处理中…' : '确认' }}</button>
+      </div>
+      <p v-if="coordinateConversionNote" class="coordinate-conversion-note" role="status">{{ coordinateConversionNote }}</p>
       <p v-if="locationError" class="location-error" role="alert">{{ locationError }}</p>
       <div class="selected-center" :class="{ unsupported: center.supportStatus === 'unsupported' }" role="status" aria-live="polite">
         <span class="pin-small">●</span>
@@ -89,7 +98,7 @@
 import { computed } from 'vue'
 import { ArrowLeft, Location, Refresh, Search } from '@element-plus/icons-vue'
 import { FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
-import type { AnalysisCenter, LocationCandidate } from '../types/location'
+import type { AnalysisCenter, CoordinateSystem, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, MapProbeResult, MapStatus } from '../types/report'
 
 const props = defineProps<{
@@ -98,6 +107,8 @@ const props = defineProps<{
   candidates: LocationCandidate[]
   coordinateLng: string
   coordinateLat: string
+  coordinateSystem: CoordinateSystem
+  coordinateConversionNote: string
   locationError: string
   searching: boolean
   resolving: boolean
@@ -127,6 +138,7 @@ const readinessTitle = computed(() => {
   if (props.realMapReady) return '浏览器底图已加载，Web API 尚未探测'
   return '真实百度 Web 服务已配置，尚未探测'
 })
+const coordinateSystemLabel = computed(() => props.coordinateSystem === 'wgs84' ? 'WGS84' : props.coordinateSystem === 'gcj02' ? 'GCJ-02' : 'BD-09')
 const readinessMessage = computed(() => {
   if (props.mapStatusLoading) return '正在读取后端配置和浏览器底图状态。'
   if (!props.mapStatus) return '请确认后端已启动，然后重新检测。'
@@ -149,6 +161,7 @@ const emit = defineEmits<{
   'update:addressQuery': [value: string]
   'update:coordinateLng': [value: string]
   'update:coordinateLat': [value: string]
+  'update:coordinateSystem': [value: CoordinateSystem]
   'update:mode': [value: AnalysisMode]
   'update:minutes': [value: AnalysisMinutes]
   'update:showNormal': [value: boolean]

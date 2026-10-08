@@ -22,6 +22,8 @@
         :candidates="candidates"
         :coordinate-lng="coordinateLng"
         :coordinate-lat="coordinateLat"
+        :coordinate-system="coordinateSystem"
+        :coordinate-conversion-note="coordinateConversionNote"
         :location-error="locationError"
         :searching="searching"
         :resolving="resolving"
@@ -41,6 +43,7 @@
         @update:address-query="addressQuery = $event"
         @update:coordinate-lng="coordinateLng = $event"
         @update:coordinate-lat="coordinateLat = $event"
+        @update:coordinate-system="coordinateSystem = $event; coordinateConversionNote = ''"
         @update:mode="mode = $event"
         @update:minutes="minutes = $event"
         @update:show-normal="showNormal = $event"
@@ -270,6 +273,8 @@ const {
   candidates,
   coordinateLng,
   coordinateLat,
+  coordinateSystem,
+  coordinateConversionNote,
   searching,
   resolving,
   error: locationError,

@@ -129,6 +129,8 @@ uvicorn app.main:app --reload --port 8000
 
 步行坐标对结果保存在同一 SQLite 数据库的 `walking_cache` 表中，缓存键包含提供方、有方向的起终点、步行方式和规范化坐标。只有成功结果会写入缓存，并保存原始数据来源、创建时间和过期时间；过期记录不会作为有效结果复用。
 
+手工坐标输入支持 WGS84、GCJ-02 和 BD-09。WGS84/GCJ-02 会调用百度 Geoconv V2 转换为 BD-09，再执行黄埔区范围校验和逆地理编码；离线快照不会伪造外部坐标转换，只有真实百度 Web 服务模式可用。项目内部、缓存和报告统一保存 BD-09。
+
 真实地图模式优先使用提供方的批量步行矩阵能力；提供方不支持批量时，系统按 `WALKING_MAX_CONCURRENCY` 和 `WALKING_QPS` 执行受控并发。超时、最大重试次数、指数退避基数和缓存有效期分别由 `WALKING_TIMEOUT_SECONDS`、`WALKING_MAX_RETRIES`、`WALKING_RETRY_BASE_SECONDS` 和 `WALKING_CACHE_TTL_SECONDS` 配置。部分坐标对失败不会使整份报告失败，但报告会标记为部分结果，受影响类别不会纳入综合评分。
 
 `GET /api/health` 和 `GET /api/map/status` 只报告真实模式是否完成配置，不主动调用百度接口，也不把“配置完成”误报为“接口已连接”。需要验证时，在界面点击“验证 Web API”或显式调用 `POST /api/map/probe`；该操作会执行一次地理编码探测并消耗真实 API 配额。探活成功只证明地理编码端点可用，POI、步行接口和浏览器底图权限仍需分别验证。

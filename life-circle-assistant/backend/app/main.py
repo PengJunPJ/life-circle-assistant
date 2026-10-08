@@ -22,7 +22,7 @@ from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService
 from .mock_data import CATEGORIES, CENTER
-from .schemas import AnalyzeRequest, ReportComparisonRequest, SimulationRequest
+from .schemas import AnalyzeRequest, CoordinateConversionRequest, ReportComparisonRequest, SimulationRequest
 from .storage import ReportRepository, TaskRepository
 
 load_dotenv()
@@ -226,6 +226,41 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             "source": map_provider.descriptor.source,
             "provider": map_provider.descriptor.id,
             "result": asdict(result),
+        }
+
+    @app.post("/api/coordinates/convert")
+    async def convert_coordinate(
+        conversion_request: CoordinateConversionRequest,
+        map_provider: MapProvider = Depends(get_map_provider),
+    ):
+        """把 WGS84/GCJ-02/BD-09 输入统一归一化为系统内部使用的 BD-09。"""
+        try:
+            result = await map_provider.convert_coordinate(
+                conversion_request.lng,
+                conversion_request.lat,
+                conversion_request.from_system,
+            )
+        except MapProviderError as exc:
+            status_code = 422 if map_provider.descriptor.mode == "snapshot" else 502
+            raise HTTPException(status_code=status_code, detail=f"地图坐标转换失败：{exc}") from exc
+        try:
+            require_supported_huangpu_area(result.lng, result.lat)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=f"转换后的 BD-09 坐标超出支持范围：{exc}") from exc
+        return {
+            "source": map_provider.descriptor.source,
+            "provider": map_provider.descriptor.id,
+            "input": {
+                "lng": conversion_request.lng,
+                "lat": conversion_request.lat,
+                "coordinate_system": conversion_request.from_system,
+            },
+            "result": {
+                "lng": result.lng,
+                "lat": result.lat,
+                "coordinate_system": result.to_system,
+            },
+            "method": result.method,
         }
 
     @app.get("/api/pois")

@@ -24,7 +24,7 @@
     <el-tour-step
       target="[data-guide='analysis-center']"
       title="选择分析中心点"
-      description="输入地址搜索、填写 BD-09 坐标，或直接点击地图。选择候选后确认地址和坐标正确。"
+      description="输入地址搜索，或选择 WGS84、GCJ-02、BD-09 后填写坐标，也可直接点击地图。外部坐标会先通过百度 Geoconv V2 转换为 BD-09。"
       placement="right"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"

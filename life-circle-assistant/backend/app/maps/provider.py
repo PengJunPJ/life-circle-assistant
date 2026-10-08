@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Literal, Protocol
 
 DataSourceKind = Literal["real_api", "cache", "local_snapshot", "interpolation", "degraded_estimate"]
+CoordinateSystem = Literal["wgs84", "gcj02", "bd09"]
 
 
 class MapProviderError(RuntimeError):
@@ -40,6 +41,15 @@ class LocationResult:
 
 
 @dataclass(frozen=True)
+class CoordinateConversionResult:
+    lng: float
+    lat: float
+    from_system: CoordinateSystem
+    to_system: Literal["bd09"]
+    method: str
+
+
+@dataclass(frozen=True)
 class FacilityResult:
     id: str
     name: str
@@ -73,6 +83,13 @@ class MapProvider(Protocol):
     async def geocode(self, address: str, city: str = "广州") -> list[LocationResult]: ...
 
     async def reverse_geocode(self, lng: float, lat: float) -> LocationResult: ...
+
+    async def convert_coordinate(
+        self,
+        lng: float,
+        lat: float,
+        from_system: CoordinateSystem,
+    ) -> CoordinateConversionResult: ...
 
     async def search_places(
         self,

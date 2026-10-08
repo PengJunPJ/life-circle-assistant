@@ -4,7 +4,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app, create_app
-from app.maps.provider import FacilityResult, LocationResult, MapProviderError, ProviderDescriptor, WalkingResult
+from app.maps.provider import (
+    CoordinateConversionResult,
+    FacilityResult,
+    LocationResult,
+    MapProviderError,
+    ProviderDescriptor,
+    WalkingResult,
+)
 from app.storage import Database, TaskRepository
 
 client = TestClient(app)
@@ -127,6 +134,27 @@ def test_map_status_and_mock_geocode():
     assert "超出本地快照支持范围" in outside.json()["detail"]
 
 
+def test_snapshot_coordinate_conversion_keeps_bd09_and_rejects_external_systems():
+    identity = client.post(
+        "/api/coordinates/convert",
+        json={"lng": 113.4872, "lat": 23.1068, "from_system": "bd09"},
+    )
+    assert identity.status_code == 200
+    assert identity.json()["result"] == {
+        "lng": 113.4872,
+        "lat": 23.1068,
+        "coordinate_system": "bd09",
+    }
+    assert identity.json()["method"] == "identity_bd09"
+
+    unsupported = client.post(
+        "/api/coordinates/convert",
+        json={"lng": 113.48, "lat": 23.10, "from_system": "gcj02"},
+    )
+    assert unsupported.status_code == 422
+    assert "需要启用真实百度地图 Web 服务" in unsupported.json()["detail"]
+
+
 def test_snapshot_place_search_keeps_legacy_category_label_behavior():
     response = client.get("/api/pois", params={"query": "药店"})
     assert response.status_code == 200
@@ -221,6 +249,16 @@ class FixtureMapProvider:
         self.calls.append("reverse_geocode")
         return LocationResult(lng=lng, lat=lat, address="测试中心点")
 
+    async def convert_coordinate(self, lng: float, lat: float, from_system: str):
+        self.calls.append(f"convert_coordinate:{from_system}")
+        return CoordinateConversionResult(
+            lng=113.4872,
+            lat=23.1068,
+            from_system=from_system,  # type: ignore[arg-type]
+            to_system="bd09",
+            method="fixture_baidu_geoconv_v2",
+        )
+
     async def search_places(self, query: str, center: tuple[float, float], radius_m: int = 1000):
         self.calls.append("search_places")
         return [FacilityResult(id="place-1", name=query, category="unknown", lng=center[0], lat=center[1])]
@@ -256,6 +294,26 @@ class FixtureMapProvider:
             ]
             for origin in origins
         ]
+
+
+def test_coordinate_conversion_endpoint_normalizes_to_bd09_before_scope_checks(tmp_path):
+    provider = FixtureMapProvider()
+    fixture_client = TestClient(create_app(provider, tmp_path / "coordinate-conversion.db"))
+
+    response = fixture_client.post(
+        "/api/coordinates/convert",
+        json={"lng": 113.48, "lat": 23.10, "from_system": "gcj02"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "source": "real_api",
+        "provider": "deterministic-test-provider",
+        "input": {"lng": 113.48, "lat": 23.10, "coordinate_system": "gcj02"},
+        "result": {"lng": 113.4872, "lat": 23.1068, "coordinate_system": "bd09"},
+        "method": "fixture_baidu_geoconv_v2",
+    }
+    assert "convert_coordinate:gcj02" in provider.calls
 
 
 class RealProbeFixtureMapProvider(FixtureMapProvider):

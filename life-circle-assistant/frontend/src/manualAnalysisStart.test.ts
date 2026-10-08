@@ -18,6 +18,7 @@ vi.mock('./composables/useAnalysisCenter', () => ({
   useAnalysisCenter: () => ({
     center: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
     addressQuery: ref(''), candidates: ref([]), coordinateLng: ref('113.4872'), coordinateLat: ref('23.1068'),
+    coordinateSystem: ref('bd09'), coordinateConversionNote: ref(''),
     searching: ref(false), resolving: ref(false), error: ref(''), searchCandidates: vi.fn(), selectCandidate: vi.fn(),
     restoreCenter: vi.fn(), selectMapPoint: vi.fn(), applyCoordinateInput: vi.fn(),
   }),

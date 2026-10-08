@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const api = vi.hoisted(() => ({
   searchAddressCandidates: vi.fn(),
   reverseGeocode: vi.fn(),
+  convertCoordinate: vi.fn(),
   createAnalysis: vi.fn(),
   waitForAnalysis: vi.fn(),
 }))
@@ -106,6 +107,33 @@ describe('统一分析中心选点流程', () => {
     expect(result.submitted.center_selection_method).toBe('coordinates')
     expect(result.submitted.center_address).toBe('广州市黄埔区坐标确认地址')
     expect(result.analysis.report.value?.center).toMatchObject({ lng: 113.49, lat: 23.109 })
+  })
+
+  it('GCJ-02 坐标先通过百度转换为 BD-09 再确认中心点', async () => {
+    api.convertCoordinate.mockResolvedValue({
+      source: 'real_api',
+      provider: 'baidu-web-service',
+      input: { lng: 113.48, lat: 23.10, coordinate_system: 'gcj02' },
+      result: { lng: 113.4872, lat: 23.1068, coordinate_system: 'bd09' },
+      method: 'baidu_geoconv_v2',
+    })
+    api.reverseGeocode.mockResolvedValue({
+      source: 'real_api',
+      provider: 'baidu-web-service',
+      result: { lng: 113.4872, lat: 23.1068, address: '广州市黄埔区转换后地址' },
+    })
+    const location = useAnalysisCenter()
+    location.coordinateSystem.value = 'gcj02'
+    location.coordinateLng.value = '113.48'
+    location.coordinateLat.value = '23.10'
+
+    expect(await location.applyCoordinateInput()).toBe(true)
+
+    expect(api.convertCoordinate).toHaveBeenCalledWith(113.48, 23.10, 'gcj02')
+    expect(api.reverseGeocode).toHaveBeenCalledWith(113.4872, 23.1068)
+    expect(location.coordinateSystem.value).toBe('bd09')
+    expect(location.center.value).toMatchObject({ lng: 113.4872, lat: 23.1068 })
+    expect(location.coordinateConversionNote.value).toContain('Geoconv V2')
   })
 
   it('无效坐标和超出离线支持范围时阻止分析', async () => {

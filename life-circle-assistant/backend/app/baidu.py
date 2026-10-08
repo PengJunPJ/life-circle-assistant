@@ -73,10 +73,11 @@ class BaiduMapClient:
                 if payload.get("status") not in (0, "0"):
                     status = str(payload.get("status"))
                     rate_limited = status in {"302", "429"}
+                    retryable = rate_limited or status == "1" or status.startswith("5")
                     raise BaiduMapError(
                         payload.get("message") or f"百度地图接口返回状态 {status}",
                         code="rate_limited" if rate_limited else f"provider_status_{status}",
-                        retryable=rate_limited or status.startswith("5"),
+                        retryable=retryable,
                         rate_limited=rate_limited,
                     )
                 return payload
@@ -148,6 +149,52 @@ class BaiduMapClient:
             "lat": float(location["lat"]),
             "address": result.get("formatted_address") or f"{lng:.6f}, {lat:.6f}",
         }
+
+    async def convert_coordinates(
+        self,
+        coordinates: list[tuple[float, float]],
+        model: int,
+    ) -> list[dict[str, float]]:
+        """调用百度 Geoconv V2，并按官方每次 100 点上限分块。
+
+        本项目使用的转换方向是 ``model=1``（GCJ-02 → BD-09）和
+        ``model=2``（WGS84/GPS → BD-09）。输入和返回均保持经度、纬度顺序。
+        """
+        if model not in {1, 2}:
+            raise ValueError("本项目只支持把 WGS84 或 GCJ-02 转换为 BD-09")
+        if not coordinates:
+            return []
+        converted: list[dict[str, float]] = []
+        for start in range(0, len(coordinates), 100):
+            chunk = coordinates[start : start + 100]
+            payload = await self._request(
+                "/geoconv/v2/",
+                {
+                    "coords": ";".join(f"{lng:.12g},{lat:.12g}" for lng, lat in chunk),
+                    "model": model,
+                },
+            )
+            results = payload.get("result") or []
+            if len(results) != len(chunk) or any(not isinstance(item, dict) for item in results):
+                raise BaiduMapError(
+                    f"坐标转换返回 {len(results)} 条结果，与请求的 {len(chunk)} 个坐标不一致",
+                    code="format_error",
+                )
+            for result in results:
+                if "x" not in result or "y" not in result:
+                    raise BaiduMapError("坐标转换结果缺少 x/y 字段", code="format_error")
+                try:
+                    lng = float(result["x"])
+                    lat = float(result["y"])
+                except (TypeError, ValueError) as exc:
+                    raise BaiduMapError("坐标转换结果不是有效数字", code="format_error") from exc
+                if not math.isfinite(lng) or not math.isfinite(lat):
+                    raise BaiduMapError("坐标转换结果不是有限数", code="format_error")
+                converted.append({"lng": lng, "lat": lat})
+        return converted
+
+    async def convert_coordinate(self, lng: float, lat: float, model: int) -> dict[str, float]:
+        return (await self.convert_coordinates([(lng, lat)], model))[0]
 
     async def search_poi(self, query: str, lng: float, lat: float, radius: int = 1000) -> list[dict[str, Any]]:
         payload = await self._request(

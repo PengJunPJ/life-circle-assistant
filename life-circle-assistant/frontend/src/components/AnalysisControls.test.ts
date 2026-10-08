@@ -20,7 +20,8 @@ function mountControls(mapStatus: MapStatus | null, realMapReady: boolean) {
   return shallowMount(AnalysisControls, {
     props: {
       center: { lng: 113.4872, lat: 23.1068, address: '海韵东路', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' },
-      addressQuery: '', candidates: [], coordinateLng: '113.4872', coordinateLat: '23.1068', locationError: '',
+      addressQuery: '', candidates: [], coordinateLng: '113.4872', coordinateLat: '23.1068',
+      coordinateSystem: 'bd09', coordinateConversionNote: '', locationError: '',
       searching: false, resolving: false, mode: 'demo', minutes: 15, visibleCategories: ['market'],
       showNormal: false, showSparse: true, showCritical: true, loading: false, source: mapStatus?.source,
       mapStatus, mapStatusLoading: false,
@@ -52,5 +53,15 @@ describe('地图测试就绪状态', () => {
     expect(wrapper.get('.map-readiness').text()).toContain('无法读取地图服务状态')
     expect(wrapper.get('.map-readiness').text()).toContain('Web API状态未知')
     expect(wrapper.get('.map-readiness').classes()).not.toContain('snapshot')
+  })
+
+  it('允许明确选择 WGS84、GCJ-02 或 BD-09 输入坐标系', async () => {
+    const wrapper = mountControls(realStatus, true)
+    const select = wrapper.get('select[aria-label="输入坐标系"]')
+
+    await select.setValue('wgs84')
+
+    expect(wrapper.emitted('update:coordinateSystem')).toEqual([['wgs84']])
+    expect(select.findAll('option')).toHaveLength(3)
   })
 })

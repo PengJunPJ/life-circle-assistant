@@ -1,5 +1,7 @@
 import asyncio
 
+import pytest
+
 from app.baidu import BaiduMapClient, BaiduMapError
 from app.maps.baidu import BaiduMapProvider
 
@@ -34,9 +36,92 @@ class BatchStubClient:
         }
 
 
+class CoordinateStubClient:
+    def __init__(self) -> None:
+        self.calls: list[tuple[float, float, int]] = []
+
+    async def convert_coordinate(self, lng: float, lat: float, model: int):
+        self.calls.append((lng, lat, model))
+        return {"lng": 113.4872, "lat": 23.1068}
+
+
 def test_provider_declares_batch_walking_support():
     provider = BaiduMapProvider(client=BatchStubClient())  # type: ignore[arg-type]
     assert provider.supports_batch_walking is True
+
+
+def test_baidu_client_calls_geoconv_v2_with_official_model(monkeypatch):
+    client = BaiduMapClient()
+    calls: list[tuple[str, dict]] = []
+
+    async def fake_request(path: str, params: dict):
+        calls.append((path, params))
+        return {"status": 0, "result": [{"x": 113.4872, "y": 23.1068}]}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    converted = asyncio.run(client.convert_coordinate(113.48, 23.10, 1))
+
+    assert converted == {"lng": 113.4872, "lat": 23.1068}
+    assert calls == [
+        (
+            "/geoconv/v2/",
+            {"coords": "113.48,23.1", "model": 1},
+        )
+    ]
+
+
+def test_baidu_client_rejects_malformed_geoconv_result(monkeypatch):
+    client = BaiduMapClient()
+
+    async def fake_request(_path: str, _params: dict):
+        return {"status": 0, "result": []}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    with pytest.raises(BaiduMapError, match="与请求的 1 个坐标不一致"):
+        asyncio.run(client.convert_coordinate(113.48, 23.10, 2))
+
+
+def test_baidu_client_chunks_101_coordinates_at_official_limit(monkeypatch):
+    client = BaiduMapClient()
+    chunk_sizes: list[int] = []
+
+    async def fake_request(path: str, params: dict):
+        assert path == "/geoconv/v2/"
+        coords = params["coords"].split(";")
+        chunk_sizes.append(len(coords))
+        return {
+            "status": 0,
+            "result": [
+                {"x": float(pair.split(",")[0]) + 0.01, "y": float(pair.split(",")[1]) + 0.01} for pair in coords
+            ],
+        }
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    coordinates = [(113.0 + index * 0.001, 23.0) for index in range(101)]
+
+    converted = asyncio.run(client.convert_coordinates(coordinates, 2))
+
+    assert chunk_sizes == [100, 1]
+    assert len(converted) == 101
+
+
+def test_provider_maps_wgs84_and_gcj02_to_geoconv_v2_models_and_keeps_bd09_identity():
+    client = CoordinateStubClient()
+    provider = BaiduMapProvider(client=client)  # type: ignore[arg-type]
+
+    converted_gcj02 = asyncio.run(provider.convert_coordinate(113.48, 23.10, "gcj02"))
+    converted_wgs84 = asyncio.run(provider.convert_coordinate(113.47, 23.09, "wgs84"))
+    identity = asyncio.run(provider.convert_coordinate(113.4872, 23.1068, "bd09"))
+
+    assert client.calls == [(113.48, 23.10, 1), (113.47, 23.09, 2)]
+    assert converted_gcj02.lng == 113.4872
+    assert converted_gcj02.lat == 23.1068
+    assert converted_gcj02.method == "baidu_geoconv_v2"
+    assert converted_wgs84.method == "baidu_geoconv_v2"
+    assert identity.lng == 113.4872
+    assert identity.method == "identity_bd09"
 
 
 def test_walking_matrix_chunks_by_pair_limit():

@@ -13,6 +13,13 @@ CoreCategory = Literal[
 ]
 CenterSelectionMethod = Literal["default", "address", "map", "coordinates"]
 SimulationSelectionMethod = Literal["recommendation", "map"]
+CoordinateSystem = Literal["wgs84", "gcj02", "bd09"]
+
+
+class CoordinateConversionRequest(BaseModel):
+    lng: float = Field(ge=-180, le=180)
+    lat: float = Field(ge=-90, le=90)
+    from_system: CoordinateSystem
 
 
 class AnalyzeRequest(BaseModel):

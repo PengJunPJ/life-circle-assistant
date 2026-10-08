@@ -6,6 +6,8 @@ import unicodedata
 
 from ..baidu import BaiduMapClient, BaiduMapError
 from .provider import (
+    CoordinateConversionResult,
+    CoordinateSystem,
     FacilityResult,
     LocationResult,
     MapProviderError,
@@ -95,6 +97,33 @@ class BaiduMapProvider:
         except BaiduMapError as exc:
             raise self._provider_error(exc) from exc
         return LocationResult(lng=result["lng"], lat=result["lat"], address=result["address"])
+
+    async def convert_coordinate(
+        self,
+        lng: float,
+        lat: float,
+        from_system: CoordinateSystem,
+    ) -> CoordinateConversionResult:
+        source_models: dict[CoordinateSystem, int] = {"wgs84": 2, "gcj02": 1, "bd09": 0}
+        if from_system == "bd09":
+            return CoordinateConversionResult(
+                lng=lng,
+                lat=lat,
+                from_system=from_system,
+                to_system="bd09",
+                method="identity_bd09",
+            )
+        try:
+            result = await self.client.convert_coordinate(lng, lat, source_models[from_system])
+        except BaiduMapError as exc:
+            raise self._provider_error(exc) from exc
+        return CoordinateConversionResult(
+            lng=result["lng"],
+            lat=result["lat"],
+            from_system=from_system,
+            to_system="bd09",
+            method="baidu_geoconv_v2",
+        )
 
     async def search_places(
         self,
