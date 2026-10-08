@@ -200,8 +200,16 @@ export type MapStatus = {
   provider_mode: 'real' | 'snapshot' | 'fixture'
   provider: string
   source: string
-  real_api_available: boolean
+  real_api_configured: boolean
+  real_api_probe_endpoint: string | null
   mock_available: boolean
   snapshot_available: boolean
+  message: string
+}
+
+export type MapProbeResult = {
+  configured: boolean
+  verified: boolean
+  checked_at: string | null
   message: string
 }

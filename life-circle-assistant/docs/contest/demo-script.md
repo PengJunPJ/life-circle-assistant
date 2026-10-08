@@ -21,7 +21,7 @@
 
 | # | 操作 | 预期观察 | 证据指针 |
 | --- | --- | --- | --- |
-| B1 | 在 `.env` 填 `BAIDU_MAP_AK` 与 `VITE_BAIDU_MAP_AK`，`BAIDU_MAP_MODE=real`，`docker compose up --build` | `/api/health` 返回 `real_api_available: true`；顶栏显示"真实百度服务已连接" | [../../README.md](../../README.md) 模式说明 |
+| B1 | 在 `.env` 填 `BAIDU_MAP_AK` 与 `VITE_BAIDU_MAP_AK`，`BAIDU_MAP_MODE=real`，`docker compose up --build`；在分析面板点击“验证 Web API” | `/api/health` 仅返回 `real_api_configured: true`，不会消耗配额；显式探活成功后界面显示地理编码接口已验证，浏览器底图状态单独展示 | [../../README.md](../../README.md) 模式说明 |
 | B2 | 用地址搜索、地图点选、坐标输入三种方式各选一次中心 | 三种选点结果一致地驱动分析中心 | 用户故事 5 |
 | B3 | 运行"正式分析"（24 方向等时圈） | 等时圈为真实路网步行边界而非圆形缓冲；执行指标区显示 API 调用、缓存命中、阶段耗时 | [../performance/v2-baseline.md](../performance/v2-baseline.md) |
 | B4 | 查看重点盲区格证据 | 依据文案给出"步行超过阈值且 1 公里内无同类设施"，数据来源为 real_api | [algorithm-overview.md](algorithm-overview.md) 盲区规则 |

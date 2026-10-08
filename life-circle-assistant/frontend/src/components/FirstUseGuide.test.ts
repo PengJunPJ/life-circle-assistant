@@ -7,7 +7,8 @@ import type { MapStatus } from '../types/report'
 
 const realStatus: MapStatus = {
   mode: 'real', provider_mode: 'real', provider: 'baidu-web-services', source: 'real_api',
-  real_api_available: true, mock_available: true, snapshot_available: false, message: '真实服务已启用',
+  real_api_configured: true, real_api_probe_endpoint: '/api/map/probe',
+  mock_available: true, snapshot_available: false, message: '真实服务已配置',
 }
 
 describe('首次使用向导', () => {
@@ -15,7 +16,7 @@ describe('首次使用向导', () => {
     const ready = shallowMount(FirstUseGuide, {
       props: { open: true, mapStatus: realStatus, mapStatusLoading: false, realMapReady: true },
     })
-    expect((ready.vm as unknown as { sourceDescription: string }).sourceDescription).toContain('均已就绪')
+    expect((ready.vm as unknown as { sourceDescription: string }).sourceDescription).toContain('主动触发')
 
     const missingMap = shallowMount(FirstUseGuide, {
       props: { open: true, mapStatus: realStatus, mapStatusLoading: false, realMapReady: false },

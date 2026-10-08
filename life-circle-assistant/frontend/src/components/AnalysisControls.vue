@@ -7,14 +7,14 @@
     <button class="desktop-panel-heading" type="button" aria-label="收起或展开分析参数面板" @click="toggleCollapseIfDesktop"><span class="eyebrow">空间分析工作台</span><ArrowLeft class="panel-collapse-icon" /></button>
     <h1>15分钟生活圈<br /><em>智能体检</em></h1>
     <p class="intro">用真实步行可达性，识别社区服务覆盖与规划机会。</p>
-    <div class="map-readiness" :class="{ ready: mapStatus?.real_api_available && realMapReady, snapshot: !mapStatusLoading && mapStatus && !mapStatus.real_api_available }" data-guide="source-status" role="status" aria-live="polite">
+    <div class="map-readiness" :class="{ ready: mapStatus?.real_api_configured && realMapReady && mapProbeResult?.verified, snapshot: !mapStatusLoading && mapStatus && !mapStatus.real_api_configured }" data-guide="source-status" role="status" aria-live="polite">
       <div class="map-readiness-heading">
-        <span class="readiness-mark" aria-hidden="true">{{ mapStatus?.real_api_available && realMapReady ? '✓' : mapStatusLoading ? '···' : '!' }}</span>
+        <span class="readiness-mark" aria-hidden="true">{{ mapStatus?.real_api_configured && realMapReady && mapProbeResult?.verified ? '✓' : mapStatusLoading || mapProbeLoading ? '···' : '!' }}</span>
         <span><strong>{{ readinessTitle }}</strong><small>{{ readinessMessage }}</small></span>
-        <button type="button" :disabled="mapStatusLoading" @click="emit('refresh-map-status')">重新检测</button>
+        <button type="button" :disabled="mapStatusLoading || mapProbeLoading" @click="mapStatus?.real_api_configured ? emit('probe-map-api') : emit('refresh-map-status')">{{ mapProbeLoading ? '探测中…' : mapStatus?.real_api_configured ? '验证 Web API' : '刷新状态' }}</button>
       </div>
       <div class="readiness-checks">
-        <span :class="{ ok: mapStatus?.real_api_available }"><i aria-hidden="true"></i>Web 服务{{ webServiceLabel }}</span>
+        <span :class="{ ok: mapStatus?.real_api_configured && mapProbeResult?.verified }"><i aria-hidden="true"></i>Web API{{ webServiceLabel }}</span>
         <span :class="{ ok: realMapReady }"><i aria-hidden="true"></i>百度底图{{ realMapReady ? '已加载' : '未加载' }}</span>
       </div>
     </div>
@@ -80,8 +80,8 @@
         </div>
       </div>
     </div>
-    <button class="primary-action" data-guide="run-analysis" type="button" aria-describedby="analysis-source-note" :disabled="loading || resolving || Boolean(locationError) || center.supportStatus !== 'supported'" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : mapStatus?.real_api_available ? '开始真实分析' : '开始快照体检' }}<span aria-hidden="true">↗</span></button>
-    <div id="analysis-source-note" class="api-note"><span class="api-indicator" :class="{ real: mapStatus?.real_api_available || source === 'baidu' || source === 'real_api' }" aria-hidden="true"></span><span>当前：{{ mapStatus?.real_api_available || source === 'baidu' || source === 'real_api' ? '百度地图真实数据' : '本地百度数据快照' }}</span></div>
+    <button class="primary-action" data-guide="run-analysis" type="button" aria-describedby="analysis-source-note" :disabled="loading || resolving || Boolean(locationError) || center.supportStatus !== 'supported'" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : mapStatus?.real_api_configured ? '开始真实分析' : '开始快照体检' }}<span aria-hidden="true">↗</span></button>
+    <div id="analysis-source-note" class="api-note"><span class="api-indicator" :class="{ real: mapStatus?.real_api_configured || source === 'baidu' || source === 'real_api' }" aria-hidden="true"></span><span>当前：{{ mapStatus?.real_api_configured ? '已配置真实模式（分析时调用百度 API）' : source === 'baidu' || source === 'real_api' ? '百度地图真实测算结果' : '本地百度数据快照' }}</span></div>
   </aside>
 </template>
 
@@ -90,7 +90,7 @@ import { computed } from 'vue'
 import { ArrowLeft, Location, Refresh, Search } from '@element-plus/icons-vue'
 import { FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { AnalysisCenter, LocationCandidate } from '../types/location'
-import type { AnalysisMode, AnalysisMinutes, MapStatus } from '../types/report'
+import type { AnalysisMode, AnalysisMinutes, MapProbeResult, MapStatus } from '../types/report'
 
 const props = defineProps<{
   center: AnalysisCenter
@@ -111,27 +111,39 @@ const props = defineProps<{
   source?: string
   mapStatus: MapStatus | null
   mapStatusLoading: boolean
+  mapProbeResult: MapProbeResult | null
+  mapProbeLoading: boolean
   realMapReady: boolean
   mobileOpen: boolean
 }>()
 const readinessTitle = computed(() => {
   if (props.mapStatusLoading) return '正在检测地图服务'
   if (!props.mapStatus) return '无法读取地图服务状态'
-  if (props.mapStatus?.real_api_available && props.realMapReady) return '正式百度地图已就绪'
-  if (props.mapStatus?.real_api_available) return '真实 Web 服务已启用'
-  return '当前为本地快照模式'
+  if (!props.mapStatus.real_api_configured) return '当前为本地快照模式'
+  if (props.mapProbeLoading) return '正在探测百度地理编码接口'
+  if (props.mapProbeResult?.verified && props.realMapReady) return 'Web API 探测成功，浏览器底图已加载'
+  if (props.mapProbeResult?.verified) return '百度 Web API 地理编码探测成功'
+  if (props.mapProbeResult && !props.mapProbeResult.verified) return '百度 Web API 探测失败'
+  if (props.realMapReady) return '浏览器底图已加载，Web API 尚未探测'
+  return '真实百度 Web 服务已配置，尚未探测'
 })
 const readinessMessage = computed(() => {
-  if (props.mapStatusLoading) return '正在读取后端和浏览器底图状态。'
+  if (props.mapStatusLoading) return '正在读取后端配置和浏览器底图状态。'
   if (!props.mapStatus) return '请确认后端已启动，然后重新检测。'
-  if (props.mapStatus?.real_api_available && props.realMapReady) return '可以开始正式地图测试。'
-  if (props.mapStatus?.real_api_available) return '底图未加载，请检查浏览器 AK 域名白名单。'
-  return props.mapStatus?.message || '快照数据仅适合演示，不代表最新地图。'
+  if (!props.mapStatus.real_api_configured) return props.mapStatus.message || '快照数据仅适合演示，不代表最新地图。'
+  if (props.mapProbeLoading) return '正在调用一次百度地理编码接口；遇到超时或限流时可能重试并额外消耗配额。'
+  if (props.mapProbeResult) return props.mapProbeResult.message
+  if (!props.realMapReady) return 'Web 服务仅表示已配置；浏览器底图未加载，请检查浏览器 AK 域名白名单。点击“验证 Web API”会产生真实地理编码调用。'
+  return '浏览器底图已加载，但不代表 Web 服务接口已验证。点击“验证 Web API”会调用一次地理编码接口。'
 })
 const webServiceLabel = computed(() => {
   if (props.mapStatusLoading) return '检测中'
   if (!props.mapStatus) return '状态未知'
-  return props.mapStatus.real_api_available ? '已连接' : '未启用'
+  if (!props.mapStatus.real_api_configured) return '未启用'
+  if (props.mapProbeLoading) return '探测中'
+  if (props.mapProbeResult?.verified) return '探测成功'
+  if (props.mapProbeResult && !props.mapProbeResult.verified) return '探测失败'
+  return '已配置，未探测'
 })
 const emit = defineEmits<{
   'update:addressQuery': [value: string]
@@ -148,6 +160,7 @@ const emit = defineEmits<{
   'toggle-category': [value: string]
   run: []
   'refresh-map-status': []
+  'probe-map-api': []
   'close-mobile': []
   'toggle-collapse': []
 }>()

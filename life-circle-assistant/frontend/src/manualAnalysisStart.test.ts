@@ -11,7 +11,8 @@ import MapStage from './components/MapStage.vue'
 const mocks = vi.hoisted(() => ({ runAnalysis: vi.fn(), loadHistory: vi.fn() }))
 
 vi.mock('./services/analysisApi', () => ({
-  fetchMapStatus: vi.fn().mockResolvedValue({ mode: 'real', provider_mode: 'real', provider: 'baidu', source: 'real_api', real_api_available: true, mock_available: true, snapshot_available: false, message: '已启用' }),
+  fetchMapStatus: vi.fn().mockResolvedValue({ mode: 'real', provider_mode: 'real', provider: 'baidu', source: 'real_api', real_api_configured: true, real_api_probe_endpoint: '/api/map/probe', mock_available: true, snapshot_available: false, message: '已配置' }),
+  probeMapApi: vi.fn().mockResolvedValue({ configured: true, verified: true, checked_at: '2026-10-08T00:00:00+00:00', message: '探测成功' }),
 }))
 vi.mock('./composables/useAnalysisCenter', () => ({
   useAnalysisCenter: () => ({

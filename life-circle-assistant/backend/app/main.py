@@ -4,6 +4,7 @@ import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -39,6 +40,17 @@ def get_task_repository(request: Request) -> TaskRepository:
 
 def get_report_repository(request: Request) -> ReportRepository:
     return request.app.state.report_repository
+
+
+def cors_allow_origins() -> list[str]:
+    configured = os.getenv(
+        "CORS_ALLOW_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    )
+    origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
+    if not origins or "*" in origins:
+        raise ValueError("CORS_ALLOW_ORIGINS 必须配置一个或多个明确的来源，不能使用通配符")
+    return origins
 
 
 async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: AnalyzeRequest) -> None:
@@ -82,9 +94,9 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
     app = FastAPI(title="15分钟生活圈智能体检与规划助手", version=APP_VERSION, lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=cors_allow_origins(),
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type"],
         expose_headers=["Content-Disposition", "X-Report-Id", "X-Coordinate-System"],
     )
     # 将基础设施装配集中到 bootstrap，避免 create_app 同时承担太多职责。
@@ -98,7 +110,8 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             "version": APP_VERSION,
             "mode": "real" if descriptor.mode == "real" else "mock",
             "provider_mode": descriptor.mode,
-            "real_api_available": descriptor.source == "real_api",
+            "real_api_configured": descriptor.mode == "real",
+            "real_api_probe_performed": False,
             "seeded_walking_cache": getattr(request.app.state, "seeded_walking_cache_count", 0),
             "llm": {
                 **llm_configuration(),
@@ -118,14 +131,46 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             "provider_mode": descriptor.mode,
             "provider": descriptor.id,
             "source": descriptor.source,
-            "real_api_available": descriptor.source == "real_api",
+            "real_api_configured": descriptor.mode == "real",
+            "real_api_probe_endpoint": "/api/map/probe" if descriptor.mode == "real" else None,
             "mock_available": True,
             "snapshot_available": descriptor.mode == "snapshot",
             "message": (
-                "已启用百度地图 Web 服务实时测算"
+                "已配置百度地图 Web 服务；接口连通性尚未探测"
                 if descriptor.source == "real_api"
                 else "当前使用本地百度数据快照，不代表最新真实地图测算"
             ),
+        }
+
+    @app.post("/api/map/probe")
+    async def probe_map_api(map_provider: MapProvider = Depends(get_map_provider)):
+        """显式验证一次百度地理编码接口；GET 健康检查不会触发真实 API 调用。"""
+        if map_provider.descriptor.mode != "real":
+            raise HTTPException(status_code=409, detail="真实百度地图 Web 服务尚未配置")
+
+        checked_at = datetime.now(UTC).isoformat()
+        try:
+            result = await map_provider.geocode("广州市黄埔区", "广州")
+        except MapProviderError:
+            return {
+                "configured": True,
+                "verified": False,
+                "checked_at": checked_at,
+                "message": "百度地图地理编码接口探测失败，请检查 Web 服务 AK、权限、配额或网络。",
+            }
+
+        if not result:
+            return {
+                "configured": True,
+                "verified": False,
+                "checked_at": checked_at,
+                "message": "百度地图地理编码接口未返回有效结果，请检查 AK 权限和服务配置。",
+            }
+        return {
+            "configured": True,
+            "verified": True,
+            "checked_at": checked_at,
+            "message": "百度地图地理编码接口探测成功；POI、步行接口和浏览器底图权限需分别验证。",
         }
 
     @app.get("/api/map/config")
