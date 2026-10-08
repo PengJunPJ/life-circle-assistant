@@ -14,7 +14,7 @@ def test_health():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
-    assert response.json()["version"] == "2.1.1"
+    assert response.json()["version"] == "2.2.0"
 
 
 def test_map_status_and_mock_geocode():
