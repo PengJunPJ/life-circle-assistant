@@ -12,7 +12,7 @@
 4. **算法与 API 策略**：先读一页纸 [algorithm-overview.md](algorithm-overview.md)，再按需深入 [../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md)、[../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md) 与 [../../../docs/adr/](../../../docs/adr/) 决策记录。
 5. **真实社区证据**：[沙涌长盛花园真实报告](../validation/reports/shachong-changsheng-20261004.json)、[64 条核查基准](../validation/benchmarks/shachong-changsheng-20261004.json)、[评估结果](../validation/results/shachong-changsheng-20261004.md) 与[评估口径](../validation/v2.1-benchmark-evaluation.md)。沙涌 64/64 核查已完成，但属于百度同源一致性证据；跨来源准确率和多社区泛化仍未验证。
 6. **性能与优化**：[../performance/v2-baseline.md](../performance/v2-baseline.md) 三档实测（冷 124s / 种子预热 19s / 全缓存 12.5s）与批量算路对照。
-7. **质量门禁**：[../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml) 与本地 `make quality`；测试规模后端 112 项、前端 44 项。
+7. **质量门禁**：[../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml) 与本地 `make quality`；当前工作树测试规模后端 125 项、前端 46 项（已发布 V2.2.0 的历史口径为 112/44）。
 8. **限制与披露**：[limitations.md](limitations.md) 汇总全部可信度边界，评审可据此判断哪些结论可直接使用。
 9. **证据索引**：[evidence-index.md](evidence-index.md) 给出每条证据的位置、状态与负责人，含尚未完成项的诚实标注。
 

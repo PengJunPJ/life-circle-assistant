@@ -3,6 +3,8 @@ from __future__ import annotations
 from ..baidu import haversine_meters
 from ..mock_data import CATEGORIES, CENTER, POIS
 from .provider import (
+    CoordinateConversionResult,
+    CoordinateSystem,
     FacilityResult,
     LocationResult,
     MapProviderError,
@@ -44,6 +46,22 @@ class SnapshotMapProvider:
         if distance > 30:
             address = f"{address}（样例范围内坐标选点）"
         return LocationResult(lng=lng, lat=lat, address=address)
+
+    async def convert_coordinate(
+        self,
+        lng: float,
+        lat: float,
+        from_system: CoordinateSystem,
+    ) -> CoordinateConversionResult:
+        if from_system != "bd09":
+            raise MapProviderError("WGS84/GCJ-02 坐标转换需要启用真实百度地图 Web 服务")
+        return CoordinateConversionResult(
+            lng=lng,
+            lat=lat,
+            from_system=from_system,
+            to_system="bd09",
+            method="identity_bd09",
+        )
 
     async def search_places(
         self,

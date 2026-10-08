@@ -11,12 +11,14 @@ import MapStage from './components/MapStage.vue'
 const mocks = vi.hoisted(() => ({ runAnalysis: vi.fn(), loadHistory: vi.fn() }))
 
 vi.mock('./services/analysisApi', () => ({
-  fetchMapStatus: vi.fn().mockResolvedValue({ mode: 'real', provider_mode: 'real', provider: 'baidu', source: 'real_api', real_api_available: true, mock_available: true, snapshot_available: false, message: '已启用' }),
+  fetchMapStatus: vi.fn().mockResolvedValue({ mode: 'real', provider_mode: 'real', provider: 'baidu', source: 'real_api', real_api_configured: true, real_api_probe_endpoint: '/api/map/probe', mock_available: true, snapshot_available: false, message: '已配置' }),
+  probeMapApi: vi.fn().mockResolvedValue({ configured: true, verified: true, checked_at: '2026-10-08T00:00:00+00:00', message: '探测成功' }),
 }))
 vi.mock('./composables/useAnalysisCenter', () => ({
   useAnalysisCenter: () => ({
     center: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
     addressQuery: ref(''), candidates: ref([]), coordinateLng: ref('113.4872'), coordinateLat: ref('23.1068'),
+    coordinateSystem: ref('bd09'), coordinateConversionNote: ref(''),
     searching: ref(false), resolving: ref(false), error: ref(''), searchCandidates: vi.fn(), selectCandidate: vi.fn(),
     restoreCenter: vi.fn(), selectMapPoint: vi.fn(), applyCoordinateInput: vi.fn(),
   }),

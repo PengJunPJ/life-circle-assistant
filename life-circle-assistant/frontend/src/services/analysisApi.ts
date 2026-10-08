@@ -1,8 +1,8 @@
 import { API_BASE_URL } from '../constants/facilities'
 import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
-import type { CenterSelectionMethod, LocationApiResponse, LocationCandidate, WalkingRoute } from '../types/location'
-import type { AiInterpretation, AiInterpretationIntent, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapStatus, Report } from '../types/report'
+import type { CenterSelectionMethod, CoordinateConversionResponse, CoordinateSystem, LocationApiResponse, LocationCandidate, WalkingRoute } from '../types/location'
+import type { AiInterpretation, AiInterpretationIntent, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapProbeResult, MapStatus, Report } from '../types/report'
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
 import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
 
@@ -20,6 +20,10 @@ export async function fetchMapConfig() {
 
 export async function fetchMapStatus() {
   return parseResponse<MapStatus>(await fetch(`${API_BASE_URL}/api/map/status`))
+}
+
+export async function probeMapApi() {
+  return parseResponse<MapProbeResult>(await fetch(`${API_BASE_URL}/api/map/probe`, { method: 'POST' }))
 }
 
 export async function fetchWalkingRoute(origin: { lng: number; lat: number }, destination: { lng: number; lat: number }) {
@@ -50,6 +54,16 @@ export async function searchAddressCandidates(address: string) {
 export async function reverseGeocode(lng: number, lat: number) {
   return parseResponse<LocationApiResponse>(
     await fetch(`${API_BASE_URL}/api/locations/reverse?lng=${encodeURIComponent(lng)}&lat=${encodeURIComponent(lat)}`),
+  )
+}
+
+export async function convertCoordinate(lng: number, lat: number, fromSystem: CoordinateSystem) {
+  return parseResponse<CoordinateConversionResponse>(
+    await fetch(`${API_BASE_URL}/api/coordinates/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lng, lat, from_system: fromSystem }),
+    }),
   )
 }
 

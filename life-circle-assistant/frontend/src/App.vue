@@ -5,7 +5,8 @@
       :theme="theme"
       :map-status-loading="mapStatusLoading"
       :map-status-available="Boolean(mapStatus)"
-      :real-api-ready="Boolean(mapStatus?.real_api_available)"
+      :real-api-configured="Boolean(mapStatus?.real_api_configured)"
+      :real-api-verified="Boolean(mapProbeResult?.verified)"
       @update:theme="applyTheme"
       @open-guide="openFirstUseGuide"
     />
@@ -21,6 +22,8 @@
         :candidates="candidates"
         :coordinate-lng="coordinateLng"
         :coordinate-lat="coordinateLat"
+        :coordinate-system="coordinateSystem"
+        :coordinate-conversion-note="coordinateConversionNote"
         :location-error="locationError"
         :searching="searching"
         :resolving="resolving"
@@ -34,10 +37,13 @@
         :source="report?.source || center.source"
         :map-status="mapStatus"
         :map-status-loading="mapStatusLoading"
+        :map-probe-result="mapProbeResult"
+        :map-probe-loading="mapProbeLoading"
         :real-map-ready="realMapReady"
         @update:address-query="addressQuery = $event"
         @update:coordinate-lng="coordinateLng = $event"
         @update:coordinate-lat="coordinateLat = $event"
+        @update:coordinate-system="coordinateSystem = $event; coordinateConversionNote = ''"
         @update:mode="mode = $event"
         @update:minutes="minutes = $event"
         @update:show-normal="showNormal = $event"
@@ -48,7 +54,8 @@
         @apply-coordinates="applyCoordinateInput"
         @toggle-category="toggleCategory"
         @run="startAnalysis"
-        @refresh-map-status="loadMapStatus"
+        @refresh-map-status="refreshMapStatus"
+        @probe-map-api="probeConfiguredMapApi"
         @toggle-collapse="collapsedControls = !collapsedControls"
         @close-mobile="closeMobilePanel('controls')"
       />
@@ -172,8 +179,8 @@
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { fetchMapStatus } from './services/analysisApi'
-import type { MapStatus } from './types/report'
+import { fetchMapStatus, probeMapApi as requestMapApiProbe } from './services/analysisApi'
+import type { MapProbeResult, MapStatus } from './types/report'
 import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
@@ -253,6 +260,8 @@ function applyTheme(value: 'dark' | 'light', event?: MouseEvent) {
 applyTheme(theme.value)
 const mapStatus = ref<MapStatus | null>(null)
 const mapStatusLoading = ref(true)
+const mapProbeResult = ref<MapProbeResult | null>(null)
+const mapProbeLoading = ref(false)
 const realMapReady = ref(false)
 const guideOpen = ref(false)
 const controlsTrigger = ref<HTMLButtonElement | null>(null)
@@ -264,6 +273,8 @@ const {
   candidates,
   coordinateLng,
   coordinateLat,
+  coordinateSystem,
+  coordinateConversionNote,
   searching,
   resolving,
   error: locationError,
@@ -425,10 +436,32 @@ async function loadMapStatus() {
   mapStatusLoading.value = true
   try {
     mapStatus.value = await fetchMapStatus()
+    if (!mapStatus.value.real_api_configured) mapProbeResult.value = null
   } catch {
     mapStatus.value = null
   } finally {
     mapStatusLoading.value = false
+  }
+}
+
+async function refreshMapStatus() {
+  await loadMapStatus()
+}
+
+async function probeConfiguredMapApi() {
+  if (!mapStatus.value?.real_api_configured || mapProbeLoading.value) return
+  mapProbeLoading.value = true
+  try {
+    mapProbeResult.value = await requestMapApiProbe()
+  } catch {
+    mapProbeResult.value = {
+      configured: true,
+      verified: false,
+      checked_at: new Date().toISOString(),
+      message: '百度地图地理编码接口探测失败，请检查 Web 服务 AK、权限、配额或网络。',
+    }
+  } finally {
+    mapProbeLoading.value = false
   }
 }
 

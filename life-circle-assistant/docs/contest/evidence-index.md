@@ -7,7 +7,7 @@
 | E-01 | 源码托管与开源许可证（Apache-2.0） | Gitee 仓库；根 [LICENSE](../../../LICENSE) | ✅ | — |
 | E-02 | 一键构建/部署与示例数据（Docker Compose + 合成快照 + 缓存种子） | [../../README.md](../../README.md)、[../../docker-compose.yml](../../docker-compose.yml)、[../../backend/data/baidu_snapshot.json](../../backend/data/baidu_snapshot.json)、[../../backend/data/walking_cache_seed.json](../../backend/data/walking_cache_seed.json) | ✅ | — |
 | E-03 | 无凭证离线演示闭环 | [demo-script.md](demo-script.md) 路径 A | ✅ | — |
-| E-04 | 真实模式地图能力（地理编码/POI/步行/等时圈） | [demo-script.md](demo-script.md) 路径 B；[../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md) | ✅ | — |
+| E-04 | 真实模式地图能力（坐标转换/地理编码/POI/步行/等时圈） | [demo-script.md](demo-script.md) 路径 B；[algorithm-overview.md](algorithm-overview.md)；[../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md) | ✅ WGS84/GCJ-02 经百度 Geoconv V2 统一为 BD-09；其余地图能力已实现 | — |
 | E-05 | 定稿真实跑报告归档（含执行指标） | [../validation/reports/shachong-changsheng-20261004.json](../validation/reports/shachong-changsheng-20261004.json)；历史对照：[红山报告](../validation/reports/hongshan-haiyundonglu-20260921.json) | ✅ | 自动 |
 | E-06 | 等时圈生成算法（扇形采样+二分细化+降级标识） | [algorithm-overview.md](algorithm-overview.md)；[../../../docs/adr/0004-等时圈精度分档与报告导出.md](../../../docs/adr/0004-等时圈精度分档与报告导出.md) | ✅ | — |
 | E-07 | 地图 API 调用策略（逐词 POI、预筛、批量算路分块、缓存/限流/重试） | [algorithm-overview.md](algorithm-overview.md)；[../../../docs/adr/0009-百度地图调用的两阶段筛选策略.md](../../../docs/adr/0009-百度地图调用的两阶段筛选策略.md) | ✅ | — |
@@ -19,8 +19,8 @@
 | E-13 | 容错与降级证据（限流/超时/重试/部分失败/降级估算披露） | 报告 `data_quality` 区；[../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md) | ✅ | — |
 | E-14 | 可视化与交互（等时圈、网格色块、柱状+tooltip、雷达图、七类图层） | [../releases/v2.2.0.md](../releases/v2.2.0.md)；截图待补 | 🟡 截图待补 | 自动 |
 | E-15 | AI 解读能力与证据约束（引用校验、防幻觉过滤、无密钥规则降级） | [../../backend/app/ai_assistant.py](../../backend/app/ai_assistant.py)；[demo-script.md](demo-script.md) A6 | ✅ | — |
-| E-16 | 质量门禁（CI 三 job + 本地 make quality；112+44 测试、ruff、ESLint、容器冒烟） | [../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../Makefile](../../Makefile) | ✅ 本地测试/lint/格式检查、前端构建已通过；Gitee 门禁见 E-18 | 自动 |
-| E-17 | 密钥脱敏扫描记录（仓库无 AK/Secret/模型密钥） | 待生成一次扫描输出归档 | ⬜ | 自动 |
+| E-16 | 质量门禁（CI 三 job + 本地 make quality；当前工作树 125+46 测试、ruff、ESLint、容器冒烟） | [../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../Makefile](../../Makefile) | ✅ 本地测试/lint/格式检查、前端构建已通过；V2.2.0 历史口径为 112+44，Gitee 门禁见 E-18 | 自动 |
+| E-17 | 密钥脱敏扫描记录（仓库无 AK/Secret/模型密钥） | [security-scan-2026-10-08.md](security-scan-2026-10-08.md) | ✅ 工作树与 Git 历史未发现高置信度凭证值；发布物仍需复核 | 自动 |
 | E-18 | Gitee Go PR 门禁实跑三步 + master 保护分支绑定 | [../research/gitee-go-quality-gate.md](../research/gitee-go-quality-gate.md)（调研已有，实跑未做） | ⬜ | 人工+自动配合 |
 | E-19 | 截图集（深浅主题、图层、盲区依据、雷达、AI、导出、执行指标） | [screenshots/](screenshots/README.md) | ⬜ | 自动 |
 | E-20 | 演示录屏（3~5 分钟） | 赛事平台附件 | ⬜ | 人工 |

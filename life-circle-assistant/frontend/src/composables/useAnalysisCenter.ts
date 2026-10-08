@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { DEFAULT_CENTER } from '../constants/facilities'
-import { reverseGeocode, searchAddressCandidates } from '../services/analysisApi'
-import type { AnalysisCenter, CenterSelectionMethod, LocationCandidate } from '../types/location'
+import { convertCoordinate, reverseGeocode, searchAddressCandidates } from '../services/analysisApi'
+import type { AnalysisCenter, CenterSelectionMethod, CoordinateSystem, LocationCandidate } from '../types/location'
 
 const DEFAULT_ADDRESS = '广州市黄埔区红山街道海韵东路离线样例中心'
 
@@ -17,13 +17,16 @@ export function useAnalysisCenter() {
   const candidates = ref<LocationCandidate[]>([])
   const coordinateLng = ref(DEFAULT_CENTER.lng.toFixed(6))
   const coordinateLat = ref(DEFAULT_CENTER.lat.toFixed(6))
+  const coordinateSystem = ref<CoordinateSystem>('bd09')
+  const coordinateConversionNote = ref('')
   const searching = ref(false)
   const resolving = ref(false)
   const error = ref('')
 
-  function validateCoordinates(lng: number, lat: number) {
-    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return '请输入数字格式的 BD-09 经纬度'
-    if (lng < -180 || lng > 180 || lat < -90 || lat > 90) return '请输入合法范围内的 BD-09 经纬度'
+  function validateCoordinates(lng: number, lat: number, system: CoordinateSystem = 'bd09') {
+    const label = system === 'wgs84' ? 'WGS84' : system === 'gcj02' ? 'GCJ-02' : 'BD-09'
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return `请输入数字格式的 ${label} 经纬度`
+    if (lng < -180 || lng > 180 || lat < -90 || lat > 90) return `请输入合法范围内的 ${label} 经纬度`
     return ''
   }
 
@@ -42,6 +45,8 @@ export function useAnalysisCenter() {
     addressQuery.value = center.value.address
     coordinateLng.value = location.lng.toFixed(6)
     coordinateLat.value = location.lat.toFixed(6)
+    coordinateSystem.value = 'bd09'
+    coordinateConversionNote.value = ''
     candidates.value = []
     error.value = ''
   }
@@ -118,11 +123,48 @@ export function useAnalysisCenter() {
   }
 
   function selectMapPoint(lng: number, lat: number) {
+    coordinateConversionNote.value = ''
     return selectCoordinates(lng, lat, 'map')
   }
 
-  function applyCoordinateInput() {
-    return selectCoordinates(Number(coordinateLng.value), Number(coordinateLat.value), 'coordinates')
+  async function applyCoordinateInput() {
+    const lng = Number(coordinateLng.value)
+    const lat = Number(coordinateLat.value)
+    const inputSystem = coordinateSystem.value
+    const validationError = validateCoordinates(lng, lat, inputSystem)
+    if (validationError) {
+      center.value = { ...center.value, supportStatus: 'unsupported' }
+      error.value = validationError
+      coordinateConversionNote.value = ''
+      return false
+    }
+    if (inputSystem === 'bd09') {
+      coordinateConversionNote.value = ''
+      return selectCoordinates(lng, lat, 'coordinates')
+    }
+
+    resolving.value = true
+    error.value = ''
+    coordinateConversionNote.value = ''
+    try {
+      const conversion = await convertCoordinate(lng, lat, inputSystem)
+      const selected = await selectCoordinates(
+        conversion.result.lng,
+        conversion.result.lat,
+        'coordinates',
+      )
+      if (selected) {
+        const inputLabel = inputSystem === 'wgs84' ? 'WGS84' : 'GCJ-02'
+        coordinateConversionNote.value = `已通过百度 Geoconv V2 将 ${inputLabel} 转换为 BD-09`
+      }
+      return selected
+    } catch (reason: any) {
+      center.value = { ...center.value, supportStatus: 'unsupported' }
+      error.value = reason?.message || '坐标转换失败，请检查真实百度地图服务后重试'
+      return false
+    } finally {
+      resolving.value = false
+    }
   }
 
   return {
@@ -131,6 +173,8 @@ export function useAnalysisCenter() {
     candidates,
     coordinateLng,
     coordinateLat,
+    coordinateSystem,
+    coordinateConversionNote,
     searching,
     resolving,
     error,

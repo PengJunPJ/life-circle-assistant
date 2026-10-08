@@ -24,7 +24,7 @@
     <el-tour-step
       target="[data-guide='analysis-center']"
       title="选择分析中心点"
-      description="输入地址搜索、填写 BD-09 坐标，或直接点击地图。选择候选后确认地址和坐标正确。"
+      description="输入地址搜索，或选择 WGS84、GCJ-02、BD-09 后填写坐标，也可直接点击地图。外部坐标会先通过百度 Geoconv V2 转换为 BD-09。"
       placement="right"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"
@@ -80,9 +80,9 @@ const finishButton = { children: '我知道了' }
 const sourceDescription = computed(() => {
   if (props.mapStatusLoading) return '正在检测后端数据源和浏览器底图，请稍候。'
   if (!props.mapStatus) return '暂时无法读取地图服务状态，请先确认后端已启动。'
-  if (!props.mapStatus.real_api_available) return '当前仍是本地快照模式，不会请求最新百度地图数据。需将 BAIDU_MAP_MODE 设为 real 并重启服务。'
-  if (!props.realMapReady) return '后端真实 Web 服务已启用，但浏览器底图尚未就绪。请检查浏览器 AK 的 localhost 域名白名单。'
-  return '后端百度 Web 服务与浏览器百度底图均已就绪，本次操作将使用正式地图数据。'
+  if (!props.mapStatus.real_api_configured) return '当前仍是本地快照模式，不会请求最新百度地图数据。需将 BAIDU_MAP_MODE 设为 real 并重启服务。'
+  if (!props.realMapReady) return '后端已配置真实 Web 服务，但接口连通性尚未探测、浏览器底图也未就绪。请检查 Web 服务 AK 与浏览器 AK 域名白名单。'
+  return '后端已配置真实 Web 服务，浏览器底图已加载；Web API 的地理编码探测需在分析面板中主动触发，且会消耗 API 配额。'
 })
 
 watch(() => props.open, (value) => {

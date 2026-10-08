@@ -13,7 +13,7 @@ docker compose up --build
 
 日常开发建议保持 `.env` 的 `BAIDU_MAP_MODE=mock`，系统会优先读取 `backend/data/baidu_snapshot.json`，不会请求百度 Web 服务，也不会加载百度 JavaScript 地图，从而减少 API 额度消耗。需要联调真实数据时再切换为 `real`。
 
-打开 <http://localhost:5173>。本地快照模式下使用离线数据；真实模式需要同时配置服务器端 `BAIDU_MAP_AK` 和浏览器端 `VITE_BAIDU_MAP_AK`。
+打开 <http://localhost:5173>。Docker 前端使用 Nginx 提供生产构建并将 `/api` 同源转发到后端；本地快照模式下使用离线数据，真实模式需要同时配置服务器端 `BAIDU_MAP_AK` 和浏览器端 `VITE_BAIDU_MAP_AK`。
 
 当百度 Web 服务恢复可用后，可执行以下命令抓取一次真实体检报告并更新本地快照；抓取失败不会覆盖旧文件：
 
@@ -71,7 +71,9 @@ npm run dev
 | `BAIDU_MAP_MODE` | 后端提供方 | `mock` 用于离线，`real` 用于真实 API |
 | `BAIDU_MAP_AK` / `BAIDU_MAP_SECRET` | 服务器端地图凭证 | 仅放在本地 `.env` 或密钥管理器 |
 | `BAIDU_MAP_QPS` | 所有百度 Web 服务共享的请求节流 | 低配额开发 AK 建议 `1.5` |
+| `CORS_ALLOW_ORIGINS` | 允许直接访问后端 API 的浏览器来源，逗号分隔 | 默认仅 `localhost:5173` 与 `127.0.0.1:5173`；禁止 `*` |
 | `VITE_BAIDU_MAP_AK` | 浏览器底图 AK | 限制域名白名单，不与 Secret 混用 |
+| `VITE_API_BASE_URL` | 前端 API 地址 | Docker 留空走 Nginx 同源 `/api`；本地 Vite 开发默认访问 `http://localhost:8000` |
 | `LIFE_CIRCLE_DATABASE_PATH` | SQLite 数据库路径 | 开发可指向 `/tmp` 独立文件 |
 | `WALKING_*` | 步行缓存、并发、QPS、超时与重试 | 真实 API 按配额调整，离线模式保持默认值 |
 | `LLM_ENABLED` | 是否启用大模型解读 | 默认 `false`；未配置完整凭证时自动使用规则模板 |
@@ -127,7 +129,11 @@ uvicorn app.main:app --reload --port 8000
 
 步行坐标对结果保存在同一 SQLite 数据库的 `walking_cache` 表中，缓存键包含提供方、有方向的起终点、步行方式和规范化坐标。只有成功结果会写入缓存，并保存原始数据来源、创建时间和过期时间；过期记录不会作为有效结果复用。
 
+手工坐标输入支持 WGS84、GCJ-02 和 BD-09。WGS84/GCJ-02 会调用百度 Geoconv V2 转换为 BD-09，再执行黄埔区范围校验和逆地理编码；离线快照不会伪造外部坐标转换，只有真实百度 Web 服务模式可用。项目内部、缓存和报告统一保存 BD-09。
+
 真实地图模式优先使用提供方的批量步行矩阵能力；提供方不支持批量时，系统按 `WALKING_MAX_CONCURRENCY` 和 `WALKING_QPS` 执行受控并发。超时、最大重试次数、指数退避基数和缓存有效期分别由 `WALKING_TIMEOUT_SECONDS`、`WALKING_MAX_RETRIES`、`WALKING_RETRY_BASE_SECONDS` 和 `WALKING_CACHE_TTL_SECONDS` 配置。部分坐标对失败不会使整份报告失败，但报告会标记为部分结果，受影响类别不会纳入综合评分。
+
+`GET /api/health` 和 `GET /api/map/status` 只报告真实模式是否完成配置，不主动调用百度接口，也不把“配置完成”误报为“接口已连接”。需要验证时，在界面点击“验证 Web API”或显式调用 `POST /api/map/probe`；该操作会执行一次地理编码探测并消耗真实 API 配额。探活成功只证明地理编码端点可用，POI、步行接口和浏览器底图权限仍需分别验证。
 
 V2 报告的 `execution.metrics` 记录步行提供方调用量、真实 API 调用量、批量调用量、缓存命中/未命中/过期量、重试、限流、超时、格式错误、最终失败、降级结果和步行计算耗时；`data_quality` 同时披露缓存、限流、超时和格式错误事件。
 

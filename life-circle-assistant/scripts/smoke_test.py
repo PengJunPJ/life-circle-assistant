@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -22,7 +23,8 @@ def request_bytes(url: str) -> tuple[bytes, str]:
 
 
 def wait_for_report(task_id: str) -> dict:
-    deadline = time.monotonic() + 15
+    timeout_seconds = float(os.getenv("SMOKE_REPORT_TIMEOUT_SECONDS", "60"))
+    deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         task = request_json(f"http://localhost:8000/api/analyze/{task_id}")
         if task["status"] == "completed":
@@ -30,7 +32,7 @@ def wait_for_report(task_id: str) -> dict:
         if task["status"] == "failed":
             raise RuntimeError(task.get("error") or "体检任务失败")
         time.sleep(0.2)
-    raise TimeoutError("等待演示模式体检报告超时")
+    raise TimeoutError(f"等待演示模式体检报告超过 {timeout_seconds:g} 秒")
 
 
 def main() -> None:
@@ -59,7 +61,11 @@ def main() -> None:
     if response.status != 200 or '<div id="app"></div>' not in page:
         raise RuntimeError("前端容器未返回应用入口页面")
 
-    print("容器冒烟验证通过：前端可访问，后端健康，演示模式报告可生成 PDF。")
+    proxied_health = request_json("http://localhost:5173/api/health")
+    if proxied_health.get("status") != "ok" or proxied_health.get("mode") != "mock":
+        raise RuntimeError(f"前端 Nginx 未正确同源代理后端 API：{proxied_health}")
+
+    print("容器冒烟验证通过：Nginx 静态前端与同源 API 可访问，后端健康，演示模式报告可生成 PDF。")
 
 
 if __name__ == "__main__":

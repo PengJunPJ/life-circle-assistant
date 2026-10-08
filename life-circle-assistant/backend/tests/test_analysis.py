@@ -4,7 +4,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app, create_app
-from app.maps.provider import FacilityResult, LocationResult, MapProviderError, ProviderDescriptor, WalkingResult
+from app.maps.provider import (
+    CoordinateConversionResult,
+    FacilityResult,
+    LocationResult,
+    MapProviderError,
+    ProviderDescriptor,
+    WalkingResult,
+)
 from app.storage import Database, TaskRepository
 
 client = TestClient(app)
@@ -15,6 +22,97 @@ def test_health():
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.json()["version"] == "2.2.0"
+    assert response.json()["real_api_configured"] is False
+    assert response.json()["real_api_probe_performed"] is False
+
+
+def test_cors_defaults_to_local_demo_origins_and_rejects_other_origins():
+    allowed = client.options(
+        "/api/health",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "GET"},
+    )
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+    rejected = client.options(
+        "/api/health",
+        headers={"Origin": "https://untrusted.example", "Access-Control-Request-Method": "GET"},
+    )
+    assert rejected.status_code == 400
+    assert "access-control-allow-origin" not in rejected.headers
+
+
+def test_cors_origins_can_be_overridden_explicitly(monkeypatch, tmp_path):
+    monkeypatch.setenv("CORS_ALLOW_ORIGINS", "https://review.example")
+    cors_client = TestClient(create_app(FixtureMapProvider(), tmp_path / "cors.db"))
+
+    allowed = cors_client.options(
+        "/api/health",
+        headers={"Origin": "https://review.example", "Access-Control-Request-Method": "GET"},
+    )
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == "https://review.example"
+
+    rejected = cors_client.options(
+        "/api/health",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "GET"},
+    )
+    assert rejected.status_code == 400
+
+
+def test_cors_rejects_wildcard_configuration(monkeypatch):
+    monkeypatch.setenv("CORS_ALLOW_ORIGINS", "*")
+    with pytest.raises(ValueError, match="不能使用通配符"):
+        create_app(FixtureMapProvider())
+
+
+def test_map_status_reports_configuration_without_claiming_api_verified(tmp_path):
+    provider = RealProbeFixtureMapProvider()
+    probe_client = TestClient(create_app(provider, tmp_path / "map-status.db"))
+
+    status = probe_client.get("/api/map/status")
+    assert status.status_code == 200
+    assert status.json()["real_api_configured"] is True
+    assert status.json()["real_api_probe_endpoint"] == "/api/map/probe"
+    assert "尚未探测" in status.json()["message"]
+    assert "geocode_probe" not in provider.calls
+
+    health = probe_client.get("/api/health").json()
+    assert health["real_api_configured"] is True
+    assert health["real_api_probe_performed"] is False
+    assert "geocode_probe" not in provider.calls
+
+
+def test_map_api_probe_is_explicit_and_reports_only_geocoding_verification(tmp_path):
+    provider = RealProbeFixtureMapProvider()
+    probe_client = TestClient(create_app(provider, tmp_path / "map-probe.db"))
+
+    response = probe_client.post("/api/map/probe")
+    assert response.status_code == 200
+    assert response.json()["configured"] is True
+    assert response.json()["verified"] is True
+    assert response.json()["checked_at"]
+    assert "POI、步行接口" in response.json()["message"]
+    assert provider.calls.count("geocode_probe") == 1
+
+
+def test_map_api_probe_failure_does_not_leak_provider_error(tmp_path):
+    provider = RealProbeFixtureMapProvider(fail_probe=True)
+    probe_client = TestClient(create_app(provider, tmp_path / "map-probe-fail.db"))
+
+    response = probe_client.post("/api/map/probe")
+    assert response.status_code == 200
+    assert response.json()["configured"] is True
+    assert response.json()["verified"] is False
+    assert "测试提供方内部错误" not in response.text
+    assert "AK、权限、配额或网络" in response.json()["message"]
+
+
+def test_map_api_probe_rejects_unconfigured_provider(tmp_path):
+    probe_client = TestClient(create_app(FixtureMapProvider(), tmp_path / "map-probe-mock.db"))
+    response = probe_client.post("/api/map/probe")
+    assert response.status_code == 409
+    assert response.json()["detail"] == "真实百度地图 Web 服务尚未配置"
 
 
 def test_map_status_and_mock_geocode():
@@ -34,6 +132,27 @@ def test_map_status_and_mock_geocode():
     outside = client.get("/api/locations/reverse", params={"lng": 113.6, "lat": 23.2})
     assert outside.status_code == 422
     assert "超出本地快照支持范围" in outside.json()["detail"]
+
+
+def test_snapshot_coordinate_conversion_keeps_bd09_and_rejects_external_systems():
+    identity = client.post(
+        "/api/coordinates/convert",
+        json={"lng": 113.4872, "lat": 23.1068, "from_system": "bd09"},
+    )
+    assert identity.status_code == 200
+    assert identity.json()["result"] == {
+        "lng": 113.4872,
+        "lat": 23.1068,
+        "coordinate_system": "bd09",
+    }
+    assert identity.json()["method"] == "identity_bd09"
+
+    unsupported = client.post(
+        "/api/coordinates/convert",
+        json={"lng": 113.48, "lat": 23.10, "from_system": "gcj02"},
+    )
+    assert unsupported.status_code == 422
+    assert "需要启用真实百度地图 Web 服务" in unsupported.json()["detail"]
 
 
 def test_snapshot_place_search_keeps_legacy_category_label_behavior():
@@ -130,6 +249,16 @@ class FixtureMapProvider:
         self.calls.append("reverse_geocode")
         return LocationResult(lng=lng, lat=lat, address="测试中心点")
 
+    async def convert_coordinate(self, lng: float, lat: float, from_system: str):
+        self.calls.append(f"convert_coordinate:{from_system}")
+        return CoordinateConversionResult(
+            lng=113.4872,
+            lat=23.1068,
+            from_system=from_system,  # type: ignore[arg-type]
+            to_system="bd09",
+            method="fixture_baidu_geoconv_v2",
+        )
+
     async def search_places(self, query: str, center: tuple[float, float], radius_m: int = 1000):
         self.calls.append("search_places")
         return [FacilityResult(id="place-1", name=query, category="unknown", lng=center[0], lat=center[1])]
@@ -165,6 +294,48 @@ class FixtureMapProvider:
             ]
             for origin in origins
         ]
+
+
+def test_coordinate_conversion_endpoint_normalizes_to_bd09_before_scope_checks(tmp_path):
+    provider = FixtureMapProvider()
+    fixture_client = TestClient(create_app(provider, tmp_path / "coordinate-conversion.db"))
+
+    response = fixture_client.post(
+        "/api/coordinates/convert",
+        json={"lng": 113.48, "lat": 23.10, "from_system": "gcj02"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "source": "real_api",
+        "provider": "deterministic-test-provider",
+        "input": {"lng": 113.48, "lat": 23.10, "coordinate_system": "gcj02"},
+        "result": {"lng": 113.4872, "lat": 23.1068, "coordinate_system": "bd09"},
+        "method": "fixture_baidu_geoconv_v2",
+    }
+    assert "convert_coordinate:gcj02" in provider.calls
+
+
+class RealProbeFixtureMapProvider(FixtureMapProvider):
+    def __init__(self, fail_probe: bool = False):
+        super().__init__()
+        self.fail_probe = fail_probe
+
+    @property
+    def descriptor(self):
+        return ProviderDescriptor(
+            id="probe-test-provider",
+            mode="real",
+            source="real_api",
+            label="探测测试提供方",
+            is_latest_real_measurement=True,
+        )
+
+    async def geocode(self, address: str, city: str = "广州"):
+        self.calls.append("geocode_probe")
+        if self.fail_probe:
+            raise MapProviderError("测试提供方内部错误，不能返回给客户端")
+        return [LocationResult(lng=113.5, lat=23.1, address=f"{city}{address}")]
 
 
 class PartialWalkingFixtureMapProvider(FixtureMapProvider):
