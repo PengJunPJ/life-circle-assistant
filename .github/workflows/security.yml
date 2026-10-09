@@ -1,0 +1,146 @@
+name: 安全与依赖扫描
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 2 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql:
+    name: CodeQL 静态分析
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - name: 准备前端 CodeQL 构建环境
+        if: ${{ matrix.language == 'javascript-typescript' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: life-circle-assistant/frontend/package-lock.json
+      - name: 安装前端依赖并构建
+        if: ${{ matrix.language == 'javascript-typescript' }}
+        working-directory: life-circle-assistant/frontend
+        run: npm ci && npm run build
+      - uses: github/codeql-action/analyze@v3
+
+  dependency-review:
+    name: PR 依赖变更审查
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  python-dependencies:
+    name: Python 依赖漏洞扫描
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: life-circle-assistant/backend/requirements.txt
+      - name: 安装 pip-audit
+        run: python -m pip install --disable-pip-version-check pip-audit
+      - name: 扫描生产依赖并保留报告
+        run: |
+          set +e
+          pip-audit \
+            -r life-circle-assistant/backend/requirements.txt \
+            --format=json \
+            --output=pip-audit.json
+          audit_status=$?
+          set -e
+          python -m json.tool pip-audit.json >/dev/null
+          if [ "$audit_status" -gt 1 ]; then
+            exit "$audit_status"
+          fi
+          if [ "$audit_status" -eq 1 ]; then
+            echo '发现已知漏洞；当前阶段保留报告并由 Dependabot/升级 PR 逐项收敛。'
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: pip-audit.json
+          if-no-files-found: error
+
+  npm-dependencies:
+    name: npm 依赖漏洞扫描
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: life-circle-assistant/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: life-circle-assistant/frontend/package-lock.json
+      - name: 使用官方 npm 审计端点
+        run: npm config set registry https://registry.npmjs.org/
+      - run: npm ci
+      - name: 扫描 npm 依赖并保留报告
+        run: |
+          set +e
+          npm audit --audit-level=high --json > npm-audit.json
+          audit_status=$?
+          set -e
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('npm-audit.json').read_text())
+          if 'error' in report:
+              raise SystemExit(f"npm audit failed: {report['error']}")
+          PY
+          if [ "$audit_status" -gt 1 ]; then
+            exit "$audit_status"
+          fi
+          if [ "$audit_status" -eq 1 ]; then
+            echo '发现 high/critical 漏洞；当前阶段保留报告并由 Dependabot/升级 PR 逐项收敛。'
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-report
+          path: life-circle-assistant/frontend/npm-audit.json
+          if-no-files-found: error
+
+  secrets:
+    name: 密钥泄露扫描
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

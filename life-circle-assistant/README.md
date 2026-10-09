@@ -192,6 +192,6 @@ make quality
 
 也可以分别执行 `make backend-check`、`make frontend-check` 或 `make container-check`。
 
-仓库保留 `.github/workflows/quality.yml`，供 GitHub 镜像仓库在推送和 Pull Request 中运行同一组检查；当前主远端位于 Gitee，因此该 GitHub Actions 配置不会因 Gitee 提交自动执行。Gitee Go 的运行时版本、Docker Compose 支持和保护分支关联方案见 [Gitee Go 质量门禁落地调研](docs/research/gitee-go-quality-gate.md)。在 Gitee Go 完成开通、实跑和保护分支绑定前，`make quality` 仍是发布前的权威验收命令。
+仓库通过 `.github/workflows/quality.yml` 在 GitHub 的推送和 Pull Request 中运行后端、前端和容器质量检查，并以 `质量门禁汇总` 作为分支保护应绑定的统一检查项。`.github/workflows/security.yml` 负责 CodeQL、依赖漏洞和密钥扫描；`.github/workflows/release.yml` 在 `vX.Y.Z` 标签通过完整质量门禁后构建并推送带 SBOM/provenance 的 GHCR 镜像、创建 GitHub Release。生产部署仍需按实际部署平台配置 GitHub Environment、审批人和密钥。`make quality` 仍是本地发布前的权威验收命令。
 
 项目文档、领域术语和架构决策位于上级 `docs/` 目录。

@@ -4,6 +4,13 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: life-circle-assistant
@@ -58,3 +65,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./scripts/container-smoke.sh
+
+  quality-gate:
+    name: 质量门禁汇总
+    if: ${{ always() }}
+    needs: [backend, frontend, container]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查必需 job 结果
+        env:
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          CONTAINER_RESULT: ${{ needs.container.result }}
+        run: |
+          set -euo pipefail
+          printf 'backend=%s\nfrontend=%s\ncontainer=%s\n' \
+            "$BACKEND_RESULT" "$FRONTEND_RESULT" "$CONTAINER_RESULT"
+          test "$BACKEND_RESULT" = success
+          test "$FRONTEND_RESULT" = success
+          test "$CONTAINER_RESULT" = success
