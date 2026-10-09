@@ -72,12 +72,6 @@ jobs:
     needs: [backend, frontend, container]
     runs-on: ubuntu-latest
     steps:
-      - name: 输出必需 job 结果
-        run: |
-          printf '%s\n' \
-            'backend=${{ needs.backend.result }}' \
-            'frontend=${{ needs.frontend.result }}' \
-            'container=${{ needs.container.result }}'
       - name: 任一必需 job 失败时阻断
-        if: ${{ needs.backend.result != 'success' || needs.frontend.result != 'success' || needs.container.result != 'success' }}
+        if: ${{ failure() }}
         run: exit 1
