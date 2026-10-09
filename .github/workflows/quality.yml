@@ -73,14 +73,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 检查必需 job 结果
-        env:
-          BACKEND_RESULT: ${{ needs.backend.result }}
-          FRONTEND_RESULT: ${{ needs.frontend.result }}
-          CONTAINER_RESULT: ${{ needs.container.result }}
         run: |
           set -euo pipefail
           printf 'backend=%s\nfrontend=%s\ncontainer=%s\n' \
-            "$BACKEND_RESULT" "$FRONTEND_RESULT" "$CONTAINER_RESULT"
-          test "$BACKEND_RESULT" = success
-          test "$FRONTEND_RESULT" = success
-          test "$CONTAINER_RESULT" = success
+            '${{ needs.backend.result }}' \
+            '${{ needs.frontend.result }}' \
+            '${{ needs.container.result }}'
+          test '${{ needs.backend.result }}' = success
+          test '${{ needs.frontend.result }}' = success
+          test '${{ needs.container.result }}' = success
