@@ -12,8 +12,8 @@ importers:
         specifier: ^2.3.1
         version: 2.3.2(vue@3.5.43(typescript@5.9.3))
       echarts:
-        specifier: ^5.6.0
-        version: 5.6.0
+        specifier: ^6.1.0
+        version: 6.1.0
       element-plus:
         specifier: ^2.9.1
         version: 2.14.6(vue@3.5.43(typescript@5.9.3))
@@ -825,8 +825,8 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  echarts@5.6.0:
-    resolution: {integrity: sha512-oTbVTsXfKuEhxftHqL5xprgLoc0k7uScAwtryCgWF6hPYFLRwOUHiFmHGCBKP5NPFNkDVopOieyUqYGH8Fa3kA==}
+  echarts@6.1.0:
+    resolution: {integrity: sha512-q0yaFPggC9FUdsWH4blavRWFmxdrIodbkoKNAjJudAI6CA9gNPxHtV2RcZNEepZVlk4yvBYkOkbk6HIVpIyHZA==}
 
   editorconfig@3.0.2:
     resolution: {integrity: sha512-T0ix8GhtxyKVfUFEcvdNDt3YGqlwkFHbD4/5bgFUDgFmxhI/cSRAeJ87/Sz//Cq8Eam6JX/e23RkoFO71P7aAA==}
@@ -1475,8 +1475,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zrender@5.6.1:
-    resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
+  zrender@6.1.0:
+    resolution: {integrity: sha512-oEGMDB6pOP2S6OwRR4PdVv610zrjnA3Bh+JnSG12fYJlBKjtNAoEb5fSUoCOOINlH96I2fU38/A2UpRKs67xYQ==}
 
 snapshots:
 
@@ -2139,10 +2139,10 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  echarts@5.6.0:
+  echarts@6.1.0:
     dependencies:
       tslib: 2.3.0
-      zrender: 5.6.1
+      zrender: 6.1.0
 
   editorconfig@3.0.2:
     dependencies:
@@ -2816,6 +2816,6 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zrender@5.6.1:
+  zrender@6.1.0:
     dependencies:
       tslib: 2.3.0
