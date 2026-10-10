@@ -11,3 +11,7 @@
 ### 领域文档
 
 本项目使用单上下文布局，包含 `CONTEXT.md` 和 `docs/adr/`。详见 `docs/agents/domain.md`。
+
+### 提交信息
+
+执行 Git 提交时，提交信息必须使用中文。
