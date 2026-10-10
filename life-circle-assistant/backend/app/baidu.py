@@ -203,6 +203,24 @@ class BaiduMapClient:
         )
         return payload.get("results") or []
 
+    async def search_poi_region(
+        self,
+        query: str,
+        region: str = "广州",
+        city_limit: bool = True,
+    ) -> list[dict[str, Any]]:
+        payload = await self._request(
+            "/place/v2/search",
+            {
+                "query": query,
+                "region": region,
+                "city_limit": "true" if city_limit else "false",
+                "scope": 2,
+                "page_size": 20,
+            },
+        )
+        return payload.get("results") or []
+
     async def walking_route(self, origin: tuple[float, float], destination: tuple[float, float]) -> dict[str, Any]:
         self.walking_request_count += 1
         payload = await self._request(
