@@ -16,9 +16,11 @@
 - 每方向用**二分细化**逼近"步行时间 = 阈值"的边界点；有效边界点 < 6 时降级为内置演示边界并显式标记。
 - 输出闭合多边形与面积、采样数、成功数、最大耗时；真实路网结果与降级边界在报告字段中分开标识（[../../../docs/adr/0004-等时圈精度分档与报告导出.md](../../../docs/adr/0004-等时圈精度分档与报告导出.md)）。
 
-## 3. 多源 POI 数据清洗
+## 3. POI 数据清洗与多源策略边界
 
-- 语义归一化：把百度返回的异构名称/地址归到设施语义类型，合并同址同机构重复记录；规则版本写入报告 `facility_normalization`（[../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md)）。
+- **当前运行时（2.3.0）**：只接入百度单一来源；按多关键词检索、语义归一和同源去重，规则版本写入报告 `facility_normalization`（[../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md)）。不能称为跨来源 POI 清洗。
+- **已实现但默认关闭**：跨来源 `reconcile_facilities()` 纯计算模块，覆盖候选对齐、冲突保留、坐标系校验和待人工复核；未接入分析主链路，未用高德真实数据验证。策略见[多源 POI 对齐策略](../architecture/multi-source-poi-reconciliation.md)。
+- **待完成**：高德 API Key、书面许可、真实双源样本和 50–100 对独立人工标签；当前没有多源准确率结果。
 - 直线距离预筛（3000m）缩小步行计算候选集，控制 API 调用量。
 
 ## 4. 服务盲区识别算法
