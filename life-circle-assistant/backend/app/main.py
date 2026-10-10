@@ -66,7 +66,12 @@ async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: An
         app.state.walking_cache_repository,
         app.state.walking_settings,
     )
-    service = AnalysisApplicationService(app.state.map_provider, update_stage, walking_service)
+    service = AnalysisApplicationService(
+        app.state.map_provider,
+        update_stage,
+        walking_service,
+        facility_validator=getattr(app.state, "amap_validator", None),
+    )
     try:
         report = await service.run(task_id, analysis_request)
         task_repository.update_request(task_id, report["request"])
@@ -87,6 +92,11 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             close = getattr(client, "aclose", None)
             if close is not None:
                 await close()
+            amap_validator = getattr(_app.state, "amap_validator", None)
+            amap_client = getattr(amap_validator, "amap_client", None)
+            close_amap = getattr(amap_client, "aclose", None)
+            if close_amap is not None:
+                await close_amap()
             llm_provider = getattr(_app.state, "llm_provider", None)
             if llm_provider is not None:
                 await llm_provider.close()
@@ -124,7 +134,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         }
 
     @app.get("/api/map/status")
-    def map_status(map_provider: MapProvider = Depends(get_map_provider)):
+    def map_status(request: Request, map_provider: MapProvider = Depends(get_map_provider)):
         descriptor = map_provider.descriptor
         return {
             "mode": "real" if descriptor.mode == "real" else "mock",
@@ -140,6 +150,11 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
                 if descriptor.source == "real_api"
                 else "当前使用本地百度数据快照，不代表最新真实地图测算"
             ),
+            "auxiliary_validation": {
+                "provider": "amap",
+                "enabled": getattr(request.app.state, "amap_validator", None) is not None,
+                "affects_primary_analysis": False,
+            },
         }
 
     @app.post("/api/map/probe")

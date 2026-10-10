@@ -1,7 +1,7 @@
 schema_version: 1
 policy_version: "1.0"
 runtime_enabled: false
-comparison_coordinate_system: amap_gcj02
+comparison_coordinate_system: bd09
 data_retention: feature_only_after_written_permission
 sources:
   baidu:
@@ -17,17 +17,18 @@ sources:
     usage_note: "当前正式分析主来源；在双源验证中不作为独立地面真值。"
   amap:
     role: independent_observation
-    adapter_status: not_implemented
+    adapter_status: implemented_observation_only
     source_id_namespace: "amap:<id>"
-    coordinate_system: amap_gcj02
+    coordinate_system: gcj02
+    normalized_coordinate_system: bd09
     field_priority:
       name: 0
       address: 0
       location: 0
       category: 0
     approval_status: pending_written_permission
-    api_key_status: not_configured
-    usage_note: "只计划用于按需只读交叉观察；不得默认进入主分析或落盘原始 POI。"
+    api_key_status: local_env_only
+    usage_note: "已实现按需只读交叉观察；AMAP_VALIDATION_ENABLED 默认关闭，不进入主分析，不落盘原始 POI。"
 matching_policy:
   high_confidence_max_distance_m: 50
   manual_review_max_distance_m: 100

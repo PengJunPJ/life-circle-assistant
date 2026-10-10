@@ -572,6 +572,19 @@ html[data-theme="dark"] .map-hover-card .hc-route-btn:disabled { border-color: #
 html[data-theme="dark"] .route-chip { background: rgba(105,219,124,.16); color: #69db7c; }
 html[data-theme="dark"] .route-endpoint-label { background: #37b24d; color: #04210c; box-shadow: 0 2px 8px rgba(0,0,0,.45); }
 /* 报告面板内部 */
+.multisource-validation { border-top: 1px solid #e3eae6; padding-top: 14px; }
+.multisource-validation-status { display: grid; gap: 4px; padding: 10px 12px; border-left: 3px solid #8fa3ad; background: #f4f7f6; color: #506662; font-size: 12px; }
+.multisource-validation-status.complete { border-left-color: #2f9e74; background: #eef9f3; }
+.multisource-validation-status.failed { border-left-color: #e08362; background: #fff4ef; }
+.multisource-validation-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.multisource-validation-metrics span { display: grid; gap: 2px; padding: 7px 5px; background: #f5f8f7; text-align: center; font-size: 11px; color: #6b7e78; }
+.multisource-validation-metrics b { color: #21483e; font-size: 15px; }
+html[data-theme="dark"] .multisource-validation { border-top-color: rgba(126,214,199,.1); }
+html[data-theme="dark"] .multisource-validation-status { background: rgba(126,214,199,.08); color: #9db8b8; }
+html[data-theme="dark"] .multisource-validation-status.complete { background: rgba(52,224,180,.1); }
+html[data-theme="dark"] .multisource-validation-status.failed { background: rgba(255,107,87,.1); }
+html[data-theme="dark"] .multisource-validation-metrics span { background: rgba(126,214,199,.08); color: #9db8b8; }
+html[data-theme="dark"] .multisource-validation-metrics b { color: #eaf6f3; }
 html[data-theme="dark"] .report-heading { border-bottom-color: rgba(126,214,199,.1); }
 html[data-theme="dark"] .report-heading h2 { color: #eaf6f3; }
 html[data-theme="dark"] .download-btn { background: rgba(46,230,197,.12); color: #9db8b8; }

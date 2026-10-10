@@ -13,3 +13,6 @@ os.environ["BAIDU_MAP_QPS"] = "0"
 os.environ["WALKING_QPS"] = "0"
 os.environ.pop("BAIDU_MAP_AK", None)
 os.environ.pop("BAIDU_MAP_SECRET", None)
+os.environ["AMAP_VALIDATION_ENABLED"] = "false"
+os.environ["AMAP_QPS"] = "0"
+os.environ.pop("AMAP_WEB_SERVICE_KEY", None)

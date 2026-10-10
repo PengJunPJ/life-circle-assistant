@@ -8,15 +8,19 @@ PostgreSQL、Redis 或其他实现。
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
 
+from .amap import AmapPoiClient
+from .baidu import BaiduMapClient
 from .llm import create_llm_provider
 from .maps import MapProvider, create_map_provider
 from .maps.walking import WalkingSettings
 from .storage import Database, ReportRepository, TaskRepository, WalkingCacheRepository
 from .storage.walking_cache_seed import seed_from_env
+from .validation.amap_facility import AmapFacilityValidator
 
 
 def configure_runtime(
@@ -37,6 +41,11 @@ def configure_runtime(
     database.migrate()
 
     app.state.map_provider = resolved_provider
+    app.state.amap_validator = None
+    if os.getenv("AMAP_VALIDATION_ENABLED", "false").strip().lower() == "true":
+        baidu_client = getattr(resolved_provider, "client", None)
+        if isinstance(baidu_client, BaiduMapClient):
+            app.state.amap_validator = AmapFacilityValidator(AmapPoiClient(), baidu_client)
     app.state.database = database
     app.state.task_repository = TaskRepository(database)
     app.state.report_repository = ReportRepository(database)

@@ -19,7 +19,9 @@
   → 验证报告（默认不进入主分析报告）
 ```
 
-`reconcile_facilities(records, as_of=None)` 是对齐模块唯一的记录级 interface。它是纯计算模块，不访问网络、数据库或环境变量。`decide_candidate_features(...)` 为数据最小化的评估接口，只接受已经计算的名称/地址相似度、距离、类别和坐标兼容性特征。来源 API 调用、许可证审查、人工标签和持久化由调用模块负责。
+`reconcile_facilities(records, as_of=None)` 是对齐模块唯一的记录级 interface。它是纯计算模块，不访问网络、数据库或环境变量。`decide_candidate_features(...)` 为数据最小化的评估接口，只接受已经计算的名称/地址相似度、距离、类别和坐标兼容性特征。来源 API 调用、许可证审查、人工标签和持久化由调用模块负责。高德原生返回 GCJ-02 坐标，观察适配器先通过百度 Geoconv `model=1` 转为 BD-09，再交给该接口；登记表同时保留原生和比较坐标系。
+
+当前已增加 `AmapPoiClient` 和 `AmapFacilityValidator` 作为辅助观察链路。它们只在 `AMAP_VALIDATION_ENABLED=true` 时运行，百度仍负责正式设施、步行、评分和盲区分析；高德失败、限流或截断只会写入 `multisource_validation` 辅助摘要，不会使百度主报告替换来源或静默补齐数据。高德原始 POI 仅在进程内使用，公开报告不包含名称、地址、坐标或来源 ID。
 
 ## 输入记录契约
 

@@ -1,4 +1,4 @@
-.PHONY: quality backend-check frontend-check container-check performance-snapshot benchmark-help multisource-audit
+.PHONY: quality backend-check frontend-check container-check performance-snapshot benchmark-help multisource-audit amap-probe
 
 quality: backend-check frontend-check container-check
 
@@ -28,3 +28,6 @@ multisource-audit:
 		--fixture docs/validation/multisource-poi/fixture.json \
 		--json-output docs/validation/multisource-poi/evaluation.json \
 		--markdown-output docs/validation/multisource-poi/evaluation.md
+
+amap-probe:
+	python3 backend/scripts/probe_amap.py
