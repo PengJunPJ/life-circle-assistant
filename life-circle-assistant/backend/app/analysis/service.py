@@ -56,10 +56,12 @@ class AnalysisApplicationService:
         provider: MapProvider,
         update_stage: StageUpdater | None = None,
         walking_service: WalkingService | None = None,
+        facility_validator: Any | None = None,
     ) -> None:
         self.provider = provider
         self.walking_service = walking_service or WalkingService(provider)
         self.update_stage = update_stage or (lambda _code, _label, _progress: None)
+        self.facility_validator = facility_validator
         self.stage_history: list[dict[str, Any]] = []
         self._stage_durations_ms: dict[str, int] = {}
         self._active_stage: str | None = None
@@ -139,6 +141,19 @@ class AnalysisApplicationService:
 
         normalization = normalize_facilities(facilities)
         facilities = normalization.facilities
+        multisource_validation: dict[str, Any] = {
+            "status": "disabled",
+            "provider": "amap",
+            "affects_primary_analysis": False,
+            "message": "高德辅助验证未启用；百度仍是主分析来源。",
+        }
+        if self.facility_validator is not None:
+            multisource_validation = await self.facility_validator.validate(
+                facilities,
+                center_bd09=center,
+                categories=list(request.categories),
+                radius_m=3_000,
+            )
         events.append(
             quality_event(
                 "facility_semantic_normalization",
@@ -318,6 +333,7 @@ class AnalysisApplicationService:
                 "pois": facilities,
                 "facilities": facilities,
                 "facility_normalization": normalization.summary,
+                "multisource_validation": multisource_validation,
                 "zones": zones,
                 "service_areas": zones,
                 "summary": {

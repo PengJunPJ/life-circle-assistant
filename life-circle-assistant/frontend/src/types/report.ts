@@ -82,6 +82,20 @@ export type Report = {
   source: string
   quality: { mode: string; confidence: number; message: string }
   data_quality: DataQuality
+  multisource_validation?: {
+    status: 'disabled' | 'complete' | 'failed'
+    provider: 'amap' | string
+    affects_primary_analysis: false
+    message?: string
+    error_code?: string
+    query_count?: number
+    returned_count?: number
+    truncated_query_count?: number
+    matched_count?: number
+    review_count?: number
+    conflict_count?: number
+    unmatched_count?: number
+  }
   calculation_mode: {
     requested_mode: AnalysisMode
     provider_mode: 'real' | 'snapshot' | 'fixture'

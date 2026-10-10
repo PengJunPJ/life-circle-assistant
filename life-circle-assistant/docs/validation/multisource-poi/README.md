@@ -6,6 +6,16 @@
 - [`fixture.json`](fixture.json)：审计 fixture manifest；当前等待真实采集，`pairs` 为空，不代表验证已完成。
 - [`../../architecture/multi-source-poi-reconciliation.md`](../../architecture/multi-source-poi-reconciliation.md)：实体匹配规则、冲突/时效策略和启用门槛。
 
+## 本地辅助验证
+
+Key 连通性探测不会保存高德 POI 原始字段：
+
+```bash
+make amap-probe
+```
+
+拿到适用的书面许可并确认配额后，在本地 `.env` 设置 `AMAP_VALIDATION_ENABLED=true`。下一次百度真实分析仍由百度负责设施、步行、评分和盲区；报告额外出现 `multisource_validation` 摘要和“高德辅助验证”面板。高德失败、限流或截断不会使百度主报告失败，也不会把高德结果计入百度评分。
+
 ## Fixture 样本字段
 
 取得书面许可并完成 50–100 对人工标签后，`pairs` 使用最小特征格式，不保存第三方原始 POI 字段：

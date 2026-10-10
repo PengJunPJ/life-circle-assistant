@@ -128,6 +128,12 @@ def create_report_skeleton(
             "merged_group_count": 0,
             "by_category": {},
         },
+        "multisource_validation": {
+            "status": "disabled",
+            "provider": "amap",
+            "affects_primary_analysis": False,
+            "message": "高德辅助验证未启用；百度仍是主分析来源。",
+        },
         "zones": {"type": "FeatureCollection", "features": []},
         "service_areas": {"type": "FeatureCollection", "features": []},
         "summary": {},
