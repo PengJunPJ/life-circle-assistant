@@ -1,0 +1,9 @@
+# Default reviewer for all repository changes.
+* @PengJunPJ
+
+# Sensitive governance and source-boundary files.
+/.github/ @PengJunPJ
+/life-circle-assistant/docs/governance/ @PengJunPJ
+/life-circle-assistant/docs/contest/ @PengJunPJ
+/life-circle-assistant/backend/app/amap.py @PengJunPJ
+/life-circle-assistant/backend/app/validation/ @PengJunPJ

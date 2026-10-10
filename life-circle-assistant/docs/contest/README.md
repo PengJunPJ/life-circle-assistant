@@ -15,6 +15,7 @@
 7. **质量与安全门禁**：[../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../../.github/workflows/security.yml](../../../.github/workflows/security.yml) 与本地 `make quality`；候选版本的测试规模为后端 126 项、前端 46 项，生产与开发依赖漏洞审计和 npm high/critical 审计为阻断项。
 8. **限制与披露**：[limitations.md](limitations.md) 汇总全部可信度边界，评审可据此判断哪些结论可直接使用。
 9. **证据索引**：[evidence-index.md](evidence-index.md) 给出每条证据的位置、状态与负责人，含尚未完成项的诚实标注。
+10. **治理与合规**：[开源治理](../governance/open-source-governance.md)、[维护路线](../governance/maintenance-roadmap.md)、[依赖合规](../governance/dependency-compliance.md) 和 [第三方声明](../governance/third-party-notices.md) 说明仓库维护、依赖审计、SBOM 与外部地图服务边界。
 
 ## 三条硬承诺
 

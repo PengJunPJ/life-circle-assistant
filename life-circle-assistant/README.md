@@ -200,3 +200,11 @@ make quality
 仓库通过 `.github/workflows/quality.yml` 在 GitHub 的推送和 Pull Request 中运行后端、前端和容器质量检查，并以 `质量门禁汇总` 作为分支保护应绑定的统一检查项。`.github/workflows/security.yml` 负责 CodeQL、依赖漏洞和密钥扫描；`.github/workflows/release.yml` 在 `vX.Y.Z` 标签通过完整质量门禁后构建并推送带 SBOM/provenance 的 GHCR 镜像、创建 GitHub Release。生产部署仍需按实际部署平台配置 GitHub Environment、审批人和密钥。`make quality` 仍是本地发布前的权威验收命令。
 
 项目文档、领域术语和架构决策位于上级 `docs/` 目录。
+
+## 开源治理与合规
+
+- [贡献指南](../CONTRIBUTING.md)、[行为准则](../CODE_OF_CONDUCT.md)、[安全策略](../SECURITY.md)、[维护者说明](../MAINTAINERS.md)
+- [开源治理](docs/governance/open-source-governance.md)、[维护路线](docs/governance/maintenance-roadmap.md)
+- [依赖合规清单](docs/governance/dependency-compliance.md)、[第三方声明](docs/governance/third-party-notices.md)、[SBOM 说明](docs/governance/sbom/README.md)
+
+依赖漏洞扫描和许可证材料是工程审计证据，不是法律意见；高德辅助验证仍默认关闭，书面数据留存/公开展示许可和独立双源准确率验证尚未完成。
