@@ -3,4 +3,4 @@ uvicorn[standard]==0.54.0
 httpx==0.28.1
 pydantic==2.14.0
 python-dotenv==1.2.4
-reportlab==4.4.9
+reportlab==5.0.1
