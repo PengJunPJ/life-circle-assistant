@@ -45,9 +45,51 @@ class CoordinateStubClient:
         return {"lng": 113.4872, "lat": 23.1068}
 
 
+class AddressSearchStubClient:
+    async def search_poi_region(self, query: str, region: str, city_limit: bool = True):
+        if "萝岗" in query:
+            return [
+                {
+                    "uid": "luogang-wanda",
+                    "name": "万达广场(广州萝岗店)",
+                    "address": "广州市黄埔区科丰路89号",
+                    "location": {"lng": 113.472842, "lat": 23.174166},
+                }
+            ]
+        return [
+            {
+                "uid": "nangang-wanda",
+                "name": "万达广场(广州南岗店)",
+                "address": "广州市黄埔区康富路16号",
+                "location": {"lng": 113.556993, "lat": 23.104894},
+            }
+        ]
+
+    async def geocode(self, address: str, city: str = "广州"):
+        return {
+            "lng": 113.5,
+            "lat": 23.1,
+            "address": address,
+        }
+
+
 def test_provider_declares_batch_walking_support():
     provider = BaiduMapProvider(client=BatchStubClient())  # type: ignore[arg-type]
     assert provider.supports_batch_walking is True
+
+
+def test_poi_address_search_uses_place_search_before_ambiguous_geocoding():
+    provider = BaiduMapProvider(client=AddressSearchStubClient())  # type: ignore[arg-type]
+
+    luogang = asyncio.run(provider.geocode("广州市黄埔区萝岗万达"))
+    nangang = asyncio.run(provider.geocode("广州市黄埔区南岗万达"))
+
+    assert [(item.lng, item.lat, item.address) for item in luogang] == [
+        (113.472842, 23.174166, "万达广场(广州萝岗店) · 广州市黄埔区科丰路89号")
+    ]
+    assert [(item.lng, item.lat, item.address) for item in nangang] == [
+        (113.556993, 23.104894, "万达广场(广州南岗店) · 广州市黄埔区康富路16号")
+    ]
 
 
 def test_baidu_client_calls_geoconv_v2_with_official_model(monkeypatch):

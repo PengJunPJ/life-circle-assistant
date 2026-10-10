@@ -85,11 +85,46 @@ class BaiduMapProvider:
         )
 
     async def geocode(self, address: str, city: str = "广州") -> list[LocationResult]:
+        # 百度普通地理编码会把一些 POI 查询压到错误同名地点，例如
+        # “萝岗万达”和“南岗万达”都落到南岗店。POI 型查询优先用地点检索。
+        if self._looks_like_poi_query(address):
+            try:
+                candidates = self._normalize_geocode_places(await self.client.search_poi_region(address, city))
+            except (AttributeError, BaiduMapError):
+                candidates = []
+            if candidates:
+                return candidates
         try:
             result = await self.client.geocode(address, city)
         except BaiduMapError as exc:
             raise self._provider_error(exc) from exc
         return [LocationResult(lng=result["lng"], lat=result["lat"], address=result["address"])]
+
+    @staticmethod
+    def _looks_like_poi_query(address: str) -> bool:
+        return bool(re.search(r"(万达|广场|商场|市场|超市|门店|大厦|小区|公园|医院|学校|地铁站|服务中心)", address))
+
+    @staticmethod
+    def _normalize_geocode_places(places: list[dict]) -> list[LocationResult]:
+        candidates: list[LocationResult] = []
+        seen: set[tuple[float, float]] = set()
+        for place in places:
+            location = place.get("location") or {}
+            try:
+                lng = float(location["lng"])
+                lat = float(location["lat"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            key = (round(lng, 7), round(lat, 7))
+            if key in seen:
+                continue
+            seen.add(key)
+            name = str(place.get("name") or "").strip()
+            address = str(place.get("address") or "").strip()
+            label = " · ".join(part for part in (name, address) if part)
+            if label:
+                candidates.append(LocationResult(lng=lng, lat=lat, address=label))
+        return candidates[:10]
 
     async def reverse_geocode(self, lng: float, lat: float) -> LocationResult:
         try:
