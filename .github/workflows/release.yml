@@ -90,7 +90,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
+      - uses: docker/metadata-action@v6
         id: api-meta
         with:
           images: ${{ env.IMAGE_PREFIX }}-api
@@ -105,7 +105,7 @@ jobs:
           labels: ${{ steps.api-meta.outputs.labels }}
           provenance: true
           sbom: true
-      - uses: docker/metadata-action@v5
+      - uses: docker/metadata-action@v6
         id: web-meta
         with:
           images: ${{ env.IMAGE_PREFIX }}-web
