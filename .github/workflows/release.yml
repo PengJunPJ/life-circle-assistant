@@ -49,7 +49,7 @@ jobs:
           test "$version" = "$file_version"
           printf 'tag=%s\nversion=%s\n' "$tag" "$version" >> "$GITHUB_OUTPUT"
       - name: 配置 Python 运行时
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12.14'
           cache: pip
