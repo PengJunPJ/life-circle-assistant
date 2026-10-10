@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>前端安全审计看板</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:1100px;margin:0 auto;padding:24px;color:#17212b;background:#f5f7fa}h1{margin:0 0 8px}p{color:#52606d}.bar{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.bar input,.bar select,.bar button{padding:9px;border:1px solid #cbd5e1;border-radius:4px;background:#fff}.summary{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#fff;border-left:4px solid #64748b;padding:12px 16px;min-width:120px;box-shadow:0 1px 2px #0001}.finding{background:#fff;margin:12px 0;border:1px solid #d9e2ec;border-radius:4px}.finding summary{cursor:pointer;padding:14px;font-weight:600}.finding section{padding:0 14px 14px;line-height:1.6}.medium{border-left:4px solid #d97706}.low{border-left:4px solid #2563eb}.ok{color:#166534}.muted{color:#52606d}
+</style>
+</head>
+<body>
+<h1>前端安全审计看板</h1><p>审计日期：2026-10-09；Vue 3 + Vite 8；范围为源码、依赖、构建配置和本地只读运行态。</p>
+<div class="summary"><div class="stat">Critical<br><strong>0</strong></div><div class="stat">High<br><strong>0</strong></div><div class="stat medium">Medium<br><strong>1</strong></div><div class="stat low">Low<br><strong>0</strong></div><div class="stat">依赖漏洞<br><strong class="ok">0</strong></div></div>
+<div class="bar"><input id="q" placeholder="搜索问题、文件或类别"><select id="severity"><option value="">全部严重度</option><option>Medium</option><option>Low</option></select><button id="all">全部展开</button><button id="none">全部收起</button></div>
+<div id="list"></div>
+<p class="muted">构建与审计均通过。Medium 项要求百度浏览器 AK 使用精确域名白名单、配额和告警；Low 项建议在 Nginx 或上游网关补充安全响应头。真实百度控制台和公网部署尚未连接验证。</p>
+<script>
+const findings=[
+{id:'VUE-SEC-002',severity:'Medium',category:'第三方脚本与配置',title:'浏览器端百度 AK 暴露于脚本 URL',file:'frontend/src/composables/useMapRenderer.ts:417-423',status:'confirmed',impact:'百度 JavaScript SDK 需要公开 AK；域名白名单过宽会产生额度或费用风险，后端 Secret 未暴露。',remediation:'配置精确域名白名单、额度和告警，必要时轮换凭据。'},
+];
+const list=document.getElementById('list'); const q=document.getElementById('q'); const s=document.getElementById('severity');
+function render(){const query=q.value.toLowerCase(); const sev=s.value; list.innerHTML=findings.filter(f=>(!sev||f.severity===sev)&&JSON.stringify(f).toLowerCase().includes(query)).map(f=>`<details class="finding ${f.severity.toLowerCase()}"><summary>[${f.severity}] ${f.id}：${f.title}</summary><section><p><b>类别：</b>${f.category}<br><b>证据：</b>${f.file}<br><b>状态：</b>${f.status}</p><p><b>影响：</b>${f.impact}</p><p><b>整改：</b>${f.remediation}</p></section></details>`).join('')||'<p>没有匹配问题。</p>'}
+q.oninput=s.onchange=render; document.getElementById('all').onclick=()=>document.querySelectorAll('details').forEach(x=>x.open=true); document.getElementById('none').onclick=()=>document.querySelectorAll('details').forEach(x=>x.open=false); render();
+</script>
+</body></html>

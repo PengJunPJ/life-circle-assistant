@@ -21,9 +21,9 @@
 
 先创建一个测试 PR 并等待 workflow 成功，再选择状态检查。检查名称必须使用 GitHub 实际显示的 `质量门禁汇总`，不要只选择内部 job id。
 
-`CodeQL 静态分析`、`密钥泄露扫描` 和 PR 上的 `PR 依赖变更审查` 可以纳入必需检查。全量 `Python 依赖漏洞扫描` 与 `npm 依赖漏洞扫描` 当前会上传 JSON 报告并告警，不因已存在的历史漏洞直接阻断；这是临时收敛策略，待 Dependabot 升级 PR 清理现有漏洞后，再把两项扫描改为阻断。
+建议将 `质量门禁汇总` 作为 `main` 的统一必需检查，并按组织策略将 `CodeQL 静态分析`、`密钥泄露扫描` 和 PR 上的 `PR 依赖变更审查` 纳入必需检查。当前 `Python 依赖漏洞扫描`（生产与开发 requirements）和 `npm 依赖漏洞扫描`（high/critical）均为阻断式门禁：审计返回非零即失败，同时上传 JSON 证据；本地候选版本已验证三项审计均为 0 个已知漏洞。Docker 基础镜像尚未接入 Trivy/Grype CVE 阻断扫描，仍需作为发布前人工检查项。
 
-当前安全债务包括：后端 `pypdf`、`starlette`、`python-dotenv` 及测试依赖版本偏旧，前端 Vitest/ECharts 传递依赖存在上游安全公告。不要直接执行 `npm audit fix --force` 或跨 FastAPI/Vitest/ECharts 大版本升级；应由 Dependabot 逐个 PR 升级，并通过完整 `make quality` 与人工回归后合并。
+依赖升级由 Dependabot 持续提出候选；每个升级 PR 都必须通过完整 `make quality`、依赖审计和必要的人工回归后合并。不要直接执行 `npm audit fix --force` 或跳过兼容性验证的跨大版本升级。
 
 ## 2. GHCR 和发布
 

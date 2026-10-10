@@ -1,4 +1,6 @@
+import json
 import sqlite3
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -21,9 +23,20 @@ def test_health():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
-    assert response.json()["version"] == "2.2.0"
+    assert response.json()["version"] == "2.3.0"
     assert response.json()["real_api_configured"] is False
     assert response.json()["real_api_probe_performed"] is False
+
+
+def test_release_version_is_consistent():
+    project_root = Path(__file__).resolve().parents[2]
+    package = json.loads((project_root / "frontend/package.json").read_text())
+    lockfile = json.loads((project_root / "frontend/package-lock.json").read_text())
+
+    assert (project_root / "VERSION").read_text().strip() == "2.3.0"
+    assert package["version"] == "2.3.0"
+    assert lockfile["version"] == "2.3.0"
+    assert lockfile["packages"][""]["version"] == "2.3.0"
 
 
 def test_cors_defaults_to_local_demo_origins_and_rejects_other_origins():

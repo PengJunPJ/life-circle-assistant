@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-10-09",
+  "npm": {
+    "registry": "https://registry.npmjs.org",
+    "command": "npm audit --audit-level=high",
+    "status": "passed",
+    "vulnerabilities": {"critical": 0, "high": 0, "moderate": 0, "low": 0, "total": 0}
+  },
+  "python": {
+    "production": {"command": "pip-audit -r backend/requirements.txt", "status": "passed", "known_vulnerabilities": 0},
+    "development": {"command": "pip-audit -r backend/requirements-dev.txt", "status": "passed", "known_vulnerabilities": 0}
+  },
+  "supply_chain_notes": [
+    "package-lock.json resolved URLs were normalized to registry.npmjs.org.",
+    "Python production requirements exclude pytest, pypdf and ruff; those remain in requirements-dev.txt.",
+    "Audit output contained no package names requiring remediation."
+  ]
+}

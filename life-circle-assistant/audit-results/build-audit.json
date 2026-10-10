@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-10-09",
+  "commands": {
+    "npm run lint": {"status": "passed"},
+    "npm run typecheck": {"status": "passed"},
+    "npm test": {"status": "passed", "test_files": 15, "tests": 46},
+    "npm run build": {"status": "passed", "sourcemaps": false},
+    "backend ruff check": {"status": "passed"},
+    "backend ruff format --check": {"status": "passed", "files": 57},
+    "backend pytest": {"status": "passed", "tests": 126},
+    "container-smoke.sh": {"status": "passed", "checks": ["Docker build", "API health", "Nginx static frontend", "same-origin API", "offline analysis", "PDF export"]}
+  },
+  "runtime": {
+    "local_node": "22.17.0 (engine warning only; target CI/Docker is 22.22.2)",
+    "local_python": "3.11.1 (isolated verification; target CI/Docker is 3.12.14)",
+    "docker_images": ["python:3.12.14-slim", "node:22.22.2-alpine", "nginx:1.31-alpine"]
+  }
+}

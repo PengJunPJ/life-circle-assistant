@@ -1,0 +1,14 @@
+[
+  {
+    "id": "VUE-SEC-002",
+    "severity": "Medium",
+    "category": "第三方脚本与配置",
+    "title": "浏览器端百度 AK 暴露于脚本 URL",
+    "file": "frontend/src/composables/useMapRenderer.ts",
+    "lines": "417-423",
+    "status": "confirmed",
+    "confidence": "high",
+    "impact": "百度地图 JavaScript API 必须在浏览器使用公开 AK；若百度控制台未限制域名，AK 可能被他人滥用并产生额度或费用风险。代码未暴露后端 Secret。",
+    "remediation": "为浏览器 AK 配置精确域名白名单、额度和告警；后端 BAIDU_MAP_SECRET 继续只在服务端使用，发布前轮换任何曾离开本机的真实凭据。"
+  }
+]

@@ -34,7 +34,7 @@ jobs:
         if: ${{ matrix.language == 'javascript-typescript' }}
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.22.2
           cache: npm
           cache-dependency-path: life-circle-assistant/frontend/package-lock.json
       - name: 安装前端依赖并构建
@@ -63,32 +63,36 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.12.14'
           cache: pip
-          cache-dependency-path: life-circle-assistant/backend/requirements.txt
+          cache-dependency-path: |
+            life-circle-assistant/backend/requirements.txt
+            life-circle-assistant/backend/requirements-dev.txt
       - name: 安装 pip-audit
         run: python -m pip install --disable-pip-version-check pip-audit
-      - name: 扫描生产依赖并保留报告
+      - name: 扫描生产与开发依赖，发现漏洞即阻断
         run: |
           set +e
           pip-audit \
             -r life-circle-assistant/backend/requirements.txt \
             --format=json \
-            --output=pip-audit.json
-          audit_status=$?
+            --output=pip-audit-production.json
+          production_status=$?
+          pip-audit \
+            -r life-circle-assistant/backend/requirements-dev.txt \
+            --format=json \
+            --output=pip-audit-development.json
+          development_status=$?
           set -e
-          python -m json.tool pip-audit.json >/dev/null
-          if [ "$audit_status" -gt 1 ]; then
-            exit "$audit_status"
-          fi
-          if [ "$audit_status" -eq 1 ]; then
-            echo '发现已知漏洞；当前阶段保留报告并由 Dependabot/升级 PR 逐项收敛。'
-          fi
+          python -m json.tool pip-audit-production.json >/dev/null
+          python -m json.tool pip-audit-development.json >/dev/null
+          test "$production_status" -eq 0
+          test "$development_status" -eq 0
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pip-audit-report
-          path: pip-audit.json
+          path: pip-audit-*.json
           if-no-files-found: error
 
   npm-dependencies:
@@ -101,13 +105,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.22.2
           cache: npm
           cache-dependency-path: life-circle-assistant/frontend/package-lock.json
       - name: 使用官方 npm 审计端点
         run: npm config set registry https://registry.npmjs.org/
       - run: npm ci
-      - name: 扫描 npm 依赖并保留报告
+      - name: 扫描 npm 依赖，high/critical 即阻断
         run: |
           set +e
           npm audit --audit-level=high --json > npm-audit.json
@@ -124,9 +128,7 @@ jobs:
           if [ "$audit_status" -gt 1 ]; then
             exit "$audit_status"
           fi
-          if [ "$audit_status" -eq 1 ]; then
-            echo '发现 high/critical 漏洞；当前阶段保留报告并由 Dependabot/升级 PR 逐项收敛。'
-          fi
+          test "$audit_status" -eq 0
       - uses: actions/upload-artifact@v4
         if: always()
         with:
