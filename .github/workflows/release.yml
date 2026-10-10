@@ -48,6 +48,31 @@ jobs:
           file_version="$(tr -d '[:space:]' < life-circle-assistant/VERSION)"
           test "$version" = "$file_version"
           printf 'tag=%s\nversion=%s\n' "$tag" "$version" >> "$GITHUB_OUTPUT"
+      - name: 配置 Python 运行时
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.14'
+          cache: pip
+          cache-dependency-path: |
+            life-circle-assistant/backend/requirements.txt
+            life-circle-assistant/backend/requirements-dev.txt
+      - name: 审计 Python 生产与开发依赖
+        run: |
+          python -m pip install --disable-pip-version-check pip-audit
+          pip-audit -r life-circle-assistant/backend/requirements.txt
+          pip-audit -r life-circle-assistant/backend/requirements-dev.txt
+      - name: 配置 Node.js 与官方 npm 注册表
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+          cache: npm
+          cache-dependency-path: life-circle-assistant/frontend/package-lock.json
+      - name: 审计 npm 生产与开发依赖
+        working-directory: life-circle-assistant/frontend
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm ci
+          npm audit --audit-level=high
       - name: 执行完整质量门禁
         run: make -C life-circle-assistant quality
 

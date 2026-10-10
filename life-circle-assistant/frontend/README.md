@@ -5,9 +5,11 @@
 ## 开发模式
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
+
+依赖版本以 `package-lock.json` 为准；项目质量门禁、容器构建和发布流程均使用 `npm ci`。
 
 打开 <http://localhost:5173>。
 

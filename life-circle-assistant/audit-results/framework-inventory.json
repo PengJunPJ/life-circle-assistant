@@ -1,0 +1,20 @@
+{
+  "project": "life-circle-assistant-web",
+  "framework": "Vue 3",
+  "build_tool": "Vite 8",
+  "language": "TypeScript",
+  "package_manager": "npm",
+  "lockfile": "frontend/package-lock.json",
+  "install_command": "npm ci",
+  "router": false,
+  "state_management": "Vue composables and local component state",
+  "api_clients": ["fetch", "百度地图 JavaScript API"],
+  "authentication": "未发现前端认证流程；后端 API 授权需按部署环境单独确认",
+  "upload_or_realtime": false,
+  "source_scope": "frontend/src, frontend/*.ts, frontend/*.vue, frontend/nginx.conf, frontend/vite.config.ts",
+  "excluded_noise": ["node_modules", "dist", "layout-prototype.html", "hover-card-prototype.html"],
+  "notes": [
+    "当前唯一复现安装入口为 npm ci + package-lock.json；pnpm-lock.yaml 已移除。",
+    "生产构建未启用 sourcemap，dist 中未发现 .map 文件。"
+  ]
+}
