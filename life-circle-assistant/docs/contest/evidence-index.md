@@ -11,7 +11,9 @@
 | E-05 | 定稿真实跑报告归档（含执行指标） | [../validation/reports/shachong-changsheng-20261004.json](../validation/reports/shachong-changsheng-20261004.json)；历史对照：[红山报告](../validation/reports/hongshan-haiyundonglu-20260921.json) | 🟡 现有报告早于 2.3.0 候选版；可证明历史真实链路，不能证明当前候选版真实复跑 | 自动 |
 | E-06 | 等时圈生成算法（扇形采样+二分细化+降级标识） | [algorithm-overview.md](algorithm-overview.md)；[../../../docs/adr/0004-等时圈精度分档与报告导出.md](../../../docs/adr/0004-等时圈精度分档与报告导出.md) | ✅ | — |
 | E-07 | 地图 API 调用策略（逐词 POI、预筛、批量算路分块、缓存/限流/重试） | [algorithm-overview.md](algorithm-overview.md)；[../../../docs/adr/0009-百度地图调用的两阶段筛选策略.md](../../../docs/adr/0009-百度地图调用的两阶段筛选策略.md) | ✅ | — |
-| E-08 | POI 数据清洗与同址归并 | [../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md) | 🟡 已实现百度单源下多关键词归一与去重；跨数据源对齐、冲突和优先级策略未实现 | 自动 |
+| E-08a | 百度单源 POI 多关键词语义归一与去重 | [../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md)；[../../backend/app/maps/baidu.py](../../backend/app/maps/baidu.py) | ✅ 当前运行时能力仅限百度单源 | — |
+| E-08b | 跨来源对齐策略、来源登记与默认关闭的纯计算模块 | [../architecture/multi-source-poi-reconciliation.md](../architecture/multi-source-poi-reconciliation.md)；[multisource-poi/](../validation/multisource-poi/README.md)；[../../backend/app/analysis/facility_reconciliation.py](../../backend/app/analysis/facility_reconciliation.py) | 🟡 策略和模块已具备；真实高德样本、许可和 50–100 对人工标签未完成 | 自动+人工 |
+| E-08c | 多源运行时接入与独立准确率验证 | 同 E-08b；[../../backend/scripts/evaluate_multisource_poi.py](../../backend/scripts/evaluate_multisource_poi.py) | ⬜ 高德 Key/书面许可待办；无真实 fixture、无准确率结论；默认关闭 | 人工+自动 |
 | E-09 | 服务盲区识别算法与分级网格口径 | [../../../docs/adr/0006-mvp设施类别与盲区判定标准.md](../../../docs/adr/0006-mvp设施类别与盲区判定标准.md) | ✅ | — |
 | E-10 | 真实社区对比核查（地址/坐标/口径一致性修复记录） | [../validation/v2-real-community-comparison.md](../validation/v2-real-community-comparison.md) | ✅ | — |
 | E-11 | 64 网格人工基准 → verified 指标（准确率/精确率/召回率/F1/混淆矩阵） | [../validation/benchmarks/](../validation/benchmarks/)、[../validation/results/shachong-changsheng-20261004.md](../validation/results/shachong-changsheng-20261004.md)、[../validation/v2.1-benchmark-evaluation.md](../validation/v2.1-benchmark-evaluation.md) | 🟡 沙涌长盛花园 64/64 已完成；与系统同源同规则，仅作一致性证据；红山基准仍为 draft | 自动+人工 |
@@ -33,3 +35,4 @@
 - 评审询问"准确率"时，明确区分 E-11 的沙涌同源一致性与独立来源、多社区准确性验证；不把 100% 一致率宣传为泛化成绩。
 - 引用性能数字时必须注明档位（冷/种子/全缓存）与 `BAIDU_MAP_QPS` 配置，见 E-12。
 - E-05 每次重大版本后重跑一次定稿真实跑并归档，保持"最新真实能力"证据不过期。
+- E-08b 的单测 fixture 是规则测试样例，不是高德真实数据；E-08c 只有在书面许可、50–100 对双源人工标签和评估报告归档后才可升级状态。

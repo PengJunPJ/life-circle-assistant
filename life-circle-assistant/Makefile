@@ -1,4 +1,4 @@
-.PHONY: quality backend-check frontend-check container-check performance-snapshot benchmark-help
+.PHONY: quality backend-check frontend-check container-check performance-snapshot benchmark-help multisource-audit
 
 quality: backend-check frontend-check container-check
 
@@ -22,3 +22,9 @@ performance-snapshot:
 
 benchmark-help:
 	python3 backend/scripts/evaluate_benchmark.py --help
+
+multisource-audit:
+	python3 backend/scripts/evaluate_multisource_poi.py \
+		--fixture docs/validation/multisource-poi/fixture.json \
+		--json-output docs/validation/multisource-poi/evaluation.json \
+		--markdown-output docs/validation/multisource-poi/evaluation.md

@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "schema_version": 1,
+    "status": "awaiting_live_capture",
+    "sources": ["baidu", "amap"],
+    "community": "广州市黄埔区样例社区",
+    "captured_at": null,
+    "query_fingerprint": null,
+    "permission_status": "pending_written_permission",
+    "human_review_status": "not_started",
+    "notes": "未配置高德 Web 服务 Key，且尚未取得高德对交叉验证及特征留存/公开展示的书面许可。此处没有虚构真实样本。"
+  },
+  "pairs": []
+}
