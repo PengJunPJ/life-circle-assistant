@@ -97,7 +97,7 @@ jobs:
           tags: |
             type=raw,value=${{ needs.validate.outputs.tag }}
             type=raw,value=latest
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: life-circle-assistant/backend
           push: true
@@ -112,7 +112,7 @@ jobs:
           tags: |
             type=raw,value=${{ needs.validate.outputs.tag }}
             type=raw,value=latest
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: life-circle-assistant/frontend
           push: true
