@@ -1,0 +1,44 @@
+schema_version: 1
+generated_at: "2026-10-10"
+scope: "direct-dependencies-and-build-sources"
+legal_note: "工程审计清单，不是法律意见；未核实项目标记 needs-review。"
+sources:
+  python_production: backend/requirements.txt
+  python_development: backend/requirements-dev.txt
+  npm_manifest: frontend/package.json
+  npm_lockfile: frontend/package-lock.json
+  dockerfiles:
+    - backend/Dockerfile
+    - frontend/Dockerfile
+  github_actions: .github/workflows
+components:
+  - id: python-production
+    scope: runtime
+    source: backend/requirements.txt
+    license: needs-review
+    evidence: docs/contest/dependency-audit-2026-10-09.md
+  - id: python-development
+    scope: development
+    source: backend/requirements-dev.txt
+    license: needs-review
+    evidence: docs/contest/dependency-audit-2026-10-09.md
+  - id: npm-production
+    scope: runtime
+    source: frontend/package-lock.json
+    license: needs-review
+    evidence: docs/contest/dependency-audit-2026-10-09.md
+  - id: npm-development
+    scope: development
+    source: frontend/package-lock.json
+    license: needs-review
+    evidence: docs/contest/dependency-audit-2026-10-09.md
+  - id: docker-images
+    scope: runtime-and-build
+    source: "backend/Dockerfile, frontend/Dockerfile"
+    license: needs-review
+    evidence: docs/governance/sbom/README.md
+  - id: github-actions
+    scope: ci
+    source: .github/workflows
+    license: needs-review
+    evidence: docs/governance/dependency-compliance.md

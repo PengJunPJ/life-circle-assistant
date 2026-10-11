@@ -62,7 +62,7 @@ npm run dev
 - `mock`：读取本地百度数据快照，适合开发、测试和离线演示，不消耗百度地图 API 额度。
 - `real`：调用百度地图地理编码、POI、步行路线 Web 服务，并加载百度地图 JavaScript 底图。
 
-真实模式需要同时满足：百度 Web 服务 AK 已开通地理编码、地点检索和步行路线权限；浏览器端 AK 已将 `localhost` 或实际访问域名加入域名白名单。`BAIDU_MAP_SECRET` 只在后端使用，不会返回给浏览器。
+真实模式需要同时满足：百度 Web 服务 AK 已开通地理编码、地点检索和步行路线权限；浏览器端 AK 已将 `localhost` 或实际访问域名加入域名白名单。`BAIDU_MAP_SECRET` 只在后端使用，不会返回给浏览器。高德 `AMAP_WEB_SERVICE_KEY` 只用于显式开启的辅助 POI 验证，不替换百度主分析。
 
 ### 脱敏环境变量
 
@@ -73,6 +73,9 @@ npm run dev
 | `BAIDU_MAP_MODE` | 后端提供方 | `mock` 用于离线，`real` 用于真实 API |
 | `BAIDU_MAP_AK` / `BAIDU_MAP_SECRET` | 服务器端地图凭证 | 仅放在本地 `.env` 或密钥管理器 |
 | `BAIDU_MAP_QPS` | 所有百度 Web 服务共享的请求节流 | 低配额开发 AK 建议 `1.5` |
+| `AMAP_WEB_SERVICE_KEY` | 高德服务器端 Web 服务 Key | 仅用于辅助验证；不进入前端、报告或版本库 |
+| `AMAP_VALIDATION_ENABLED` | 是否在百度分析后执行高德 POI 辅助验证 | 默认 `false`；取得书面许可并完成小范围验证后再打开 |
+| `AMAP_QPS` | 高德请求节流 | 按高德控制台实际配额设置，不能填占位文本 |
 | `CORS_ALLOW_ORIGINS` | 允许直接访问后端 API 的浏览器来源，逗号分隔 | 默认仅 `localhost:5173` 与 `127.0.0.1:5173`；禁止 `*` |
 | `VITE_BAIDU_MAP_AK` | 浏览器底图 AK | 限制域名白名单，不与 Secret 混用 |
 | `VITE_API_BASE_URL` | 前端 API 地址 | Docker 留空走 Nginx 同源 `/api`；本地 Vite 开发默认访问 `http://localhost:8000` |
@@ -197,3 +200,11 @@ make quality
 仓库通过 `.github/workflows/quality.yml` 在 GitHub 的推送和 Pull Request 中运行后端、前端和容器质量检查，并以 `质量门禁汇总` 作为分支保护应绑定的统一检查项。`.github/workflows/security.yml` 负责 CodeQL、依赖漏洞和密钥扫描；`.github/workflows/release.yml` 在 `vX.Y.Z` 标签通过完整质量门禁后构建并推送带 SBOM/provenance 的 GHCR 镜像、创建 GitHub Release。生产部署仍需按实际部署平台配置 GitHub Environment、审批人和密钥。`make quality` 仍是本地发布前的权威验收命令。
 
 项目文档、领域术语和架构决策位于上级 `docs/` 目录。
+
+## 开源治理与合规
+
+- [贡献指南](../CONTRIBUTING.md)、[行为准则](../CODE_OF_CONDUCT.md)、[安全策略](../SECURITY.md)、[维护者说明](../MAINTAINERS.md)
+- [开源治理](docs/governance/open-source-governance.md)、[维护路线](docs/governance/maintenance-roadmap.md)
+- [依赖合规清单](docs/governance/dependency-compliance.md)、[第三方声明](docs/governance/third-party-notices.md)、[SBOM 说明](docs/governance/sbom/README.md)
+
+依赖漏洞扫描和许可证材料是工程审计证据，不是法律意见；高德辅助验证仍默认关闭，书面数据留存/公开展示许可和独立双源准确率验证尚未完成。

@@ -1,0 +1,50 @@
+[
+    {
+        "Id": "sha256:8630ab77c5adf06e1f914483db4dd70e3fa59118160daab9b0ee75e685344221",
+        "RepoTags": [
+            "python:3.12.14-slim"
+        ],
+        "RepoDigests": [
+            "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-19T01:14:09.882652707Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.12.14",
+                "PYTHON_SHA256=5c8462af5790baf43a321a1559dbe0db06d1be4300fb85fb53c40060668e548a"
+            ],
+            "Cmd": [
+                "python3"
+            ]
+        },
+        "Architecture": "arm64",
+        "Variant": "v8",
+        "Os": "linux",
+        "Size": 144547296,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/048547e6ed75ae65871d0a120c77ba96cc290cf20ef8f962120e7c3265464205/diff:/var/lib/docker/overlay2/0a6ddcdd87aaad87a8a5fca257764c7aebf92c67993ece93e62a6aa5ff95d536/diff:/var/lib/docker/overlay2/9d89fdb045d099bfa001bb1e47314015a7c0dd448f8a6a03178fb9f0e73cde42/diff",
+                "MergedDir": "/var/lib/docker/overlay2/5e2740d574c440e997854435ec932e98b6e40659539c78f2b7e8932e006a383a/merged",
+                "UpperDir": "/var/lib/docker/overlay2/5e2740d574c440e997854435ec932e98b6e40659539c78f2b7e8932e006a383a/diff",
+                "WorkDir": "/var/lib/docker/overlay2/5e2740d574c440e997854435ec932e98b6e40659539c78f2b7e8932e006a383a/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:8227a1264c7ff2f8bd125b585e62c1cec77dd2099c985c33e08d34292d06144f",
+                "sha256:77e3d8b6f2ffedf0e56807fd677c6ebb630288d92163c762271391b3f9100826",
+                "sha256:bb98c47a575f471443d45d5e96aab7c0e646879bf372ba771288b008362ffc52",
+                "sha256:d9a454691b8952308fa3b779dac6aabd4faab3cd0f9d1fdf56820cbeb6637fbd"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "0001-01-01T00:00:00Z"
+        }
+    }
+]

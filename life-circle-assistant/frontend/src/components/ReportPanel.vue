@@ -40,6 +40,19 @@
       <div v-if="showQualityDetails" id="quality-details">
         <DataQualityDetails :quality="report.data_quality" />
       </div>
+      <section v-if="report.multisource_validation" class="report-section multisource-validation" aria-labelledby="multisource-validation-title">
+        <div class="section-title"><span id="multisource-validation-title">高德辅助验证</span><small>不改变百度主分析</small></div>
+        <div class="multisource-validation-status" :class="report.multisource_validation.status">
+          <strong>{{ multisourceStatusLabel }}</strong>
+          <span>{{ report.multisource_validation.message || multisourceSummary }}</span>
+        </div>
+        <div v-if="report.multisource_validation.status === 'complete'" class="multisource-validation-metrics">
+          <span><b>{{ report.multisource_validation.matched_count || 0 }}</b>匹配</span>
+          <span><b>{{ report.multisource_validation.review_count || 0 }}</b>待复核</span>
+          <span><b>{{ report.multisource_validation.conflict_count || 0 }}</b>冲突</span>
+          <span><b>{{ report.multisource_validation.unmatched_count || 0 }}</b>未匹配</span>
+        </div>
+      </section>
       <div class="score-block"><div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ scoreText }}<small v-if="overallScore !== null">/100</small></div><span class="score-trend"><TrendCharts /> {{ report.scoring.explanation }}</span></div><div class="score-ring" :class="{ unavailable: overallScore === null }" :style="scoreRingStyle"><b>{{ scoreText }}</b><span>{{ overallScore === null ? '暂不展示' : '健康度' }}</span></div></div>
       <div class="stat-grid"><div><strong>{{ report.summary.poi_count }}</strong><span>设施点位</span></div><div><strong>{{ report.summary.area_sqm.toLocaleString() }}</strong><span>可达面积 m²</span></div><div class="danger"><strong>{{ report.summary.critical_zone_count }}</strong><span>重点盲区</span></div><div class="amber"><strong>{{ report.summary.sparse_zone_count }}</strong><span>设施稀疏区</span></div></div>
       <section class="report-section execution-section" aria-labelledby="execution-title">
@@ -151,6 +164,16 @@ const overallScore = computed(() => props.report?.summary.score ?? null)
 const scoreText = computed(() => overallScore.value === null ? '—' : overallScore.value)
 const scoreTone = computed(() => overallScore.value === null ? 'unavailable' : overallScore.value >= 80 ? 'good' : overallScore.value >= 60 ? 'fair' : 'risk')
 const scoreRingStyle = computed(() => ({ '--score': `${(overallScore.value ?? 0) * 3.6}deg` }))
+const multisourceStatusLabel = computed(() => {
+  const status = props.report?.multisource_validation?.status
+  return status === 'complete' ? '验证已完成' : status === 'failed' ? '验证未完成' : '验证未启用'
+})
+const multisourceSummary = computed(() => {
+  const validation = props.report?.multisource_validation
+  if (!validation || validation.status === 'disabled') return '当前只使用百度地图生成正式体检结论。'
+  if (validation.status === 'failed') return '高德请求失败，百度主分析结果仍然有效。'
+  return `高德返回 ${validation.returned_count || 0} 条观察记录，未参与评分、盲区或步行计算。`
+})
 const stageLabels: Record<string, string> = {
   request_validation: '请求校验', facility_discovery: '设施发现', walking_calculation: '步行计算',
   region_classification: '区域分类', scoring: '评分生成', report_assembly: '报告组装',

@@ -1,0 +1,1 @@
+{"image":"node:22.22.2-alpine","grype_exit_code":0,"trivy_exit_code":1,"trivy_report_present":false,"trivy_log":"node-base.trivy.log"}
