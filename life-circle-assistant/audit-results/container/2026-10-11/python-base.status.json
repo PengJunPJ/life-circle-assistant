@@ -1,0 +1,1 @@
+{"image":"python:3.12.14-slim","grype_exit_code":0,"trivy_exit_code":1,"trivy_report_present":false,"trivy_log":"python-base.trivy.log"}

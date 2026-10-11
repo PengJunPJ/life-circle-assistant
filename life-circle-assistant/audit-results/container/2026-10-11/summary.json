@@ -1,0 +1,94 @@
+{
+  "scan_date_utc": "2026-10-11",
+  "images": [
+    {
+      "label": "api",
+      "image": "life-circle-audit-api:20261010",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 1,
+      "trivy_report_present": false,
+      "trivy_log": "api.trivy.log",
+      "grype_counts": {
+        "Critical": 1,
+        "High": 75,
+        "Medium": 81,
+        "Low": 24,
+        "Negligible": 49,
+        "Unknown": 1
+      },
+      "trivy_counts": {},
+      "image_id": "sha256:a45b8d3cf22b01bb397dfe259cdea5bf92b728e9fa2d3bc5e1db514a3a072d76",
+      "manifest_digest": "sha256:a0b52b70feb5629c427b0d4f8e81518699b8f6938990fbc8d81cf5eeb4e52470"
+    },
+    {
+      "label": "web",
+      "image": "life-circle-audit-web:20261010",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 1,
+      "trivy_report_present": false,
+      "trivy_log": "web.trivy.log",
+      "grype_counts": {
+        "High": 12,
+        "Medium": 16,
+        "Low": 8,
+        "Unknown": 1
+      },
+      "trivy_counts": {},
+      "image_id": "sha256:772af2fef0fa2f067d76e5caf5b91875974622f124c580b0a20cfe20f5bd1927",
+      "manifest_digest": "sha256:320ebe92305f8ad9f45cf1ddd9b68253ea7d96fa6e05139905f3c20873536aa6"
+    },
+    {
+      "label": "python-base",
+      "image": "python:3.12.14-slim",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 1,
+      "trivy_report_present": false,
+      "trivy_log": "python-base.trivy.log",
+      "grype_counts": {
+        "Critical": 1,
+        "High": 70,
+        "Medium": 78,
+        "Low": 24,
+        "Negligible": 47
+      },
+      "trivy_counts": {},
+      "image_id": "sha256:8630ab77c5adf06e1f914483db4dd70e3fa59118160daab9b0ee75e685344221",
+      "manifest_digest": "sha256:9030830580d34b38efa5992ca4f562cf1d3ae47dd0286c8722e80306a23dd6ca"
+    },
+    {
+      "label": "node-base",
+      "image": "node:22.22.2-alpine",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 1,
+      "trivy_report_present": false,
+      "trivy_log": "node-base.trivy.log",
+      "grype_counts": {
+        "Critical": 7,
+        "High": 57,
+        "Medium": 41,
+        "Low": 17
+      },
+      "trivy_counts": {},
+      "image_id": "sha256:dd9b0226f9a79d91e67b24145507fe36cf7a96ccef692bc2f138acb11f7b5d4f",
+      "manifest_digest": "sha256:8e09c750d7df5ab4e13603894879bb32c90932e0e0d82755d295c1ea0060a311"
+    },
+    {
+      "label": "nginx-base",
+      "image": "nginx:1.31-alpine",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 1,
+      "trivy_report_present": false,
+      "trivy_log": "nginx-base.trivy.log",
+      "grype_counts": {
+        "High": 12,
+        "Medium": 16,
+        "Low": 8,
+        "Unknown": 1
+      },
+      "trivy_counts": {},
+      "image_id": "sha256:a2b80c421aaa02ba1ef4ef2d3c991112674e676f9db05fd42d456f2529b83a86",
+      "manifest_digest": "sha256:8e6bf2660bad8fdf8779ef935620f100f00d7f39b6a3c5fdb3af0602d84302ce"
+    }
+  ],
+  "scanner": "grype-and-trivy"
+}

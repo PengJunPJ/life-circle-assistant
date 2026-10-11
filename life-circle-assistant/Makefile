@@ -1,4 +1,4 @@
-.PHONY: quality backend-check frontend-check container-check dependency-audit performance-snapshot benchmark-help multisource-audit amap-probe
+.PHONY: quality backend-check frontend-check container-check container-audit dependency-audit performance-snapshot benchmark-help multisource-audit amap-probe
 
 quality: backend-check frontend-check container-check
 
@@ -17,12 +17,15 @@ frontend-check:
 container-check:
 	./scripts/container-smoke.sh
 
+container-audit:
+	./scripts/container-audit.sh
+
 dependency-audit:
 	@command -v pip-audit >/dev/null || (echo 'pip-audit is required; install it before running dependency-audit' >&2; exit 1)
 	python3 -m pip_audit -r backend/requirements.txt
 	python3 -m pip_audit -r backend/requirements-dev.txt
 	cd frontend && npm_config_registry=https://registry.npmjs.org npm audit --audit-level=high
-	@echo 'Docker image CVE scanning is not part of this target yet; use Trivy or Grype and record the result in docs/governance/dependency-compliance.md.'
+	@echo 'Docker image CVE scanning is available via make container-audit; review the archived result before release.'
 
 performance-snapshot:
 	python3 scripts/performance_baseline.py --runs 2 --output docs/performance/latest-snapshot.json

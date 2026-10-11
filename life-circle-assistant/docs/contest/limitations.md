@@ -29,7 +29,7 @@
 - 健康检查只报告真实模式是否完成配置，不主动消耗百度配额；显式 `POST /api/map/probe` 只验证地理编码端点，不能代表 POI、步行接口或浏览器底图权限全部可用。
 - CI 不运行真实 API 测试；真实测算只在人工或受控集成流程执行，避免配额与网络波动造成误报。
 - Gitee Go 门禁与 master 保护分支**尚未实跑绑定**：当前质量门禁为 GitHub Actions 与本地 `make quality`，不能表述为 Gitee 上已生效的强制门禁（见 [../research/gitee-go-quality-gate.md](../research/gitee-go-quality-gate.md)）。
-- 依赖合规材料记录的是 requirements、package-lock、Dockerfile 和 GitHub Actions 的工程审计口径；漏洞扫描、SBOM 和许可证清单都不是法律意见。Docker 基础镜像 CVE 扫描、逐包许可证核对和外部服务条款复核仍需在发布前完成（见 [../governance/dependency-compliance.md](../governance/dependency-compliance.md)）。
+- 依赖合规材料记录的是 requirements、package-lock、Dockerfile 和 GitHub Actions 的工程审计口径；漏洞扫描、SBOM 和许可证清单都不是法律意见。2026-10-11 Grype 容器扫描已发现 Critical/High，Trivy 因数据库下载失败待重跑；镜像修复、逐包许可证核对和外部服务条款复核仍阻塞完整发布结论（见 [container-audit-2026-10-11.md](container-audit-2026-10-11.md)）。
 
 ## 凭证安全
 

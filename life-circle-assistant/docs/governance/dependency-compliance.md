@@ -23,9 +23,9 @@
 - npm 漏洞审计：`npm audit --audit-level=high`，使用官方 npm registry。
 - CodeQL、Dependency Review、Gitleaks：见 `.github/workflows/security.yml`。
 - Dependabot：`.github/dependabot.yml` 覆盖 pip、npm、Docker 和 GitHub Actions。
-- 发布镜像：`.github/workflows/release.yml` 使用 Docker Buildx 的 SBOM/provenance 选项。
+- 发布镜像：`.github/workflows/release.yml` 使用 Docker Buildx 的 SBOM/provenance 选项；容器扫描脚本为 `scripts/container-audit.sh`，命令入口为 `make container-audit`。
 
-漏洞扫描通过只表示当前数据库快照下未发现目标级别漏洞，不表示未来无漏洞，也不替代许可证、服务条款和数据授权审查。Docker 基础镜像 CVE 扫描、逐包许可证归档和外部 API 条款仍需补充。
+2026-10-11 的容器审计已归档至 `docs/contest/container-audit-2026-10-11.md`。Grype 已实际扫描五个镜像并发现 Critical/High 结果；Trivy 因无法下载漏洞数据库而失败，不能将本次审计表述为通过或零漏洞。漏洞扫描通过只表示当前数据库快照下未发现目标级别漏洞，不表示未来无漏洞，也不替代许可证、服务条款和数据授权审查。
 
 ## 外部服务合规边界
 
