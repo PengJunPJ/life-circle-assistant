@@ -22,7 +22,7 @@
 | E-13 | 容错与降级证据（限流/超时/重试/部分失败/降级估算披露） | 报告 `data_quality` 区；[../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md) | ✅ | — |
 | E-14 | 可视化与交互（等时圈、网格色块、柱状+tooltip、雷达图、七类图层） | [../releases/v2.3.0.md](../releases/v2.3.0.md)；截图待补 | 🟡 功能已有，截图待补 | 自动 |
 | E-15 | AI 解读能力与证据约束（引用校验、防幻觉过滤、无密钥规则降级） | [../../backend/app/ai_assistant.py](../../backend/app/ai_assistant.py)；[demo-script.md](demo-script.md) A6 | ✅ | — |
-| E-16 | 质量门禁（CI 三 job + 本地 `make quality`） | [../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../Makefile](../../Makefile) | ✅ 候选依赖下后端 126、前端 46 测试通过；Ruff、ESLint、类型检查、构建和容器冒烟通过。远端 CI 待候选提交后实跑 | 自动 |
+| E-16 | 质量门禁（CI 三 job + 本地 `make quality`） | [../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../Makefile](../../Makefile) | 🟡 本地候选版后端 140、前端 46 测试通过；Ruff、ESLint、类型检查、构建和容器冒烟通过。GitHub `main` 最近一次后端 job 因开发依赖漏声明 `pytest-asyncio` 失败，补依赖后待远端重跑 | 自动 |
 | E-17 | 密钥脱敏扫描记录（仓库无 AK/Secret/模型密钥） | [security-scan-2026-10-08.md](security-scan-2026-10-08.md) | ✅ 工作树与 Git 历史未发现高置信度凭证值；发布物仍需复核 | 自动 |
 | E-18 | Gitee 镜像仓库 CI/保护分支（可选，不作为 GitHub 主仓库参赛阻断项） | [../research/gitee-go-quality-gate.md](../research/gitee-go-quality-gate.md)（调研已有，实跑未做） | ⬜ | 人工+自动配合 |
 | E-19 | 截图集（深浅主题、图层、盲区依据、雷达、AI、导出、执行指标） | [screenshots/](screenshots/README.md) | ⬜ | 自动 |

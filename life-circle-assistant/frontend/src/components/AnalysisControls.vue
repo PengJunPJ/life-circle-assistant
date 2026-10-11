@@ -50,7 +50,7 @@
         <span><strong>{{ center.address }}</strong><small>BD-09 · {{ center.lng.toFixed(6) }}, {{ center.lat.toFixed(6) }}</small></span>
         <span class="selected">{{ resolving ? '确认中' : '已选' }}</span>
       </div>
-      <p class="map-pick-hint">也可直接点击地图选点；离线快照仅支持萝岗样例范围。</p>
+      <p class="map-pick-hint">也可直接点击地图选点；离线快照仅支持红山街道海韵东路离线样例中心周边。</p>
     </div>
     <div class="panel-section" data-guide="analysis-parameters">
       <label>分析参数</label>
