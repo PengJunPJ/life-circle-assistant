@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATE_UTC="${CONTAINER_AUDIT_DATE:-$(date -u +%F)}"
 OUTPUT_DIR="${CONTAINER_AUDIT_OUTPUT_DIR:-${ROOT_DIR}/audit-results/container/${DATE_UTC}}"
 TRIVY_TIMEOUT="${TRIVY_TIMEOUT:-2m}"
+TRIVY_DB_REPOSITORY="${TRIVY_DB_REPOSITORY:-ghcr.io/aquasecurity/trivy-db:2}"
 ALLOW_SCANNER_FAILURE="${CONTAINER_AUDIT_ALLOW_SCANNER_FAILURE:-0}"
 
 mkdir -p "${OUTPUT_DIR}"
@@ -26,10 +27,14 @@ declare -a LABELS=(api web python-base node-base nginx-base)
 declare -a IMAGES=(
   "${API_IMAGE:-life-circle-audit-api:latest}"
   "${WEB_IMAGE:-life-circle-audit-web:latest}"
-  "${PYTHON_BASE_IMAGE:-python:3.12.14-slim}"
-  "${NODE_BASE_IMAGE:-node:22.22.2-alpine}"
+  "${PYTHON_BASE_IMAGE:-python:3.12.15-alpine}"
+  "${NODE_BASE_IMAGE:-node:22.23.2-alpine}"
   "${NGINX_BASE_IMAGE:-nginx:1.31-alpine}"
 )
+if [[ -n "${WEB_BUILD_IMAGE:-}" ]]; then
+  LABELS+=(web-build)
+  IMAGES+=("${WEB_BUILD_IMAGE}")
+fi
 
 grype version > "${OUTPUT_DIR}/grype-version.txt" 2>&1
 trivy version > "${OUTPUT_DIR}/trivy-version.txt" 2>&1
@@ -57,10 +62,7 @@ for index in "${!LABELS[@]}"; do
   set -e
 
   rm -f "${trivy_file}"
-  trivy_args=(image --scanners vuln --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 --timeout "${TRIVY_TIMEOUT}" --format json --output "${trivy_file}")
-  if [[ -n "${TRIVY_DB_REPOSITORY:-}" ]]; then
-    trivy_args+=(--db-repository "${TRIVY_DB_REPOSITORY}")
-  fi
+  trivy_args=(image --scanners vuln --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 --timeout "${TRIVY_TIMEOUT}" --format json --output "${trivy_file}" --db-repository "${TRIVY_DB_REPOSITORY}")
   set +e
   trivy "${trivy_args[@]}" "${image}" > /dev/null 2> "${trivy_log}"
   trivy_rc=$?
@@ -77,6 +79,7 @@ for index in "${!LABELS[@]}"; do
   printf '%s\n' "{\"image\":\"${image}\",\"grype_exit_code\":${grype_rc},\"trivy_exit_code\":${trivy_rc},\"trivy_report_present\":${trivy_report_present},\"trivy_log\":\"${trivy_log##*/}\"}" > "${OUTPUT_DIR}/${label}.status.json"
 done
 
+set +e
 python3 - "${OUTPUT_DIR}" "${DATE_UTC}" "${LABELS[@]}" <<'PY'
 import json
 import pathlib
@@ -85,36 +88,82 @@ import sys
 output_dir = pathlib.Path(sys.argv[1])
 scan_date = sys.argv[2]
 labels = sys.argv[3:]
-summary = {"scan_date_utc": scan_date, "images": [], "scanner": "grype-and-trivy"}
+summary = {
+    "scan_date_utc": scan_date,
+    "images": [],
+    "scanner": "grype-and-trivy",
+    "release_gate": {
+        "labels": ["api", "web"],
+        "policy": "no-high-or-critical",
+        "passed": True,
+        "violations": [],
+    },
+}
 severity_order = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
 for label in labels:
     status_path = output_dir / f"{label}.status.json"
     if not status_path.exists():
         continue
     status = json.loads(status_path.read_text())
-    entry = {"label": label, **status, "grype_counts": {}, "trivy_counts": {}}
+    entry = {
+        "label": label,
+        **status,
+        "grype_counts": {},
+        "grype_high_critical": 0,
+        "grype_fixable_high_critical": 0,
+        "trivy_counts": {},
+        "trivy_high_critical": 0,
+        "trivy_fixable_high_critical": 0,
+    }
     grype_path = output_dir / f"{label}.grype.json"
     if grype_path.exists() and grype_path.stat().st_size:
         report = json.loads(grype_path.read_text())
         entry["image_id"] = report.get("source", {}).get("target", {}).get("imageID")
         entry["manifest_digest"] = report.get("source", {}).get("target", {}).get("manifestDigest")
         for match in report.get("matches", []):
-            severity = match.get("vulnerability", {}).get("severity", "Unknown")
+            vulnerability = match.get("vulnerability", {})
+            severity = vulnerability.get("severity", "Unknown")
             entry["grype_counts"][severity] = entry["grype_counts"].get(severity, 0) + 1
+            fix = vulnerability.get("fix") or {}
+            if severity in {"Critical", "High"}:
+                entry["grype_high_critical"] += 1
+                if fix.get("state") == "fixed" and fix.get("versions"):
+                    entry["grype_fixable_high_critical"] += 1
     trivy_path = output_dir / f"{label}.trivy.json"
     if trivy_path.exists() and trivy_path.stat().st_size:
         report = json.loads(trivy_path.read_text())
         for result in report.get("Results", []):
             for vulnerability in result.get("Vulnerabilities") or []:
-                severity = vulnerability.get("Severity", "Unknown")
+                severity = vulnerability.get("Severity", "Unknown").title()
                 entry["trivy_counts"][severity] = entry["trivy_counts"].get(severity, 0) + 1
+                if severity in {"Critical", "High"}:
+                    entry["trivy_high_critical"] += 1
+                    if vulnerability.get("FixedVersion"):
+                        entry["trivy_fixable_high_critical"] += 1
     summary["images"].append(entry)
+
+    if label in summary["release_gate"]["labels"]:
+        for scanner in ("grype", "trivy"):
+            count = entry[f"{scanner}_high_critical"]
+            if count:
+                summary["release_gate"]["passed"] = False
+                summary["release_gate"]["violations"].append(
+                    {"label": label, "scanner": scanner, "count": count}
+                )
 
 for entry in summary["images"]:
     entry["grype_counts"] = {key: entry["grype_counts"][key] for key in severity_order if key in entry["grype_counts"]}
     entry["trivy_counts"] = {key: entry["trivy_counts"][key] for key in severity_order if key in entry["trivy_counts"]}
 (output_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+if not summary["release_gate"]["passed"]:
+    raise SystemExit(3)
 PY
+summary_rc=$?
+set -e
+
+if [[ "${summary_rc}" -ne 0 ]]; then
+  overall_rc=1
+fi
 
 echo "container audit reports written to ${OUTPUT_DIR}"
 exit "${overall_rc}"

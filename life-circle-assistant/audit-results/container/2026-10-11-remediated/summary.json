@@ -1,0 +1,154 @@
+{
+  "scan_date_utc": "2026-10-11",
+  "images": [
+    {
+      "label": "api",
+      "image": "life-circle-audit-api:20261011-remediated",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 0,
+      "trivy_report_present": true,
+      "trivy_log": "api.trivy.log",
+      "grype_counts": {
+        "Medium": 14,
+        "Low": 1,
+        "Negligible": 1
+      },
+      "grype_high_critical": 0,
+      "grype_fixable_high_critical": 0,
+      "trivy_counts": {
+        "Medium": 5,
+        "Low": 1
+      },
+      "trivy_high_critical": 0,
+      "trivy_fixable_high_critical": 0,
+      "image_id": "sha256:5c53979f691634adef0f2ac16fe0d2aaf5420fcfe63674c1f18c98123ea3a015",
+      "manifest_digest": "sha256:bdb98a11aadf40181c107199cc7b63061963017638fa325b6c45e6858f9fba25"
+    },
+    {
+      "label": "web",
+      "image": "life-circle-audit-web:20261011-remediated",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 0,
+      "trivy_report_present": true,
+      "trivy_log": "web.trivy.log",
+      "grype_counts": {
+        "Medium": 5
+      },
+      "grype_high_critical": 0,
+      "grype_fixable_high_critical": 0,
+      "trivy_counts": {},
+      "trivy_high_critical": 0,
+      "trivy_fixable_high_critical": 0,
+      "image_id": "sha256:354e5998a44e7d38d0e46f6919303b5393919fa72a5600a15ec8e4057b0ffeb5",
+      "manifest_digest": "sha256:cecd88670df8f02417bf16e2fd1c8027db72765809cfb7f1a92fb09c92f42ffd"
+    },
+    {
+      "label": "python-base",
+      "image": "python:3.12.15-alpine",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 0,
+      "trivy_report_present": true,
+      "trivy_log": "python-base.trivy.log",
+      "grype_counts": {
+        "High": 1,
+        "Medium": 14,
+        "Low": 1,
+        "Negligible": 1
+      },
+      "grype_high_critical": 1,
+      "grype_fixable_high_critical": 1,
+      "trivy_counts": {
+        "Medium": 6,
+        "Low": 1
+      },
+      "trivy_high_critical": 0,
+      "trivy_fixable_high_critical": 0,
+      "image_id": "sha256:2a8393f6eea69a4b558e5dd3a82e2b5a73d30ce3a2fcb5b848bea8545af70bb3",
+      "manifest_digest": "sha256:204b0cd66541051a815f92a7090aaf2a0a9db72d9d8f8ebf6b3a6fa8a097e373"
+    },
+    {
+      "label": "node-base",
+      "image": "node:22.23.2-alpine",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 0,
+      "trivy_report_present": true,
+      "trivy_log": "node-base.trivy.log",
+      "grype_counts": {
+        "Critical": 1,
+        "High": 22,
+        "Medium": 25,
+        "Low": 9
+      },
+      "grype_high_critical": 23,
+      "grype_fixable_high_critical": 14,
+      "trivy_counts": {
+        "Critical": 1,
+        "High": 13,
+        "Medium": 13,
+        "Low": 1
+      },
+      "trivy_high_critical": 14,
+      "trivy_fixable_high_critical": 13,
+      "image_id": "sha256:2fa2d5d6df08a4ae01fc3d50132cc34a0c36a30ea233271de60594454cecdd51",
+      "manifest_digest": "sha256:6a8701906884a220b2f6a39c0022316e89f76f968f377a81ee88d418e4aeb694"
+    },
+    {
+      "label": "nginx-base",
+      "image": "nginx:1.31-alpine",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 0,
+      "trivy_report_present": true,
+      "trivy_log": "nginx-base.trivy.log",
+      "grype_counts": {
+        "High": 12,
+        "Medium": 16,
+        "Low": 8,
+        "Unknown": 1
+      },
+      "grype_high_critical": 12,
+      "grype_fixable_high_critical": 4,
+      "trivy_counts": {
+        "High": 3,
+        "Medium": 3
+      },
+      "trivy_high_critical": 3,
+      "trivy_fixable_high_critical": 3,
+      "image_id": "sha256:a2b80c421aaa02ba1ef4ef2d3c991112674e676f9db05fd42d456f2529b83a86",
+      "manifest_digest": "sha256:8e6bf2660bad8fdf8779ef935620f100f00d7f39b6a3c5fdb3af0602d84302ce"
+    },
+    {
+      "label": "web-build",
+      "image": "life-circle-audit-web-build:20261011-remediated",
+      "grype_exit_code": 0,
+      "trivy_exit_code": 0,
+      "trivy_report_present": true,
+      "trivy_log": "web-build.trivy.log",
+      "grype_counts": {
+        "High": 4,
+        "Medium": 10,
+        "Low": 1
+      },
+      "grype_high_critical": 4,
+      "grype_fixable_high_critical": 3,
+      "trivy_counts": {
+        "High": 4,
+        "Medium": 7,
+        "Low": 1
+      },
+      "trivy_high_critical": 4,
+      "trivy_fixable_high_critical": 3,
+      "image_id": "sha256:5429bbdedba65ce96c9f87e9aa92592de45fda92a88087fdc39daf8a9cafbc14",
+      "manifest_digest": "sha256:47478afe4a81d2d25d7b6b28fd08ba3f2ec338f6bbd65a8ca4786c636d8a9701"
+    }
+  ],
+  "scanner": "grype-and-trivy",
+  "release_gate": {
+    "labels": [
+      "api",
+      "web"
+    ],
+    "policy": "no-high-or-critical",
+    "passed": true,
+    "violations": []
+  }
+}

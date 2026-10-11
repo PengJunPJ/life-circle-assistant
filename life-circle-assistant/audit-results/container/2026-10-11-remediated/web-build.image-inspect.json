@@ -1,0 +1,57 @@
+[
+    {
+        "Id": "sha256:5429bbdedba65ce96c9f87e9aa92592de45fda92a88087fdc39daf8a9cafbc14",
+        "RepoTags": [
+            "life-circle-audit-web-build:20261011-remediated",
+            "life-circle-audit-web-build:remediated"
+        ],
+        "RepoDigests": [],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-10-11T04:11:57.575097053Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "NODE_VERSION=22.23.2",
+                "YARN_VERSION=1.22.22",
+                "VITE_API_BASE_URL="
+            ],
+            "Entrypoint": [
+                "docker-entrypoint.sh"
+            ],
+            "Cmd": [
+                "node"
+            ],
+            "WorkingDir": "/app"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 557069473,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/wxghmdzgi8gfdyzlykrhjputx/diff:/var/lib/docker/overlay2/e6n0ep1ga0u2eajdwuvwls0xc/diff:/var/lib/docker/overlay2/dx5mofmt7wu6wy33q45rtlp94/diff:/var/lib/docker/overlay2/x45xolkfigxftozbz66w7g0sm/diff:/var/lib/docker/overlay2/py4804m2klifg2u5bgkvrpd1n/diff:/var/lib/docker/overlay2/7ac77c9ff696a30c2dc8de0ea25359a95ef90e2a79c85614c1e2bca7102138d1/diff:/var/lib/docker/overlay2/1fcee1c4baf8e397f41d8724e07822e43677210d484d544d251dd463a9e67fe9/diff:/var/lib/docker/overlay2/ec9f9f2db78670ef0a32a434c0a8d04164533035012960ddb9598cc7fa78fbfa/diff:/var/lib/docker/overlay2/324c435a33b31ae9dc65bf4a1759accef493c04609393c4e7c1fe039712fb8ee/diff",
+                "MergedDir": "/var/lib/docker/overlay2/r30ku7a383m1rk73fab71tnl8/merged",
+                "UpperDir": "/var/lib/docker/overlay2/r30ku7a383m1rk73fab71tnl8/diff",
+                "WorkDir": "/var/lib/docker/overlay2/r30ku7a383m1rk73fab71tnl8/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:1b349a3334531b575b01d409540dd8aca14ef29abddacd50f36643d7c949db4b",
+                "sha256:75779f0bd2348ccc630312ab6ab389bfcfc4fb1b2b0c2482353257343983a3e4",
+                "sha256:b2501dd6c744e702916da3bd0c6cd093d9be22e192fa78e4c2a12309ebfd0e0c",
+                "sha256:f9f608a9965820b16aec4809c39b815138a44e07c0ad8d61ac9b71898979d225",
+                "sha256:4145325392936a6ccda01f2d10fca18735e842f3e2de5b50dec53a95dc058262",
+                "sha256:e44f97f15cf0442f4404f1d00d3a473fe40aaa68a6372a402f9153f91b7cbcf4",
+                "sha256:1bddde0758512fe121e68015eddda32f78545be2510714b5c458ea8cafca6e59",
+                "sha256:4513ae1f3f7cca5fc68f503ef9ffb9893984dbc0d89f50dd4d950423da1687aa",
+                "sha256:68222fd3063a1d31880c3e3a208bc28639e1fbac0e959ce249a42113e4dc6c23",
+                "sha256:91535b652e0b6828ce2991baf3b11962eda1c0312a74bfbfb9a19216246feaf8"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-11T04:24:53.066554509Z"
+        }
+    }
+]

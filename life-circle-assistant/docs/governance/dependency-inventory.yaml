@@ -1,5 +1,5 @@
 schema_version: 1
-generated_at: "2026-10-10"
+generated_at: "2026-10-11"
 scope: "direct-dependencies-and-build-sources"
 legal_note: "工程审计清单，不是法律意见；未核实项目标记 needs-review。"
 sources:
@@ -35,8 +35,12 @@ components:
   - id: docker-images
     scope: runtime-and-build
     source: "backend/Dockerfile, frontend/Dockerfile"
+    versions:
+      - "python:3.12.15-alpine@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4"
+      - "node:22.23.2-alpine@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85"
+      - "nginx:1.31-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2"
     license: needs-review
-    evidence: docs/governance/sbom/README.md
+    evidence: docs/contest/container-audit-remediation-2026-10-11.md
   - id: github-actions
     scope: ci
     source: .github/workflows
