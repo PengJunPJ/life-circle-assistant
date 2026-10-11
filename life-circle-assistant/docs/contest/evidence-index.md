@@ -29,9 +29,9 @@
 | E-20 | 演示录屏（3~5 分钟） | 赛事平台附件 | ⬜ | 人工 |
 | E-21 | 限制与披露汇总 | [limitations.md](limitations.md) | ✅ | — |
 | E-22 | 赛事平台材料（报名表、作品描述、视频上传） | 外部系统 | ⬜ | 人工 |
-| E-23 | 依赖漏洞审计（Python 生产/开发 + npm high/critical，发现即阻断） | [dependency-audit-2026-10-09.md](dependency-audit-2026-10-09.md)、[../../../.github/workflows/security.yml](../../../.github/workflows/security.yml) | ✅ 三项审计均 0 漏洞；Docker 基础镜像尚未做 Trivy/Grype CVE 扫描 | 自动 |
+| E-23 | 依赖与容器漏洞审计（Python/npm + 应用/基础镜像） | [dependency-audit-2026-10-09.md](dependency-audit-2026-10-09.md)、[container-audit-2026-10-11.md](container-audit-2026-10-11.md)、[../../../.github/workflows/security.yml](../../../.github/workflows/security.yml) | 🟡 Python/npm 审计为 0；Grype 已发现应用/基础镜像 Critical/High；Trivy 因数据库下载失败待重跑 | 自动 |
 | E-24 | 开源治理规则（许可证、Issue/PR、评审、发布、安全和外部服务责任边界） | [../../../CONTRIBUTING.md](../../../CONTRIBUTING.md)、[../../../SECURITY.md](../../../SECURITY.md)、[../../../MAINTAINERS.md](../../../MAINTAINERS.md)、[../governance/open-source-governance.md](../governance/open-source-governance.md) | ✅ 初版材料已提交；DCO/CLA、分支保护实际配置和安全联系入口仍以 GitHub 设置为准 | 自动+人工 |
-| E-25 | 依赖合规、第三方声明和 SBOM 生成口径 | [../governance/dependency-compliance.md](../governance/dependency-compliance.md)、[../governance/third-party-notices.md](../governance/third-party-notices.md)、[../governance/sbom/README.md](../governance/sbom/README.md)、[../governance/dependency-inventory.yaml](../governance/dependency-inventory.yaml) | 🟡 工程清单和命令已具备；逐包许可证核对、Docker CVE 扫描和正式 SBOM 附件待发布前完成 | 自动+人工 |
+| E-25 | 依赖合规、第三方声明和 SBOM 生成口径 | [../governance/dependency-compliance.md](../governance/dependency-compliance.md)、[../governance/third-party-notices.md](../governance/third-party-notices.md)、[../governance/sbom/README.md](../governance/sbom/README.md)、[../governance/dependency-inventory.yaml](../governance/dependency-inventory.yaml)、[container-audit-2026-10-11.md](container-audit-2026-10-11.md) | 🟡 容器扫描脚本和证据已归档；现有镜像有 Critical/High，Trivy 数据库待网络可用后重跑，许可证和正式 SBOM 仍待发布前复核 | 自动+人工 |
 | E-26 | 维护路线和多源验证门槛 | [../governance/maintenance-roadmap.md](../governance/maintenance-roadmap.md)、[../architecture/multi-source-poi-reconciliation.md](../architecture/multi-source-poi-reconciliation.md) | 🟡 路线与验收标准已记录；高德书面许可、50–100 对双源人工标签和独立指标仍待完成 | 自动+人工 |
 
 ## 使用规则
