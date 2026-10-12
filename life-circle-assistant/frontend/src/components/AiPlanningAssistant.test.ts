@@ -19,7 +19,7 @@ function response(patch: Partial<PlanningResponse> = {}): PlanningResponse {
     mode: 'llm_tools', model: '测试工具模型', prompt_version: 'tool-planner-v1',
     summary: '先核验服务盲区，再评估候选点。', recommendations: [], evidence_refs: [],
     data_quality_notice: '当前报告快照', boundary_notice: '假设模拟不修改报告', generated_at: '2026-10-12T00:00:00Z',
-    tool_calls: [{ id: 'tool-one', name: 'query_facilities', label: '设施查询', arguments: { category: 'market' },
+    comparisons: [], tool_calls: [{ id: 'tool-one', name: 'query_facilities', label: '设施查询', arguments: { category: 'market' },
       status: 'completed', duration_ms: 8, result: { summary: '匹配2处设施', source: 'report_snapshot', items: [
         { id: 'market-one', name: '测试菜市场', walk_minutes: 9, source: 'local_snapshot' },
       ] } }], simulations: [], ...patch,
@@ -74,6 +74,26 @@ describe('工具规划助手', () => {
     expect(vi.mocked(planReport).mock.lastCall?.[1].message).toContain('模拟新增一个菜市场')
     expect(wrapper.emitted('simulation-result')?.[0]).toEqual([simulation])
     expect(wrapper.text()).toContain('在地图查看本次模拟')
+  })
+
+  it('显式选择比较目标，展示排名且仅在用户选中后切换地图方案', async () => {
+    const comparison = {
+      id: 'comparison-one', report_id: report.report_id, goal: 'reduce_critical_zones', goal_label: '减少重点盲区',
+      summary: '按目标优先方案甲。', preferred_option_ids: ['sim-one'], disclosure: '方案相互独立，不计算成本。',
+      options: [{ id: 'sim-one', title: '菜市场方案 1', category: 'market', location_label: '人民路东侧候选点', status: 'completed', eligible: true, rank: 1,
+        delta: { category_score: 2, overall_score: 1, coverage_area_sqm: 300, critical_zone_count: -1, sparse_zone_count: 0 }, simulation: {} }],
+    } as PlanningResponse['comparisons'][number]
+    vi.mocked(planReport).mockResolvedValue(response({ comparisons: [comparison], simulations: [simulation] }))
+    const wrapper = setup()
+    await wrapper.get('#planning-comparison-goal').setValue('reduce_critical_zones')
+    await wrapper.findAll('.ai-actions button')[3]!.trigger('click')
+    await flushPromises()
+    expect(vi.mocked(planReport).mock.lastCall?.[1].comparison_goal).toBe('reduce_critical_zones')
+    expect(wrapper.text()).toContain('不计算成本')
+    expect(wrapper.text()).toContain('人民路东侧候选点')
+    expect(wrapper.emitted('simulation-result')).toBeUndefined()
+    await wrapper.get('.option-map').trigger('click')
+    expect(wrapper.emitted('simulation-result')?.[0]).toEqual([simulation])
   })
 
   it('失败工具显示失败而不会发出模拟成功事件', async () => {

@@ -6,11 +6,13 @@
       <button type="button" :disabled="busy" @click="run({ intent: 'summary' })">体检摘要</button>
       <button type="button" :disabled="busy" @click="ask('查询各类设施和重点服务盲区，建议优先关注什么？')">查询服务短板</button>
       <button type="button" :disabled="busy" @click="ask(simulationQuestion)">候选设施模拟</button>
+      <button type="button" :disabled="busy" @click="ask(comparisonQuestion, true)">比较方案</button>
       <button type="button" :disabled="busy" @click="run({ intent: 'brief' })">汇报摘要</button>
     </div>
     <p v-if="gridId" class="ai-context">当前网格：{{ gridId }}</p>
     <p v-if="simulationLocation?.selectionMethod === 'map'" class="ai-context">模拟位置：已采用你在地图上的选点</p>
-    <div class="ai-question"><input v-model="question" maxlength="1000" aria-label="向规划助手提问" placeholder="例如：新增菜市场能改善多少？" @keydown.enter.prevent="ask(question)" /><button type="button" :disabled="busy || !question.trim()" @click="ask(question)">提问</button></div>
+    <div class="ai-question"><input v-model="question" maxlength="1000" aria-label="向规划助手提问" placeholder="例如：比较补足菜市场服务的方案" @keydown.enter.prevent="ask(question)" /><button type="button" :disabled="busy || !question.trim()" @click="ask(question)">提问</button></div>
+    <div class="comparison-goal"><label for="planning-comparison-goal">比较目标</label><select id="planning-comparison-goal" v-model="comparisonGoal" :disabled="busy"><option value="reduce_critical_zones">减少重点盲区</option><option value="increase_coverage">扩大分类覆盖</option><option value="improve_overall_score">提高综合指数</option></select></div>
     <button v-if="previousTurnId" type="button" class="ai-new-topic" :disabled="busy" @click="newTopic">开始新话题</button>
     <div v-if="loading" class="ai-state" role="status">正在查询证据或计算模拟结果，请稍候…</div>
     <div v-else-if="error" class="ai-state error" role="alert">{{ error }}</div>
@@ -24,7 +26,8 @@
       <p v-if="planningResult" class="ai-context">你的问题：{{ planningResult.question }}</p>
       <p class="ai-summary">{{ result.summary }}</p>
       <PlanningToolResults v-if="planningResult?.tool_calls.length" :calls="planningResult.tool_calls" />
-      <button v-if="planningResult?.simulations.length" type="button" class="ai-show-simulation" :disabled="busy" @click="showSimulation">在地图查看本次模拟</button>
+      <PlanningComparison v-if="planningResult?.comparisons?.length" :comparison="planningResult.comparisons.at(-1)!" @show-simulation="showComparisonOption" />
+      <button v-if="planningResult?.simulations.length && !planningResult.comparisons?.length && !isComparisonAttempt" type="button" class="ai-show-simulation" :disabled="busy" @click="showSimulation">在地图查看本次模拟</button>
       <div v-if="result.recommendations.length" class="ai-recommendations"><div v-for="item in result.recommendations" :key="item.title" class="ai-recommendation"><div><strong>{{ item.title }}</strong><span :class="`ai-priority ${item.priority}`">{{ priorityLabel(item.priority) }}</span></div><p>{{ item.text }}</p></div></div>
       <details class="ai-evidence"><summary>查看证据引用（{{ result.evidence_refs.length }}）</summary><ul><li v-for="ref in result.evidence_refs" :key="`${ref.type}-${ref.id}`"><strong>{{ ref.label }}</strong><span>{{ ref.detail }}</span><small>{{ ref.type }} · {{ ref.id }}</small></li></ul></details>
       <div class="ai-notices">
@@ -43,8 +46,10 @@ import { fetchReportInterpretations, interpretReport, planReport } from '../serv
 import { FACILITY_LABELS } from '../constants/facilities'
 import type { AiInterpretation, AiInterpretationIntent, Report } from '../types/report'
 import type { PlanningResponse } from '../types/planning'
+import type { PlanningComparison as PlanningComparisonData } from '../types/planning'
 import type { SimulationLocation, SimulationResult } from '../types/simulation'
 import PlanningToolResults from './PlanningToolResults.vue'
+import PlanningComparison from './PlanningComparison.vue'
 const props = defineProps<{ report: Report; simulationLocation?: SimulationLocation | null; simulationCategory?: string; gridId?: string | null; disabled?: boolean }>()
 const emit = defineEmits<{ 'simulation-result': [result: SimulationResult]; busy: [value: boolean] }>()
 const result = ref<AiInterpretation | null>(null)
@@ -52,11 +57,14 @@ const loading = ref(false)
 const error = ref('')
 const question = ref('')
 const previousTurnId = ref<string | undefined>()
+const comparisonGoal = ref<PlanningComparisonData['goal']>('reduce_critical_zones')
 const busy = computed(() => loading.value || props.disabled)
 const planningResult = computed(() => result.value && 'tool_calls' in result.value ? result.value as PlanningResponse : null)
+const isComparisonAttempt = computed(() => planningResult.value?.tool_calls.some(call => call.name === 'compare_planning_options') || false)
 const isDegraded = computed(() => result.value?.mode.endsWith('_degraded'))
 const modeLabel = computed(() => ({ llm_tools: '大模型 · 工具调用', tool_rules: '规则工具 · 模型未启用', tool_rules_degraded: '规则工具 · 已降级', llm_structured: '大模型增强' } as Record<string, string>)[result.value?.mode || ''] || result.value?.model || '规划问答')
 const simulationQuestion = computed(() => `模拟新增一个${FACILITY_LABELS[props.simulationCategory || props.report.parameters.categories[0] || 'market']}，${props.simulationLocation?.selectionMethod === 'map' ? '使用我已选择的地图点' : '使用报告中的优先候选点'}，计算改善效果。`)
+const comparisonQuestion = computed(() => `比较当前报告中可行的独立新增设施方案，优先${({ reduce_critical_zones: '减少重点盲区', increase_coverage: '扩大分类覆盖面积', improve_overall_score: '提高综合指数' } as Record<PlanningComparisonData['goal'], string>)[comparisonGoal.value]}。`)
 let version = 0
 let controller: AbortController | undefined
 watch(() => props.report.report_id, async () => {
@@ -81,7 +89,7 @@ async function run(params: { intent: AiInterpretationIntent; grid_id?: string; c
   } catch (err) { if (current === version) error.value = err instanceof Error ? err.message : 'AI 解读生成失败' }
   finally { if (current === version) { loading.value = false; emit('busy', false) } }
 }
-async function ask(value: string) {
+async function ask(value: string, compare = false) {
   if (!value.trim() || busy.value) return
   const current = ++version
   const reportId = props.report.report_id
@@ -91,17 +99,24 @@ async function ask(value: string) {
     const response = await planReport(reportId, {
       message: value.trim(), previous_turn_id: previousTurnId.value, grid_id: props.gridId || undefined,
       selected_location: props.simulationLocation?.selectionMethod === 'map' ? { lng: props.simulationLocation.lng, lat: props.simulationLocation.lat } : undefined,
+      comparison_goal: compare ? comparisonGoal.value : undefined,
     }, controller.signal)
     if (current !== version) return
     result.value = response; previousTurnId.value = response.id; question.value = ''
-    const simulation = response.simulations.at(-1)
-    if (simulation?.report_id === reportId) emit('simulation-result', simulation)
+    if (!response.comparisons?.length && !response.tool_calls.some(call => call.name === 'compare_planning_options')) {
+      const simulation = response.simulations.at(-1)
+      if (simulation?.report_id === reportId) emit('simulation-result', simulation)
+    }
   } catch (err) { if (current === version) error.value = err instanceof Error ? err.message : '规划工具执行失败' }
   finally { if (current === version) { loading.value = false; emit('busy', false) } }
 }
 function newTopic() { previousTurnId.value = undefined; result.value = null; question.value = ''; error.value = '' }
 function showSimulation() {
   const simulation = planningResult.value?.simulations.at(-1)
+  if (simulation?.report_id === props.report.report_id) emit('simulation-result', simulation)
+}
+function showComparisonOption(optionId: string) {
+  const simulation = planningResult.value?.simulations.find(item => item.id === optionId)
   if (simulation?.report_id === props.report.report_id) emit('simulation-result', simulation)
 }
 onBeforeUnmount(() => { version++; controller?.abort(); emit('busy', false) })
@@ -122,6 +137,8 @@ defineExpose({ run })
 
 <style scoped>
 .ai-context { color: #70857c; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.comparison-goal { display: flex; align-items: center; gap: 7px; margin-top: 7px; color: #70857c; font-size: 9px; }
+.comparison-goal select { min-width: 0; padding: 4px 6px; border: 1px solid #cedbd5; border-radius: 4px; background: #fff; color: #36564f; font-size: 9px; }
 .ai-new-topic, .ai-show-simulation { margin-top: 8px; padding: 6px 8px; border: 1px solid #c9ddd3; border-radius: 4px; background: #f1f8f4; color: #397568; font-size: 10px; }
 .ai-new-topic:disabled, .ai-show-simulation:disabled { opacity: .55; }
 html[data-theme="dark"] .ai-context { color: #9db8b8; }
@@ -133,6 +150,8 @@ html[data-theme="dark"] .ai-boundary-inline strong { color: #9db8b8; }
 html[data-theme="dark"] .ai-actions button, html[data-theme="dark"] .ai-question button { border-color: rgba(126,214,199,.24); background: rgba(46,230,197,.08); color: #7ff0da; }
 html[data-theme="dark"] .ai-actions button:hover, html[data-theme="dark"] .ai-question button:hover { background: rgba(46,230,197,.16); }
 html[data-theme="dark"] .ai-question input { border-color: rgba(126,214,199,.2); background: rgba(9,18,27,.7); color: #e9f6f2; }
+html[data-theme="dark"] .comparison-goal { color: #9db8b8; }
+html[data-theme="dark"] .comparison-goal select { border-color: rgba(126,214,199,.2); background: #10202e; color: #e9f6f2; }
 html[data-theme="dark"] .ai-state, html[data-theme="dark"] .ai-empty { background: rgba(9,18,27,.6); color: #9db8b8; }
 html[data-theme="dark"] .ai-state.error { background: rgba(255,107,87,.12); color: #ff9d8d; }
 html[data-theme="dark"] .ai-result { border-color: rgba(126,214,199,.2); border-left-color: #2ee6c5; background: rgba(16,32,46,.6); }

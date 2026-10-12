@@ -120,6 +120,8 @@ class PlanningRequest(BaseModel):
     selected_location: PlanningLocation | None = None
     grid_id: str | None = Field(default=None, max_length=120)
 
+    comparison_goal: Literal["reduce_critical_zones", "increase_coverage", "improve_overall_score"] | None = None
+
     @field_validator("message")
     @classmethod
     def require_question(cls, value: str) -> str:

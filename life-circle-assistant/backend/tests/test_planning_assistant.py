@@ -9,9 +9,10 @@ import pytest
 from fastapi.testclient import TestClient
 from test_simulations import SimulationFixtureProvider
 
+from app.analysis.simulations import ReportSimulationService
 from app.llm import LLMError, LLMSettings, OpenAICompatibleProvider
 from app.main import create_app
-from app.planning_assistant import PlanningTools, run_planning_assistant
+from app.planning_assistant import PlanningTools, _rules, run_planning_assistant
 from app.schemas import PlanningRequest
 
 
@@ -161,6 +162,121 @@ def test_followup_uses_server_saved_context_and_rejects_foreign_turn(setup_repor
         ).status_code
         == 422
     )
+
+
+def test_compare_planning_options_executes_independent_simulations_and_ranks(setup_report):
+    app, client, provider, report = setup_report
+    candidates = {
+        recommendation["category"]: recommendation["candidate_locations"][0]["id"]
+        for recommendation in report["recommendations"]
+        if recommendation.get("candidate_locations")
+    }
+    model = ScriptedModel([
+        call("compare_planning_options", {
+            "goal": "improve_overall_score",
+            "options": [
+                {"category": "market", "location_id": candidates["market"]},
+                {"category": "school", "location_id": candidates["school"]},
+            ],
+        }, "compare"),
+        lambda messages: answer("这些独立位置可作为进一步核验的候选。", last_result(messages)["evidence_refs"]),
+    ])
+    app.state.llm_provider = model
+    with patch.object(provider, "walking_matrix", wraps=provider.walking_matrix) as walking:
+        result = client.post(
+            f"/api/reports/{report['report_id']}/ai/plan",
+                json={"message": "比较新增菜市场与小学，优先提高综合指数"},
+        ).json()
+    assert walking.call_count >= 2
+    comparison = result["comparisons"][0]
+    assert len(comparison["options"]) == 2
+    assert all(option["eligible"] for option in comparison["options"]), comparison["options"]
+    assert all(option["rank"] in (1, 2) for option in comparison["options"]), comparison["options"]
+    baseline_scores = {item["category"]: item["score"] for item in report["category_scores"]}
+    assert all(
+        option["simulation"]["before"]["category_score"] == baseline_scores[option["category"]]
+        for option in comparison["options"]
+    )
+    assert len(result["simulations"]) == 2
+    assert client.get(f"/api/reports/{report['report_id']}").json() == report
+
+
+def test_duplicate_comparison_options_are_rejected_before_route_calls(setup_report):
+    _, _, provider, report = setup_report
+    candidate = next(rec for rec in report["recommendations"] if rec["category"] == "market")["candidate_locations"][0]
+    tools = PlanningTools(report, provider, PlanningRequest(message="比较", comparison_goal="increase_coverage"))
+    with patch.object(provider, "walking_matrix", wraps=provider.walking_matrix) as walking:
+        result = asyncio.run(tools.execute("compare_planning_options", {
+            "goal": "increase_coverage",
+            "options": [
+                {"category": "market", "location_id": candidate["id"]},
+                {"category": "market", "location_id": candidate["id"]},
+            ],
+        }, "duplicate"))
+    assert "不可重复" in result["error"]
+    assert walking.call_count == 0
+    assert not tools.simulations
+
+
+def test_rules_comparison_uses_multiple_candidates_for_a_single_category():
+    candidates = [
+        {"id": f"candidate-{index}", "category": "market", "lng": 113.5 + index / 1000, "lat": 23.1}
+        for index in range(3)
+    ]
+    tools = MagicMock()
+    tools.request = PlanningRequest(message="比较方案", comparison_goal="increase_coverage")
+    tools.categories = ["market"]
+    tools.features = []
+
+    async def execute(name, arguments, call_id):
+        if name == "get_planning_candidates":
+            return {"items": candidates}
+        if name == "compare_planning_options":
+            tools.comparison_arguments = arguments
+        return {}
+
+    tools.execute = AsyncMock(side_effect=execute)
+    asyncio.run(_rules(tools, None))
+
+    options = tools.comparison_arguments["options"]
+    assert len(options) == 3
+    assert {item["location_id"] for item in options} == {item["id"] for item in candidates}
+
+
+def test_timed_out_comparison_keeps_completed_options_and_marks_pending(setup_report):
+    _, _, provider, report = setup_report
+    candidates = {
+        recommendation["category"]: recommendation["candidate_locations"][0]["id"]
+        for recommendation in report["recommendations"]
+        if recommendation.get("candidate_locations")
+    }
+    tools = PlanningTools(report, provider, PlanningRequest(message="比较方案"))
+    original_run = ReportSimulationService.run
+    calls = 0
+
+    async def delayed_run(service, source_report, simulation_request):
+        nonlocal calls
+        calls += 1
+        if calls > 1:
+            await asyncio.sleep(0.1)
+        return await original_run(service, source_report, simulation_request)
+
+    async def invoke():
+        async with asyncio.timeout(0.05):
+            await tools.execute("compare_planning_options", {
+                "goal": "improve_overall_score",
+                "options": [
+                    {"category": "market", "location_id": candidates["market"]},
+                    {"category": "school", "location_id": candidates["school"]},
+                ],
+            }, "timeout")
+
+    with patch.object(ReportSimulationService, "run", delayed_run), pytest.raises(TimeoutError):
+        asyncio.run(invoke())
+    partial = tools.trace[0]["result"]["comparison"]
+    assert partial["options"][0]["status"] == "completed"
+    assert partial["options"][1]["status"] == "pending"
+    assert len(tools.simulations) == 1
 
 
 @pytest.mark.parametrize(
