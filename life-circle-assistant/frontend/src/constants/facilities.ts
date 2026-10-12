@@ -2,7 +2,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localho
 
 export const FACILITY_LABELS: Record<string, string> = {
   medical: '医疗服务',
-  school: '学校',
+  school: '小学',
   convenience: '购物',
   elderly: '养老',
   market: '菜市场',
