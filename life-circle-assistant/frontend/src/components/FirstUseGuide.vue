@@ -32,7 +32,7 @@
     <el-tour-step
       target="[data-guide='analysis-parameters']"
       title="设置体检参数"
-      description="页面已默认选择“正式分析”和 15 分钟，并保留四类设施；正式分析会向百度发起更多步行路线请求。"
+      description="页面已默认选择“正式分析”和 15 分钟，并勾选医疗服务、学校、购物、养老四类设施；正式分析会向百度发起更多步行路线请求。"
       placement="right"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"

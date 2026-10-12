@@ -68,10 +68,14 @@
     <div class="panel-section layer-panel">
       <div class="layer-section-title">
         <div><label>设施与服务区域</label><small>选择地图上要展示的图层</small></div>
-        <span class="layer-count">{{ visibleCategories.length }}/{{ Object.keys(FACILITY_LABELS).length }} 类</span>
+        <span class="layer-count" role="status" aria-live="polite" aria-atomic="true">{{ visibleCategories.length }}/{{ ALL_CATEGORIES.length }} 类</span>
+      </div>
+      <div class="facility-selection-actions" role="group" aria-label="设施类别快捷选择">
+        <button type="button" :disabled="ALL_CATEGORIES.every(category => visibleCategories.includes(category))" @click="emit('update:visibleCategories', [...ALL_CATEGORIES])">全选</button>
+        <button type="button" :disabled="!visibleCategories.length" @click="emit('update:visibleCategories', [])">全部取消</button>
       </div>
       <div class="facility-list layer-facility-list">
-        <button v-for="category in Object.keys(FACILITY_LABELS)" :key="category" type="button" :style="{ '--facility-color': categoryColor(category) }" :class="['facility-toggle', { selected: visibleCategories.includes(category) }]" :aria-pressed="visibleCategories.includes(category)" @click="emit('toggle-category', category)">
+        <button v-for="category in ALL_CATEGORIES" :key="category" type="button" :style="{ '--facility-color': categoryColor(category) }" :class="['facility-toggle', { selected: visibleCategories.includes(category) }]" :aria-pressed="visibleCategories.includes(category)" @click="emit('toggle-category', category)">
           <span class="facility-icon" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ FACILITY_ICONS[category] }}</span>
           <span class="facility-name">{{ FACILITY_LABELS[category] }}</span>
           <span class="check" aria-hidden="true">{{ visibleCategories.includes(category) ? '✓' : '' }}</span>
@@ -105,7 +109,7 @@ import { computed, ref } from 'vue'
 import NaturalLanguageAnalysis from './NaturalLanguageAnalysis.vue'
 import type { ConfirmedAnalysisIntent } from '../types/analysisIntent'
 import { ArrowLeft, Location, Refresh, Search } from '@element-plus/icons-vue'
-import { FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
+import { ALL_CATEGORIES, FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { AnalysisCenter, CoordinateSystem, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, MapProbeResult, MapStatus } from '../types/report'
 
@@ -174,6 +178,7 @@ const emit = defineEmits<{
   'update:coordinateSystem': [value: CoordinateSystem]
   'update:mode': [value: AnalysisMode]
   'update:minutes': [value: AnalysisMinutes]
+  'update:visibleCategories': [value: string[]]
   'update:showNormal': [value: boolean]
   'update:showSparse': [value: boolean]
   'update:showCritical': [value: boolean]

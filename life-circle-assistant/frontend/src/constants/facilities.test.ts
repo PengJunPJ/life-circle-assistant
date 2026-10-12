@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_CATEGORIES, categoryColor, categoryShort } from './facilities'
+import { ALL_CATEGORIES, categoryColor, categoryShort } from './facilities'
 
 describe('民生设施展示配置', () => {
   it('包含核心与扩展民生设施', () => {
-    expect(DEFAULT_CATEGORIES).toEqual([
+    expect(ALL_CATEGORIES).toEqual([
+      'medical',
+      'school',
+      'convenience',
+      'elderly',
       'market',
       'pharmacy',
-      'school',
-      'medical',
-      'elderly',
       'park',
-      'convenience',
     ])
   })
 

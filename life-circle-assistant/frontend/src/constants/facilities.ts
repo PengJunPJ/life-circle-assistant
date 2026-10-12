@@ -1,13 +1,13 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
 export const FACILITY_LABELS: Record<string, string> = {
+  medical: '医疗服务',
+  school: '学校',
+  convenience: '购物',
+  elderly: '养老',
   market: '菜市场',
   pharmacy: '药店',
-  school: '小学',
-  medical: '医疗服务',
-  elderly: '养老',
   park: '公园绿地',
-  convenience: '便利超市',
 }
 
 export const FACILITY_ICONS: Record<string, string> = {
@@ -17,7 +17,7 @@ export const FACILITY_ICONS: Record<string, string> = {
   medical: '医',
   elderly: '养',
   park: '园',
-  convenience: '超',
+  convenience: '购',
 }
 
 export const FACILITY_COLORS: Record<string, string> = {
@@ -30,7 +30,8 @@ export const FACILITY_COLORS: Record<string, string> = {
   convenience: '#d9a13b',
 }
 
-export const DEFAULT_CATEGORIES = Object.keys(FACILITY_LABELS)
+export const ALL_CATEGORIES = Object.keys(FACILITY_LABELS)
+export const DEFAULT_CATEGORIES = ['medical', 'school', 'convenience', 'elderly']
 export const DEFAULT_CENTER = { lng: 113.4872, lat: 23.1068 }
 // 步行路线预览色：浅绿芯线 + 深绿描边，靠"实线+描边+箭头"与等时圈青绿虚线区分
 export const ROUTE_COLOR = '#74d178'

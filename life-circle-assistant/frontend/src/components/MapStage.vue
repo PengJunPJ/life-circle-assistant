@@ -19,14 +19,19 @@
         <button class="icon-btn" type="button" aria-label="重新运行当前分析" :disabled="loading" @click="emit('refresh')"><Refresh /></button>
       </div>
     </div>
-    <div class="facility-legend" aria-label="设施类别图例"><span v-for="category in Object.keys(FACILITY_LABELS)" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span><span v-if="report?.recommendations.length" class="facility-legend-item candidate-legend"><b aria-hidden="true">候</b>规划候选点</span><span v-if="simulation" class="facility-legend-item simulation-legend"><b aria-hidden="true">拟</b>假设设施/模拟区域</span></div>
+    <div v-if="legendCategories.length || hasVisibleCandidates || simulation" class="facility-legend" aria-label="设施类别图例">
+      <span v-for="category in legendCategories" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
+      <span v-if="hasVisibleCandidates" class="facility-legend-item candidate-legend"><b aria-hidden="true">候</b>规划候选点</span>
+      <span v-if="simulation" class="facility-legend-item simulation-legend"><b aria-hidden="true">拟</b>假设设施/模拟区域</span>
+    </div>
     <div v-if="showMobileLegend" id="mobile-map-legend" class="mobile-map-legend" role="region" aria-label="地图完整图例">
       <button type="button" aria-label="关闭地图图例" @click="showMobileLegend = false">×</button>
       <strong>地图图例</strong>
       <span><b class="status-symbol critical" aria-hidden="true">!</b>重点服务盲区：红色网纹与感叹号</span>
       <span><b class="status-symbol sparse" aria-hidden="true">△</b>设施稀疏区：黄色斜纹与三角形</span>
-      <span v-for="category in Object.keys(FACILITY_LABELS)" :key="`mobile-${category}`"><b class="category-symbol" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
-      <span v-if="report?.recommendations.length"><b class="category-symbol candidate-legend" aria-hidden="true">候</b>规划候选点</span>
+      <span v-for="category in legendCategories" :key="`mobile-${category}`"><b class="category-symbol" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
+      <span v-if="!legendCategories.length">未选择设施类别</span>
+      <span v-if="hasVisibleCandidates"><b class="category-symbol candidate-legend" aria-hidden="true">候</b>规划候选点</span>
       <span v-if="simulation"><b class="category-symbol simulation-legend" aria-hidden="true">拟</b>假设设施和模拟区域</span>
     </div>
     <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking }" role="region" aria-label="百度地图生活圈分析区域"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking }" role="img" aria-label="生活圈分析地图画布" @click="handleCanvasClick" @mousemove="handleCanvasMouseMove" @mouseleave="handleCanvasMouseLeave"></canvas>
@@ -73,7 +78,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
 import { Close, Expand, Fold, Refresh } from '@element-plus/icons-vue'
 import ElMessage from 'element-plus/es/components/message/index'
-import { FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
+import { ALL_CATEGORIES, FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
 import { fetchWalkingRoute } from '../services/analysisApi'
 import MapHoverCard from './MapHoverCard.vue'
@@ -87,6 +92,10 @@ const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
 const visibleCategories = toRef(props, 'visibleCategories')
+const legendCategories = computed(() => ALL_CATEGORIES.filter(category => visibleCategories.value.includes(category)))
+const hasVisibleCandidates = computed(() => props.report?.recommendations.some(recommendation =>
+  visibleCategories.value.includes(recommendation.category) && recommendation.candidate_locations.length > 0,
+))
 const showNormal = toRef(props, 'showNormal')
 const showSparse = toRef(props, 'showSparse')
 const showCritical = toRef(props, 'showCritical')

@@ -46,6 +46,7 @@
         @update:coordinate-system="coordinateSystem = $event; coordinateConversionNote = ''"
         @update:mode="mode = $event"
         @update:minutes="minutes = $event"
+        @update:visibleCategories="visibleCategories = $event"
         @update:show-normal="showNormal = $event"
         @update:show-sparse="showSparse = $event"
         @update:show-critical="showCritical = $event"
