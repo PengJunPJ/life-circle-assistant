@@ -18,6 +18,7 @@
         <span :class="{ ok: realMapReady }"><i aria-hidden="true"></i>百度底图{{ realMapReady ? '已加载' : '未加载' }}</span>
       </div>
     </div>
+    <NaturalLanguageAnalysis :center="center" :disabled="loading || resolving || searching" :real-api-configured="Boolean(mapStatus?.real_api_configured)" @confirm="emit('confirm-intent', $event)" @update:active="intentActive = $event" />
     <div class="panel-section" data-guide="analysis-center">
       <label>分析中心点</label>
       <div class="search-box">
@@ -89,18 +90,21 @@
         </div>
       </div>
     </div>
-    <button class="primary-action" data-guide="run-analysis" type="button" aria-describedby="analysis-source-note" :disabled="loading || resolving || Boolean(locationError) || center.supportStatus !== 'supported'" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : mapStatus?.real_api_configured ? '开始真实分析' : '开始快照体检' }}<span aria-hidden="true">↗</span></button>
+    <button v-if="!intentActive" class="primary-action" data-guide="run-analysis" type="button" aria-describedby="analysis-source-note" :disabled="loading || resolving || Boolean(locationError) || center.supportStatus !== 'supported'" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : mapStatus?.real_api_configured ? '开始真实分析' : '开始快照体检' }}<span aria-hidden="true">↗</span></button>
     <div id="analysis-source-note" class="api-note"><span class="api-indicator" :class="{ real: mapStatus?.real_api_configured || source === 'baidu' || source === 'real_api' }" aria-hidden="true"></span><span>当前：{{ mapStatus?.real_api_configured ? '已配置真实模式（分析时调用百度 API）' : source === 'baidu' || source === 'real_api' ? '百度地图真实测算结果' : '本地百度数据快照' }}</span></div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import NaturalLanguageAnalysis from './NaturalLanguageAnalysis.vue'
+import type { ConfirmedAnalysisIntent } from '../types/analysisIntent'
 import { ArrowLeft, Location, Refresh, Search } from '@element-plus/icons-vue'
 import { FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { AnalysisCenter, CoordinateSystem, LocationCandidate } from '../types/location'
 import type { AnalysisMode, AnalysisMinutes, MapProbeResult, MapStatus } from '../types/report'
 
+const intentActive = ref(false)
 const props = defineProps<{
   center: AnalysisCenter
   addressQuery: string
@@ -172,6 +176,7 @@ const emit = defineEmits<{
   'apply-coordinates': []
   'toggle-category': [value: string]
   run: []
+  'confirm-intent': [intent: ConfirmedAnalysisIntent]
   'refresh-map-status': []
   'probe-map-api': []
   'close-mobile': []

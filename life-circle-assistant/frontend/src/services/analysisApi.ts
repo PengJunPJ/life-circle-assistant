@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants/facilities'
+import type { AnalysisIntent, IntentDraft } from '../types/analysisIntent'
 import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
 import type { CenterSelectionMethod, CoordinateConversionResponse, CoordinateSystem, LocationApiResponse, LocationCandidate, WalkingRoute } from '../types/location'
@@ -7,6 +8,14 @@ import type { SimulationResult, SimulationSelectionMethod } from '../types/simul
 import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
 
 export type ReportExportFormat = 'json' | 'csv' | 'geojson' | 'pdf'
+
+export async function parseAnalysisIntent(message: string, previous?: IntentDraft) {
+  return parseResponse<AnalysisIntent>(await fetch(`${API_BASE_URL}/api/analysis/intent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, previous }),
+  }))
+}
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = await response.json()

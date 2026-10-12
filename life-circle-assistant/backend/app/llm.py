@@ -1,8 +1,9 @@
-"""Optional large-language-model enhancement for report interpretation.
+"""Shared optional language-model adapter and report interpretation enhancement.
 
 The deterministic report interpreter remains the source of truth. This module
-only turns verified report facts into clearer language and always returns a
-validated fallback when the provider is unavailable or produces bad output.
+turns verified report facts into clearer language with a validated fallback.
+The analysis-intent module reuses this adapter to extract user parameters;
+neither use delegates geographic or scoring calculations to the model.
 """
 
 from __future__ import annotations

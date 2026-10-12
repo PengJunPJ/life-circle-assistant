@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 CoreCategory = Literal[
     "market",
@@ -43,6 +43,44 @@ class AnalyzeRequest(BaseModel):
     @classmethod
     def deduplicate_categories(cls, categories: list[CoreCategory]) -> list[CoreCategory]:
         return list(dict.fromkeys(categories))
+
+
+class AnalysisIntentDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    address: str = Field(default="", max_length=200)
+    use_current_center: bool = False
+    minutes: Literal[10, 15, 20] | None = 15
+    mode: Literal["demo", "analysis"] = "demo"
+    categories: list[CoreCategory] = Field(
+        default_factory=lambda: ["market", "pharmacy", "school", "medical", "elderly", "park", "convenience"],
+        max_length=7,
+    )
+    defaulted_fields: list[Literal["minutes", "mode", "categories"]] = Field(
+        default_factory=lambda: ["minutes", "mode", "categories"], max_length=3
+    )
+
+
+class AnalysisIntentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(min_length=1, max_length=1000)
+    previous: AnalysisIntentDraft | None = None
+
+    @field_validator("message")
+    @classmethod
+    def require_message(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("请描述要体检的社区或补充参数")
+        return value.strip()
+
+
+class AnalysisIntentResponse(BaseModel):
+    draft: AnalysisIntentDraft
+    parser: Literal["llm", "rules", "rules_degraded"]
+    model: str | None = None
+    missing_fields: list[Literal["location", "minutes", "categories"]]
+    message: str
 
 
 class ReportComparisonRequest(BaseModel):

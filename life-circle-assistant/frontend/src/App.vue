@@ -54,6 +54,7 @@
         @apply-coordinates="applyCoordinateInput"
         @toggle-category="toggleCategory"
         @run="startAnalysis"
+        @confirm-intent="startIntentAnalysis"
         @refresh-map-status="refreshMapStatus"
         @probe-map-api="probeConfiguredMapApi"
         @toggle-collapse="collapsedControls = !collapsedControls"
@@ -181,6 +182,7 @@
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { fetchMapStatus, probeMapApi as requestMapApiProbe } from './services/analysisApi'
 import type { MapProbeResult, MapStatus } from './types/report'
+import type { ConfirmedAnalysisIntent } from './types/analysisIntent'
 import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
@@ -395,6 +397,15 @@ function handleWorkspaceKeydown(event: KeyboardEvent) {
     event.preventDefault()
     closeMobilePanel(panel)
   }
+}
+
+async function startIntentAnalysis(intent: ConfirmedAnalysisIntent) {
+  if (loading.value || resolving.value || searching.value || intent.center.supportStatus !== 'supported') return
+  restoreCenter(intent.center)
+  minutes.value = intent.minutes
+  mode.value = intent.mode
+  visibleCategories.value = [...intent.categories]
+  await startAnalysis()
 }
 
 async function startAnalysis() {

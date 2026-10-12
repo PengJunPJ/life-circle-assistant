@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .ai_assistant import build_ai_interpretation
 from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
+from .analysis_intent import parse_analysis_intent
 from .bootstrap import configure_runtime
 from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
 from .llm import enhance_interpretation, llm_configuration
@@ -22,7 +23,14 @@ from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService
 from .mock_data import CATEGORIES, CENTER
-from .schemas import AnalyzeRequest, CoordinateConversionRequest, ReportComparisonRequest, SimulationRequest
+from .schemas import (
+    AnalysisIntentRequest,
+    AnalysisIntentResponse,
+    AnalyzeRequest,
+    CoordinateConversionRequest,
+    ReportComparisonRequest,
+    SimulationRequest,
+)
 from .storage import ReportRepository, TaskRepository
 
 load_dotenv()
@@ -339,6 +347,10 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
     @app.get("/api/demo/default")
     def default_demo():
         return {"center": CENTER, "categories": CATEGORIES}
+
+    @app.post("/api/analysis/intent", response_model=AnalysisIntentResponse)
+    async def analysis_intent(payload: AnalysisIntentRequest, request: Request):
+        return await parse_analysis_intent(payload, request.app.state.llm_provider)
 
     @app.post("/api/analyze")
     async def create_analysis(

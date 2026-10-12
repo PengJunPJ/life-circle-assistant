@@ -342,7 +342,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
   .mobile-panel-close { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; background: #e8efeb; color: #496761; font-size: 24px; line-height: 1; }
   .control-panel .panel-section:first-of-type { border-top: 0; }
   .control-panel .panel-section { padding: 15px 0; }
-  .primary-action { position: sticky; bottom: -18px; z-index: 2; height: 46px; margin: 8px -1px 0; box-shadow: 0 -8px 18px rgba(248, 250, 247, .96); }
+  .control-panel > .primary-action { position: sticky; bottom: -18px; z-index: 2; height: 46px; margin: 8px -1px 0; box-shadow: 0 -8px 18px rgba(248, 250, 247, .96); }
   .report-heading { padding: 15px 0; }
   .report-heading .eyebrow { display: none; }
   .report-heading h2 { margin-top: 0; font-size: 17px; }

@@ -8,7 +8,7 @@ import AppHeader from './components/AppHeader.vue'
 import FirstUseGuide from './components/FirstUseGuide.vue'
 import MapStage from './components/MapStage.vue'
 
-const mocks = vi.hoisted(() => ({ runAnalysis: vi.fn(), loadHistory: vi.fn() }))
+const mocks = vi.hoisted(() => ({ runAnalysis: vi.fn(), loadHistory: vi.fn(), restoreCenter: vi.fn() }))
 
 vi.mock('./services/analysisApi', () => ({
   fetchMapStatus: vi.fn().mockResolvedValue({ mode: 'real', provider_mode: 'real', provider: 'baidu', source: 'real_api', real_api_configured: true, real_api_probe_endpoint: '/api/map/probe', mock_available: true, snapshot_available: false, message: '已配置' }),
@@ -20,7 +20,7 @@ vi.mock('./composables/useAnalysisCenter', () => ({
     addressQuery: ref(''), candidates: ref([]), coordinateLng: ref('113.4872'), coordinateLat: ref('23.1068'),
     coordinateSystem: ref('bd09'), coordinateConversionNote: ref(''),
     searching: ref(false), resolving: ref(false), error: ref(''), searchCandidates: vi.fn(), selectCandidate: vi.fn(),
-    restoreCenter: vi.fn(), selectMapPoint: vi.fn(), applyCoordinateInput: vi.fn(),
+    restoreCenter: mocks.restoreCenter, selectMapPoint: vi.fn(), applyCoordinateInput: vi.fn(),
   }),
 }))
 vi.mock('./composables/useAnalysis', () => ({
@@ -68,5 +68,15 @@ describe('真实地图分析启动方式', () => {
     await nextTick()
     expect(wrapper.getComponent(FirstUseGuide).props('open')).toBe(true)
     vi.useRealTimers()
+  })
+
+  it('对话确认将位置、时间和设施同步到已有分析流程', async () => {
+    const wrapper = shallowMount(App)
+    const center = { lng: 113.49, lat: 23.11, address: '对话确认的地址', selectionMethod: 'address', source: 'local_snapshot', supportStatus: 'supported' }
+    wrapper.getComponent(AnalysisControls).vm.$emit('confirm-intent', { center, minutes: 20, mode: 'analysis', categories: ['medical', 'pharmacy'] })
+    await nextTick()
+    expect(mocks.restoreCenter).toHaveBeenCalledWith(center)
+    expect(wrapper.getComponent(AnalysisControls).props()).toMatchObject({ minutes: 20, mode: 'analysis', visibleCategories: ['medical', 'pharmacy'] })
+    expect(mocks.runAnalysis).toHaveBeenCalledTimes(1)
   })
 })
