@@ -4,7 +4,7 @@ import { ROUTE_ARROW_SPACING, ROUTE_BORDER, ROUTE_COLOR, categoryColor, category
 import { drawCanvasAnalysisCenter, renderBaiduAnalysisCenter } from '../mapLayers/analysisCenterLayer'
 import { fetchMapConfig } from '../services/analysisApi'
 import type { AnalysisCenter, WalkingRoute } from '../types/location'
-import type { Poi, Report, ServiceAreaFeature } from '../types/report'
+import type { AnalysisMinutes, Poi, Report, ServiceAreaFeature } from '../types/report'
 import type { PlanningRecommendation } from '../types/recommendations'
 import type { SimulationResult } from '../types/simulation'
 import { isServiceAreaVisible, pointInPolygon } from '../utils/serviceAreaLayers'
@@ -32,6 +32,7 @@ function drawRouteEndpointLabel(context: CanvasRenderingContext2D, x: number, y:
 type MapRendererOptions = {
   report: Ref<Report | null>
   analysisCenter: Ref<AnalysisCenter>
+  minutes: Ref<AnalysisMinutes>
   visibleCategories: Ref<string[]>
   showNormal: Ref<boolean>
   showSparse: Ref<boolean>
@@ -43,7 +44,7 @@ type MapRendererOptions = {
   onSelectSimulationLocation: (lng: number, lat: number) => void
 }
 
-export function useMapRenderer({ report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, onSelectCenter, onSelectSimulationLocation }: MapRendererOptions) {
+export function useMapRenderer({ report, analysisCenter, minutes, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, onSelectCenter, onSelectSimulationLocation }: MapRendererOptions) {
   const mapCanvas = ref<HTMLCanvasElement | null>(null)
   const mapContainer = ref<HTMLDivElement | null>(null)
   const realMapReady = ref(false)
@@ -266,7 +267,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         ctx.font = '700 10px sans-serif'; ctx.fillStyle = '#214e73'; ctx.textAlign = 'left'; ctx.fillText(`假设${simulation.value.category_label}`, point.x + 15, point.y + 4)
       }
     }
-    drawCanvasAnalysisCenter(ctx, analysisCenter.value, (lng, lat) => project(lng, lat, w, h), currentReport?.isochrone.properties.minutes || 15)
+    drawCanvasAnalysisCenter(ctx, analysisCenter.value, (lng, lat) => project(lng, lat, w, h), minutes.value)
   }
 
   function visibility() {
@@ -577,7 +578,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         baiduMap.addOverlay(label)
       }
     }
-    renderBaiduAnalysisCenter(baiduMap, BMap, analysisCenter.value, currentReport?.isochrone.properties.minutes || 15)
+    renderBaiduAnalysisCenter(baiduMap, BMap, analysisCenter.value, minutes.value)
   }
 
   function resize() {
@@ -585,7 +586,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     else drawMap()
   }
 
-  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, simulation, simulationPicking, selectedServiceArea, routePreview], async () => {
+  watch([report, analysisCenter, minutes, visibleCategories, showNormal, showSparse, showCritical, simulation, simulationPicking, selectedServiceArea, routePreview], async () => {
     clearHover()
     if (selectedServiceArea.value && !isServiceAreaVisible(selectedServiceArea.value, visibleCategories.value, visibility())) {
       selectedServiceArea.value = null

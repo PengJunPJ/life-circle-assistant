@@ -91,6 +91,7 @@ const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCente
 const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'expand-all': []; 'collapse-all': [] }>()
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
+const minutes = toRef(props, 'minutes')
 const visibleCategories = toRef(props, 'visibleCategories')
 const legendCategories = computed(() => ALL_CATEGORIES.filter(category => visibleCategories.value.includes(category)))
 const hasVisibleCandidates = computed(() => props.report?.recommendations.some(recommendation =>
@@ -120,6 +121,7 @@ const evidenceRef = ref<HTMLElement | null>(null)
 const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, hoverTarget, routePreview, setRoutePreview, retainHover, clearHover, visibleServiceAreas, selectServiceArea, handleCanvasClick, handleCanvasMouseMove, handleCanvasMouseLeave, closeServiceAreaEvidence } = useMapRenderer({
   report,
   analysisCenter,
+  minutes,
   visibleCategories,
   showNormal,
   showSparse,
