@@ -103,6 +103,9 @@ severity_order = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
 for label in labels:
     status_path = output_dir / f"{label}.status.json"
     if not status_path.exists():
+        if label in summary["release_gate"]["labels"]:
+            summary["release_gate"]["passed"] = False
+            summary["release_gate"]["violations"].append({"label": label, "reason": "missing-scan-status"})
         continue
     status = json.loads(status_path.read_text())
     entry = {
@@ -144,6 +147,12 @@ for label in labels:
 
     if label in summary["release_gate"]["labels"]:
         for scanner in ("grype", "trivy"):
+            report_path = output_dir / f"{label}.{scanner}.json"
+            if status.get(f"{scanner}_exit_code") != 0 or not report_path.exists() or not report_path.stat().st_size:
+                summary["release_gate"]["passed"] = False
+                summary["release_gate"]["violations"].append(
+                    {"label": label, "scanner": scanner, "reason": "scan-failed-or-missing"}
+                )
             count = entry[f"{scanner}_high_critical"]
             if count:
                 summary["release_gate"]["passed"] = False

@@ -21,5 +21,5 @@
 
 ## 限制
 
-- 本记录只覆盖 Python requirements 和 npm 锁定依赖，不包含 Docker 基础镜像的 CVE 数据库扫描；容器按版本标签锁定并在构建/冒烟中验证，但尚未执行 Trivy/Grype 镜像漏洞扫描。
+- 本记录原始版本只覆盖 Python requirements 和 npm 锁定依赖；Docker 基础镜像的后续双扫描结果见 [2026-10-11 容器复验记录](container-audit-remediation-2026-10-11.md)。API/Web 最终运行镜像已由 Trivy 与 Grype 复扫为 0 Critical / 0 High，基础镜像和 Node/npm 构建阶段残余风险仍按该记录披露。
 - GitHub Actions 工作流配置已更新，远端运行结果需以 GitHub Actions 实际执行记录为准。

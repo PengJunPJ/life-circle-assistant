@@ -15,6 +15,18 @@ docker compose up --build
 
 打开 <http://localhost:5173>。Docker 前端使用 Nginx 提供生产构建并将 `/api` 同源转发到后端；本地快照模式下使用离线数据，真实模式需要同时配置服务器端 `BAIDU_MAP_AK` 和浏览器端 `VITE_BAIDU_MAP_AK`。
 
+## 参赛材料与预检
+
+候选版本的作品介绍、截图和证据索引位于 `docs/contest/`。在离线模式启动容器后，可重复生成材料并执行自动检查：
+
+```bash
+make contest-screenshots
+make contest-brief
+make contest-preflight
+```
+
+`contest-preflight` 会区分自动失败和必须人工完成的事项；`--strict` 适合正式提交前使用，会把真实百度复跑、真实步行路线截图、演示视频、赛事回执和远端发布门禁一并列为阻断项。离线截图只证明产品交互，不替代真实模式证据。
+
 当百度 Web 服务恢复可用后，可执行以下命令抓取一次真实体检报告并更新本地快照；抓取失败不会覆盖旧文件：
 
 ```bash

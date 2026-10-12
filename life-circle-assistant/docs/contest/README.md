@@ -2,7 +2,7 @@
 
 本目录是"15 分钟生活圈智能体检与规划助手"参加 2026 上海开源软件应用创新大赛（开源 AI 工具赛道）的证据包入口。目标：评审人员不需要开发者口头解释，按下列顺序即可复现运行、核验能力、读取限制。
 
-当前应用版本 `2.3.0`（候选 tag `v2.3.0`），许可证 Apache-2.0（仓库根 `LICENSE`）。本文档以 GitHub `main` 为参赛主仓库；只有完整质量与安全门禁通过后才创建标签。
+当前应用版本 `2.3.0`（尚无已核实的远端 `v2.3.0` tag），许可证 Apache-2.0（仓库根 `LICENSE`）。本文档以 GitHub `main` 为参赛主仓库；只有完整质量与安全门禁通过后才创建标签。作品介绍 PDF、截图、真实报告和本地演示视频均随本目录版本化；视频公开链接、赛事回执和远端发布仍需人工完成。
 
 ## 阅读与核验顺序
 
@@ -11,11 +11,12 @@
 3. **现场演示**：按 [demo-script.md](demo-script.md) 逐步操作，每步给出预期观察与证据指针；离线与真实两条路径分开。
 4. **算法与 API 策略**：先读一页纸 [algorithm-overview.md](algorithm-overview.md)，再按需深入 [../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md)、[../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md)、[多源 POI 对齐策略](../architecture/multi-source-poi-reconciliation.md) 与 [../../../docs/adr/](../../../docs/adr/) 决策记录。
 5. **真实社区证据**：[沙涌长盛花园真实报告](../validation/reports/shachong-changsheng-20261004.json)、[64 条核查基准](../validation/benchmarks/shachong-changsheng-20261004.json)、[评估结果](../validation/results/shachong-changsheng-20261004.md) 与[评估口径](../validation/v2.1-benchmark-evaluation.md)。沙涌 64/64 核查已完成，但属于百度同源一致性证据；跨来源准确率和多社区泛化仍未验证。
-6. **性能与优化**：[../performance/v2-baseline.md](../performance/v2-baseline.md) 三档实测（冷 124s / 种子预热 19s / 全缓存 12.5s）与批量算路对照。
-7. **质量与安全门禁**：[../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../../.github/workflows/security.yml](../../../.github/workflows/security.yml) 与本地 `make quality`；候选版本的测试规模为后端 140 项、前端 46 项，生产与开发依赖漏洞审计和 npm high/critical 审计为阻断项。
+6. **性能与优化**：[../performance/v2-baseline.md](../performance/v2-baseline.md) 包含历史 2.1.0 基线与 2026-10-12 的 2.3.0 七类真实复测，两者不可混作同一组数据。
+7. **质量与安全门禁**：[../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../../.github/workflows/security.yml](../../../.github/workflows/security.yml) 与本地 `make quality`；候选版本的测试规模为后端 140 项、前端 48 项，生产与开发依赖漏洞审计和 npm high/critical 审计为阻断项。
 8. **限制与披露**：[limitations.md](limitations.md) 汇总全部可信度边界，评审可据此判断哪些结论可直接使用。
 9. **证据索引**：[evidence-index.md](evidence-index.md) 给出每条证据的位置、状态与负责人，含尚未完成项的诚实标注。
 10. **治理与合规**：[开源治理](../governance/open-source-governance.md)、[维护路线](../governance/maintenance-roadmap.md)、[依赖合规](../governance/dependency-compliance.md) 和 [第三方声明](../governance/third-party-notices.md) 说明仓库维护、依赖审计、SBOM 与外部地图服务边界。
+11. **作品介绍与预检**：[作品介绍 PDF](submission/15-minute-life-circle-competition-brief.pdf) 汇总背景、架构、创新、赛题映射、验证和限制；在应用目录运行 `make contest-preflight` 可检查版本、治理文件、截图、PDF、GitHub 远端和敏感文件。
 
 ## 三条硬承诺
 
@@ -32,4 +33,6 @@
 | [evidence-index.md](evidence-index.md) | 证据索引：位置、状态（已有/待补）、负责人 |
 | [algorithm-overview.md](algorithm-overview.md) | 算法与 API 策略一页纸（10 分钟可读） |
 | [limitations.md](limitations.md) | 限制与披露汇总 |
-| [screenshots/](screenshots/README.md) | 截图清单与命名规范（图待补） |
+| [screenshots/](screenshots/README.md) | 14 张离线截图与 1 张真实路线截图 |
+| [submission/15-minute-life-circle-competition-brief.pdf](submission/15-minute-life-circle-competition-brief.pdf) | 中文作品介绍与评审阅读路径 |
+| `make contest-preflight` | 自动交付物预检，`--strict` 同时阻断人工未完成项 |

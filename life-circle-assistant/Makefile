@@ -1,4 +1,4 @@
-.PHONY: quality backend-check frontend-check container-check container-audit dependency-audit performance-snapshot benchmark-help multisource-audit amap-probe
+.PHONY: quality backend-check frontend-check container-check container-audit dependency-audit performance-snapshot benchmark-help multisource-audit amap-probe contest-screenshots contest-brief contest-preflight
 
 quality: backend-check frontend-check container-check
 
@@ -41,3 +41,12 @@ multisource-audit:
 
 amap-probe:
 	python3 backend/scripts/probe_amap.py
+
+contest-screenshots:
+	cd frontend && npm run capture:contest
+
+contest-brief:
+	python3 scripts/build_competition_brief.py
+
+contest-preflight:
+	python3 scripts/contest_preflight.py

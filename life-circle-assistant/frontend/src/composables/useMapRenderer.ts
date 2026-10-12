@@ -9,6 +9,7 @@ import type { PlanningRecommendation } from '../types/recommendations'
 import type { SimulationResult } from '../types/simulation'
 import { isServiceAreaVisible, pointInPolygon } from '../utils/serviceAreaLayers'
 import { computeRouteArrows } from '../utils/routeArrows'
+import { loadBaiduSdk } from '../utils/baiduSdk'
 
 export type MapHoverTarget = { poi: Poi; x: number; y: number }
 export type MapRoutePreview = { poi: Poi; route: WalkingRoute }
@@ -404,32 +405,17 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       ? null
       : feature
   }
-  function loadScript(src: string) {
-    return new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = src
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error('百度地图 JavaScript API 加载失败'))
-      document.head.appendChild(script)
-    })
-  }
-
   async function loadBaiduMap() {
     try {
       const config = await fetchMapConfig()
       if (config.mode !== 'real' || !config.browser_ak) return
-      ;(window as any).__lifeCircleBaiduReady = () => undefined
-      await loadScript(`https://api.map.baidu.com/api?v=3.0&ak=${encodeURIComponent(config.browser_ak)}&callback=__lifeCircleBaiduReady`)
-      await new Promise<void>((resolve, reject) => {
-        const timer = window.setInterval(() => {
-          if ((window as any).BMap) { window.clearInterval(timer); resolve() }
-        }, 50)
-        window.setTimeout(() => { window.clearInterval(timer); reject(new Error('百度地图初始化超时')) }, 8000)
-      })
+      await loadBaiduSdk(config.browser_ak)
       realMapReady.value = true
       await nextTick()
       renderBaiduMap()
     } catch {
+      realMapReady.value = false
+      await nextTick()
       ElMessage.warning('百度地图底图加载失败，请检查浏览器端 AK 的域名白名单')
     } finally {
       // 无论使用真实底图还是 Canvas 降级图，都只在地图探测结束后通知页面开始首次分析。

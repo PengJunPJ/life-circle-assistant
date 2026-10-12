@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import statistics
+import subprocess
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 def request_json(base_url: str, path: str, method: str = "GET", payload: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -37,10 +41,15 @@ def wait_for_report(base_url: str, task_id: str, timeout_seconds: float) -> dict
     raise TimeoutError(f"等待任务 {task_id} 超过 {timeout_seconds:g} 秒")
 
 
-def run_once(base_url: str, payload: dict[str, Any], timeout_seconds: float) -> dict[str, Any]:
+def run_once(base_url: str, payload: dict[str, Any], timeout_seconds: float, report_dir: Path | None = None) -> dict[str, Any]:
     wall_started = time.perf_counter()
     task = request_json(base_url, "/api/analyze", "POST", payload)
     report = wait_for_report(base_url, task["id"], timeout_seconds)
+    if report_dir:
+        report_dir.mkdir(parents=True, exist_ok=True)
+        (report_dir / f"{report['report_id']}.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
     execution = report["execution"]
     return {
         "report_id": report["report_id"],
@@ -81,22 +90,44 @@ def main() -> None:
     parser.add_argument("--categories", default="market,pharmacy,school,medical")
     parser.add_argument("--timeout", type=float, default=180)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--report-dir", type=Path, help="同时保存本次真正生成的报告")
+    parser.add_argument("--cache-regime", choices=("cold", "seed", "warm", "unspecified"), default="unspecified",
+                        help="首轮缓存前置状态；冷缓存必须使用独立空数据库并禁用种子")
+    parser.add_argument("--lng", type=float, default=113.53382359909054)
+    parser.add_argument("--lat", type=float, default=23.089011715410187)
+    parser.add_argument("--address", default="广州市黄埔区沙涌长盛花园")
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs 必须至少为 1")
 
     health = request_json(args.base_url, "/api/health")
     payload = {
+        "lng": args.lng,
+        "lat": args.lat,
+        "center_address": args.address,
+        "center_selection_method": "coordinates",
         "minutes": args.minutes,
         "mode": args.mode,
         "categories": [item.strip() for item in args.categories.split(",") if item.strip()],
     }
+    root = Path(__file__).resolve().parents[1]
+    source_files = [*sorted((root / "backend" / "app").rglob("*.py")), root / "backend" / "requirements.txt"]
+    source_digest = hashlib.sha256()
+    for path in source_files:
+        source_digest.update(str(path.relative_to(root)).encode())
+        source_digest.update(path.read_bytes())
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
     result = {
-        "measured_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "measured_at": datetime.now(ZoneInfo("Asia/Shanghai")).isoformat(),
+        "app_version": health.get("version"),
+        "source_commit": commit,
+        "backend_source_sha256": source_digest.hexdigest(),
+        "cache_regime_first_run": args.cache_regime,
+        "seeded_walking_cache": health.get("seeded_walking_cache"),
         "base_url": args.base_url,
         "provider_mode": health.get("provider_mode"),
         "request": payload,
-        **summarize([run_once(args.base_url, payload, args.timeout) for _ in range(args.runs)]),
+        **summarize([run_once(args.base_url, payload, args.timeout, args.report_dir) for _ in range(args.runs)]),
     }
     rendered = json.dumps(result, ensure_ascii=False, indent=2)
     if args.output:

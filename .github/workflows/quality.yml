@@ -74,6 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 校验所有必需 job 都成功
+        working-directory: .
         env:
           BACKEND_RESULT: ${{ needs.backend.result }}
           FRONTEND_RESULT: ${{ needs.frontend.result }}

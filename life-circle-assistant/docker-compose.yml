@@ -12,6 +12,7 @@ services:
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       VITE_BAIDU_MAP_AK: ${VITE_BAIDU_MAP_AK:-}
       LIFE_CIRCLE_DATABASE_PATH: /app/data/runtime/life-circle.db
+      LIFE_CIRCLE_SEED_WALKING_CACHE: ${LIFE_CIRCLE_SEED_WALKING_CACHE:-1}
       WALKING_CACHE_TTL_SECONDS: ${WALKING_CACHE_TTL_SECONDS:-86400}
       WALKING_MAX_CONCURRENCY: ${WALKING_MAX_CONCURRENCY:-6}
       WALKING_QPS: ${WALKING_QPS:-8}
@@ -31,7 +32,7 @@ services:
     volumes:
       - analysis-data:/app/data/runtime
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 3s
@@ -47,7 +48,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "127.0.0.1:5173:80"
+      - "127.0.0.1:${WEB_HOST_PORT:-5173}:80"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--output-document=-", "http://127.0.0.1:80"]
       interval: 3s

@@ -1,0 +1,85 @@
+{
+  "measured_at": "2026-10-12T10:32:52.845618+08:00",
+  "app_version": "2.3.0",
+  "source_commit": "6ed0945061b2da86761ba43e214398da0eda2341",
+  "backend_source_sha256": "4edd17b21c027604af4df5656439b738cd64004777ad78e2ef5893994e2f4948",
+  "cache_regime_first_run": "cold",
+  "seeded_walking_cache": 0,
+  "base_url": "http://localhost:8000",
+  "provider_mode": "real",
+  "request": {
+    "lng": 113.53382359909054,
+    "lat": 23.089011715410187,
+    "center_address": "广州市黄埔区沙涌长盛花园",
+    "center_selection_method": "coordinates",
+    "minutes": 15,
+    "mode": "analysis",
+    "categories": [
+      "market",
+      "pharmacy",
+      "school",
+      "medical",
+      "elderly",
+      "park",
+      "convenience"
+    ]
+  },
+  "runs": [
+    {
+      "report_id": "f4760b29-cf45-42d6-add2-db9457cce691",
+      "wall_duration_ms": 149272,
+      "reported_duration_ms": 149156,
+      "stage_durations_ms": {
+        "request_validation": 1,
+        "center_resolution": 308,
+        "facility_discovery": 11852,
+        "walking_calculation": 50003,
+        "region_classification": 86991,
+        "scoring": 1,
+        "report_assembly": 1
+      },
+      "api_calls": 263,
+      "cache": {
+        "hits": 0,
+        "misses": 1291,
+        "hit_rate": 0.0
+      },
+      "walking_provider_calls": 108,
+      "walking_failures": 0,
+      "completeness": "complete"
+    },
+    {
+      "report_id": "46990b2c-0ee2-4eda-a985-b5eea99f5516",
+      "wall_duration_ms": 13260,
+      "reported_duration_ms": 13218,
+      "stage_durations_ms": {
+        "request_validation": 1,
+        "center_resolution": 470,
+        "facility_discovery": 12071,
+        "walking_calculation": 152,
+        "region_classification": 522,
+        "scoring": 1,
+        "report_assembly": 1
+      },
+      "api_calls": 18,
+      "cache": {
+        "hits": 1291,
+        "misses": 0,
+        "hit_rate": 1.0
+      },
+      "walking_provider_calls": 0,
+      "walking_failures": 0,
+      "completeness": "complete"
+    }
+  ],
+  "summary": {
+    "run_count": 2,
+    "wall_duration_ms_median": 81266,
+    "wall_duration_ms_min": 13260,
+    "wall_duration_ms_max": 149272,
+    "total_api_calls": 281,
+    "total_cache_hits": 1291,
+    "warm_run_api_reduction": 245,
+    "warm_run_duration_reduction_ms": 135938
+  }
+}

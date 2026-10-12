@@ -5,6 +5,10 @@ import urllib.error
 import urllib.request
 
 
+API_BASE_URL = os.getenv("SMOKE_API_URL", "http://localhost:8000")
+WEB_BASE_URL = os.getenv("SMOKE_WEB_URL", "http://localhost:5173")
+
+
 def request_json(url: str, method: str = "GET", payload: dict | None = None) -> dict:
     body = json.dumps(payload).encode("utf-8") if payload is not None else None
     request = urllib.request.Request(
@@ -26,9 +30,9 @@ def wait_for_report(task_id: str) -> dict:
     timeout_seconds = float(os.getenv("SMOKE_REPORT_TIMEOUT_SECONDS", "60"))
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
-        task = request_json(f"http://localhost:8000/api/analyze/{task_id}")
+        task = request_json(f"{API_BASE_URL}/api/analyze/{task_id}")
         if task["status"] == "completed":
-            return request_json(f"http://localhost:8000/api/report/{task_id}")
+            return request_json(f"{API_BASE_URL}/api/report/{task_id}")
         if task["status"] == "failed":
             raise RuntimeError(task.get("error") or "体检任务失败")
         time.sleep(0.2)
@@ -36,12 +40,12 @@ def wait_for_report(task_id: str) -> dict:
 
 
 def main() -> None:
-    health = request_json("http://localhost:8000/api/health")
+    health = request_json(f"{API_BASE_URL}/api/health")
     if health.get("status") != "ok" or health.get("mode") != "mock":
         raise RuntimeError(f"后端未以本地快照模式运行：{health}")
 
     task = request_json(
-        "http://localhost:8000/api/analyze",
+        f"{API_BASE_URL}/api/analyze",
         method="POST",
         payload={"minutes": 15, "mode": "demo"},
     )
@@ -51,17 +55,17 @@ def main() -> None:
     if report.get("isochrone", {}).get("geometry", {}).get("type") != "Polygon":
         raise RuntimeError("冒烟报告缺少有效等时圈")
     pdf, content_type = request_bytes(
-        f"http://localhost:8000/api/reports/{report['report_id']}/exports/pdf"
+        f"{API_BASE_URL}/api/reports/{report['report_id']}/exports/pdf"
     )
     if content_type != "application/pdf" or not pdf.startswith(b"%PDF-"):
         raise RuntimeError("容器无法从持久化报告生成有效 PDF")
 
-    with urllib.request.urlopen("http://localhost:5173", timeout=5) as response:
+    with urllib.request.urlopen(WEB_BASE_URL, timeout=5) as response:
         page = response.read().decode("utf-8")
     if response.status != 200 or '<div id="app"></div>' not in page:
         raise RuntimeError("前端容器未返回应用入口页面")
 
-    proxied_health = request_json("http://localhost:5173/api/health")
+    proxied_health = request_json(f"{WEB_BASE_URL}/api/health")
     if proxied_health.get("status") != "ok" or proxied_health.get("mode") != "mock":
         raise RuntimeError(f"前端 Nginx 未正确同源代理后端 API：{proxied_health}")
 
