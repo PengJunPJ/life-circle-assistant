@@ -23,11 +23,13 @@ from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService
 from .mock_data import CATEGORIES, CENTER
+from .planning_assistant import run_planning_assistant
 from .schemas import (
     AnalysisIntentRequest,
     AnalysisIntentResponse,
     AnalyzeRequest,
     CoordinateConversionRequest,
+    PlanningRequest,
     ReportComparisonRequest,
     SimulationRequest,
 )
@@ -462,6 +464,30 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"假设设施位置不可用：{exc}") from exc
+
+    @app.post("/api/reports/{report_id}/ai/plan")
+    async def plan_report(
+        report_id: str,
+        payload: PlanningRequest,
+        request: Request,
+        map_provider: MapProvider = Depends(get_map_provider),
+        report_repository: ReportRepository = Depends(get_report_repository),
+    ):
+        report = report_repository.get(report_id)
+        if not report or report.get("status") != "completed":
+            raise HTTPException(status_code=404, detail="历史报告不存在或尚未完成")
+        previous = None
+        if payload.previous_turn_id:
+            previous = report_repository.get_ai_interpretation(report_id, payload.previous_turn_id)
+            if not previous or previous.get("prompt_version") != "tool-planner-v1":
+                raise HTTPException(status_code=422, detail="上一轮规划问答不存在或不属于当前报告")
+        try:
+            result = await run_planning_assistant(
+                request.app.state.llm_provider, map_provider, report, payload, previous=previous
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return report_repository.save_ai_interpretation(report_id, result, question=payload.message)
 
     @app.post("/api/reports/{report_id}/ai/interpret")
     async def interpret_report(

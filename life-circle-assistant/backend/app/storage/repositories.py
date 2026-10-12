@@ -266,3 +266,11 @@ class ReportRepository:
                 (report_id, limit),
             ).fetchall()
         return [{"id": row["id"], **json.loads(row["result_json"])} for row in rows]
+
+    def get_ai_interpretation(self, report_id: str, interpretation_id: str) -> dict[str, Any] | None:
+        with self.database.connect() as connection:
+            row = connection.execute(
+                "SELECT id, result_json FROM ai_interpretations WHERE report_id = ? AND id = ?",
+                (report_id, interpretation_id),
+            ).fetchone()
+        return {"id": row["id"], **json.loads(row["result_json"])} if row else None

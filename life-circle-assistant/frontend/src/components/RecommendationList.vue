@@ -29,7 +29,7 @@
             <small>{{ candidate.lng.toFixed(5) }}, {{ candidate.lat.toFixed(5) }}</small>
             <em>{{ candidate.reason }}</em>
           </button>
-          <button type="button" class="candidate-simulate" @click="emit('simulate', item.category, candidate)">模拟此点</button>
+          <button type="button" class="candidate-simulate" :disabled="simulationDisabled" @click="emit('simulate', item.category, candidate)">模拟此点</button>
         </div>
       </div>
     </article>
@@ -48,6 +48,7 @@ const props = defineProps<{
   recommendations: PlanningRecommendation[]
   summary: RecommendationSummary
   selectedId: string | null
+  simulationDisabled?: boolean
 }>()
 const emit = defineEmits<{
   locate: [recommendationId: string]

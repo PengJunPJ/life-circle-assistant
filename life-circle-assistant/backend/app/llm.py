@@ -2,8 +2,8 @@
 
 The deterministic report interpreter remains the source of truth. This module
 turns verified report facts into clearer language with a validated fallback.
-The analysis-intent module reuses this adapter to extract user parameters;
-neither use delegates geographic or scoring calculations to the model.
+Analysis intent and tool planning reuse this adapter. Geographic and scoring
+calculations always remain in application services, including model-selected tools.
 """
 
 from __future__ import annotations
@@ -83,6 +83,21 @@ class OpenAICompatibleProvider:
         )
 
     async def generate(self, *, system: str, user: str) -> dict[str, Any]:
+        return await self._completion(
+            {
+                "response_format": {"type": "json_object"},
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            },
+            parse_json=True,
+        )
+
+    async def generate_tools(self, *, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
+        """原生工具协议：保留 assistant.tool_calls，由调用方执行并追加 tool 消息。"""
+        return await self._completion(
+            {"messages": messages, "tools": tools, "tool_choice": "auto", "parallel_tool_calls": False}
+        )
+
+    async def _completion(self, payload: dict[str, Any], *, parse_json: bool = False) -> dict[str, Any]:
         async with self._semaphore:
             started = time.perf_counter()
             last_error: Exception | None = None
@@ -94,21 +109,21 @@ class OpenAICompatibleProvider:
                             "model": self.model,
                             "temperature": 0.1,
                             "max_tokens": self._settings.max_tokens,
-                            "response_format": {"type": "json_object"},
-                            "messages": [
-                                {"role": "system", "content": system},
-                                {"role": "user", "content": user},
-                            ],
+                            **payload,
                         },
                     )
                     response.raise_for_status()
-                    payload = response.json()
-                    content = payload["choices"][0]["message"]["content"]
-                    if isinstance(content, list):
-                        content = "".join(str(part.get("text", "")) for part in content if isinstance(part, dict))
-                    result = json.loads(str(content))
+                    response_payload = response.json()
+                    result = response_payload["choices"][0]["message"]
                     if not isinstance(result, dict):
-                        raise LLMError("模型返回的 JSON 顶层结构不是对象")
+                        raise LLMError("模型返回的消息结构不是对象")
+                    if parse_json:
+                        content = result.get("content")
+                        if isinstance(content, list):
+                            content = "".join(str(part.get("text", "")) for part in content if isinstance(part, dict))
+                        result = json.loads(str(content))
+                        if not isinstance(result, dict):
+                            raise LLMError("模型返回的 JSON 顶层结构不是对象")
                     await self._record_call(time.perf_counter() - started)
                     return result
                 except Exception as exc:

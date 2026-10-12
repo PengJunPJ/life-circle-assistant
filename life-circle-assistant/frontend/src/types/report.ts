@@ -184,7 +184,8 @@ export type AiInterpretation = {
   recommendations: { title: string; text: string; priority: string; evidence_refs: AiEvidenceRef[] }[]
   evidence_refs: AiEvidenceRef[]
   model: string
-  mode: 'rule_template' | 'rule_template_degraded' | 'llm_structured'
+  mode: 'rule_template' | 'rule_template_degraded' | 'llm_structured' | 'llm_tools' | 'tool_rules' | 'tool_rules_degraded'
+  id?: string
   prompt_version: string
   generated_at: string
   data_quality_notice: string

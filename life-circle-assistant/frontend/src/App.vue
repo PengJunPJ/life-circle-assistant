@@ -108,6 +108,7 @@
         :simulation-loading="simulationLoading"
         :simulation-picking="simulationPicking"
         :simulation-error="simulationError"
+        :planning-grid-id="planningGridId"
         @locate-recommendation="selectedRecommendationId = $event"
         @refresh-history="loadHistory"
         @open-history="handleOpenHistory"
@@ -121,6 +122,7 @@
         @pick-simulation-location="beginSimulationMapPick"
         @run-simulation="runSimulation"
         @clear-simulation="clearSimulation"
+        @assistant-simulation="applyAssistantSimulation"
         @toggle-collapse="collapsedReport = !collapsedReport"
         @close-mobile="closeMobilePanel('report')"
       />
@@ -179,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { fetchMapStatus, probeMapApi as requestMapApiProbe } from './services/analysisApi'
 import type { MapProbeResult, MapStatus } from './types/report'
 import type { ConfirmedAnalysisIntent } from './types/analysisIntent'
@@ -199,6 +201,7 @@ const ReportComparisonPanel = defineAsyncComponent(() => import('./components/Re
 
 const FIRST_USE_GUIDE_KEY = 'life-circle:first-use-guide:v1'
 const selectedRecommendationId = ref<string | null>(null)
+const planningGridId = ref<string | null>(null)
 const activeMobilePanel = ref<'controls' | 'report' | null>(null)
 const collapsedControls = ref(false)
 const collapsedReport = ref(false)
@@ -315,7 +318,9 @@ const {
   simulateCandidate: simulateRecommendationCandidate,
   run: runSimulation,
   clear: clearSimulation,
+  applyAssistantSimulation,
 } = useSimulation(report)
+watch(() => report.value?.report_id, () => { planningGridId.value = null })
 const {
   items: historyItems,
   total: historyTotal,
@@ -505,6 +510,7 @@ function applySelectedReport(selected: NonNullable<typeof report.value>) {
 }
 
 function handleServiceAreaSelect(serviceAreaId: string | null) {
+  planningGridId.value = serviceAreaId
   if (!serviceAreaId || !report.value) {
     selectedRecommendationId.value = null
     return

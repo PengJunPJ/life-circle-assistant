@@ -2,6 +2,7 @@ import { API_BASE_URL } from '../constants/facilities'
 import type { AnalysisIntent, IntentDraft } from '../types/analysisIntent'
 import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
+import type { PlanningParameters, PlanningResponse } from '../types/planning'
 import type { CenterSelectionMethod, CoordinateConversionResponse, CoordinateSystem, LocationApiResponse, LocationCandidate, WalkingRoute } from '../types/location'
 import type { AiInterpretation, AiInterpretationIntent, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapProbeResult, MapStatus, Report } from '../types/report'
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
@@ -166,6 +167,15 @@ export async function fetchReportInterpretations(reportId: string) {
   return parseResponse<{ items: AiInterpretation[] }>(
     await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/ai/interpretations`),
   )
+}
+
+export async function planReport(reportId: string, params: PlanningParameters, signal?: AbortSignal) {
+  return parseResponse<PlanningResponse>(await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(reportId)}/ai/plan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+    signal,
+  }))
 }
 
 export async function downloadReportExport(reportId: string, format: ReportExportFormat) {

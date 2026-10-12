@@ -68,14 +68,14 @@
         </div>
       </section>
       <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>可展开核验计算过程</small></div><div ref="chartRef" class="chart"></div><div ref="radarRef" class="radar" role="img" aria-label="各类别得分雷达图"></div><ScoreBreakdown :scores="report.category_scores" /></div>
-      <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" @locate="emit('locate-recommendation', $event)" @simulate="(category, candidate) => emit('simulate-candidate', category, candidate)" /></div>
+      <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" :simulation-disabled="simulationLoading || planningBusy" @locate="emit('locate-recommendation', $event)" @simulate="(category, candidate) => emit('simulate-candidate', category, candidate)" /></div>
       <div class="report-section">
         <SimulationPanel
           :report="report"
           :category="simulationCategory"
           :location="simulationLocation"
           :result="simulationResult"
-          :loading="simulationLoading"
+          :loading="simulationLoading || planningBusy"
           :picking="simulationPicking"
           :error="simulationError"
           @update:category="emit('update:simulation-category', $event)"
@@ -84,7 +84,15 @@
           @clear="emit('clear-simulation')"
         />
       </div>
-      <AiPlanningAssistant :report="report" />
+      <AiPlanningAssistant
+        :report="report"
+        :simulation-location="simulationLocation"
+        :simulation-category="simulationCategory"
+        :grid-id="planningGridId"
+        :disabled="simulationLoading"
+        @busy="planningBusy = $event"
+        @simulation-result="emit('assistant-simulation', $event)"
+      />
       <ReportExportMenu :report-id="report.report_id" />
     </div>
     <div v-else class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span></div>
@@ -129,6 +137,7 @@ const props = defineProps<{
   simulationPicking: boolean
   simulationError: string
   mobileOpen: boolean
+  planningGridId?: string | null
 }>()
 const emit = defineEmits<{
   'refresh-history': []
@@ -146,7 +155,9 @@ const emit = defineEmits<{
   'clear-simulation': []
   'close-mobile': []
   'toggle-collapse': []
+  'assistant-simulation': [result: SimulationResult]
 }>()
+const planningBusy = ref(false)
 
 // 标题栏整体作为折叠开关仅在桌面生效；移动端抽屉由独立关闭按钮控制。
 function toggleCollapseIfDesktop() {

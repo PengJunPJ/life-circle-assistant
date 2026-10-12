@@ -103,3 +103,26 @@ class SimulationRequest(BaseModel):
     lat: float = Field(ge=-90, le=90)
     selection_method: SimulationSelectionMethod
     candidate_id: str | None = Field(default=None, max_length=120)
+
+
+class PlanningLocation(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+
+    lng: float = Field(ge=-180, le=180)
+    lat: float = Field(ge=-90, le=90)
+
+
+class PlanningRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(min_length=1, max_length=1000)
+    previous_turn_id: str | None = Field(default=None, max_length=120)
+    selected_location: PlanningLocation | None = None
+    grid_id: str | None = Field(default=None, max_length=120)
+
+    @field_validator("message")
+    @classmethod
+    def require_question(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("请描述想查询或模拟的问题")
+        return value.strip()
