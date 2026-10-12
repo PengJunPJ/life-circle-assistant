@@ -30,7 +30,7 @@ function mountControls(mapStatus: MapStatus | null, realMapReady: boolean) {
         : null,
       mapProbeLoading: false, realMapReady, mobileOpen: false,
     },
-    global: { stubs: { ElSegmented: true, ElSwitch: true } },
+    global: { stubs: { ElSwitch: true } },
   })
 }
 

@@ -57,8 +57,13 @@
       <label>分析参数</label>
       <div class="mode-switch" aria-label="分析精度模式"><button type="button" :class="{ active: mode === 'demo' }" :aria-pressed="mode === 'demo'" @click="emit('update:mode', 'demo')">快速分析</button><button type="button" :class="{ active: mode === 'analysis' }" :aria-pressed="mode === 'analysis'" @click="emit('update:mode', 'analysis')">正式分析</button></div>
       <p class="mode-note">正式地图模式下两种精度都会请求百度；正式分析会增加等时圈采样次数。</p>
-      <div class="range-row"><span>步行时间</span><strong>{{ minutes }} 分钟</strong></div>
-      <el-segmented :model-value="minutes" :options="[10, 15, 20]" size="small" @update:model-value="emit('update:minutes', $event as AnalysisMinutes)" />
+      <div class="range-row"><span id="walking-time-label">步行时间</span><strong>{{ minutes }} 分钟</strong></div>
+      <div class="walking-time-switch" role="radiogroup" aria-labelledby="walking-time-label">
+        <label v-for="option in walkingTimeOptions" :key="option" class="walking-time-option">
+          <input type="radio" name="walking-time" :value="option" :checked="minutes === option" @change="emit('update:minutes', option)" />
+          <span class="walking-time-face"><strong>{{ option }}</strong><small>分钟</small></span>
+        </label>
+      </div>
     </div>
     <div class="panel-section layer-panel">
       <div class="layer-section-title">
@@ -105,6 +110,7 @@ import type { AnalysisCenter, CoordinateSystem, LocationCandidate } from '../typ
 import type { AnalysisMode, AnalysisMinutes, MapProbeResult, MapStatus } from '../types/report'
 
 const intentActive = ref(false)
+const walkingTimeOptions: AnalysisMinutes[] = [10, 15, 20]
 const props = defineProps<{
   center: AnalysisCenter
   addressQuery: string
