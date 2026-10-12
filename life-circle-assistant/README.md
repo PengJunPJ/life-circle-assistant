@@ -6,6 +6,8 @@
 
 ## 快速运行
 
+第一次从仓库克隆安装，请先阅读 [安装使用说明](../README.md)，其中包含目录进入步骤、Docker 与本地开发两种启动方式、首次操作及常见问题。
+
 ```bash
 cp .env.example .env
 docker compose up --build
