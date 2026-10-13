@@ -1,7 +1,7 @@
 <template>
-  <aside class="control-panel" aria-label="社区体检参数">
+  <aside class="control-panel" aria-label="智能体检工作台">
     <header class="controls-heading">
-      <h1>社区体检</h1>
+      <h1>智能体检工作台</h1>
       <button class="panel-collapse-btn controls-collapse" type="button" aria-label="收起分析参数面板" @click="emit('toggle-collapse')"><ArrowLeft /></button>
       <button class="mobile-panel-close" type="button" aria-label="关闭分析参数面板并返回地图" @click="emit('close-mobile')">×</button>
     </header>
@@ -15,7 +15,7 @@
         </div>
       </details>
       <p v-if="!mapStatusLoading && !mapStatus" class="control-warning" role="alert">无法读取数据状态，请检查后端服务。</p>
-      <p v-else-if="mapStatus && !mapStatus.real_api_configured" class="control-warning">本地快照仅支持海韵东路样例周边，数据非实时。</p>
+      <p v-else-if="mapStatus && !mapStatus.real_api_configured" class="control-warning">本地快照仅支持沙涌长盛花园样例周边，数据非实时。</p>
       <p v-else-if="mapProbeResult && !mapProbeResult.verified" class="control-warning" role="alert">地图接口探测失败，请展开详情检查。</p>
       <div class="entry-tabs" role="tablist" aria-label="体检参数填写方式" @keydown="handleTabKeydown">
         <button id="manual-entry-tab" type="button" role="tab" :aria-selected="entry === 'manual'" :tabindex="entry === 'manual' ? 0 : -1" aria-controls="manual-entry-panel" :disabled="busy" @click="entry = 'manual'">自主设置</button>

@@ -153,9 +153,7 @@ def test_endpoint_only_prepares_intent_then_existing_analysis_runs_after_confirm
     with TestClient(app) as client:
         with patch.object(app.state.task_repository, "create", wraps=app.state.task_repository.create) as create:
             with patch.object(provider, "geocode", wraps=provider.geocode) as geocode:
-                response = client.post(
-                    "/api/analysis/intent", json={"message": "体检红山街道海韵东路，10分钟，买菜和买药"}
-                )
+                response = client.post("/api/analysis/intent", json={"message": "体检沙涌长盛花园，10分钟，买菜和买药"})
                 assert response.status_code == 200
                 create.assert_not_called()
                 geocode.assert_not_called()

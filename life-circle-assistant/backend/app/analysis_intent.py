@@ -154,7 +154,7 @@ async def parse_analysis_intent(
     missing, questions = [], []
     if not draft.address and not draft.use_current_center:
         missing.append("location")
-        questions.append("请补充社区或地址（如“地址是红山街道海韵东路”），也可以说“当前选点”。")
+        questions.append("请补充社区或地址（如“地址是沙涌长盛花园”），也可以说“当前选点”。")
     if draft.minutes is None:
         missing.append("minutes")
         questions.append("当前仅支持10、15、20分钟，请选择或补充一个步行时间。")

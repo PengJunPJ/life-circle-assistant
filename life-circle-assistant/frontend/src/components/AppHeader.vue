@@ -2,7 +2,7 @@
   <header class="topbar">
     <div class="brand">
       <div class="brand-mark"><MapLocation /></div>
-      <div><strong>生活圈体检</strong><span>COMMUNITY PULSE · 黄埔区样例</span></div>
+      <div><strong title="15分钟生活圈·智能体检与规划助手">15分钟生活圈·<br class="brand-title-break" />智能体检与规划助手</strong><span>COMMUNITY PULSE · 广州市黄埔区样例</span></div>
     </div>
     <div class="topbar-actions">
       <button class="theme-switch" type="button" :title="themeSwitchLabel" :aria-label="themeSwitchLabel" @click="emit('update:theme', nextTheme, $event)">

@@ -29,8 +29,8 @@ class AnalyzeRequest(BaseModel):
     放在地图支持范围模块中，避免把 HTTP 输入模型变成业务服务的容器。
     """
 
-    lng: float = Field(default=113.4872, ge=-180, le=180)
-    lat: float = Field(default=23.1068, ge=-90, le=90)
+    lng: float = Field(default=113.53382359909054, ge=-180, le=180)
+    lat: float = Field(default=23.08901171541019, ge=-90, le=90)
     minutes: Literal[10, 15, 20] = 15
     mode: Literal["demo", "analysis"] = "demo"
     categories: list[CoreCategory] = Field(

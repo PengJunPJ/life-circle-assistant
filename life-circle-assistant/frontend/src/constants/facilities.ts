@@ -32,7 +32,7 @@ export const FACILITY_COLORS: Record<string, string> = {
 
 export const ALL_CATEGORIES = Object.keys(FACILITY_LABELS)
 export const DEFAULT_CATEGORIES = ['medical', 'school', 'convenience', 'elderly']
-export const DEFAULT_CENTER = { lng: 113.4872, lat: 23.1068 }
+export const DEFAULT_CENTER = { lng: 113.53382359909054, lat: 23.08901171541019 }
 // 步行路线预览色：浅绿芯线 + 深绿描边，靠"实线+描边+箭头"与等时圈青绿虚线区分
 export const ROUTE_COLOR = '#74d178'
 export const ROUTE_BORDER = '#2f9e44'

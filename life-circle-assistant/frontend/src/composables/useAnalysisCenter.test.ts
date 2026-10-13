@@ -44,6 +44,21 @@ async function submitCurrentCenter(location = useAnalysisCenter()) {
 describe('统一分析中心选点流程', () => {
   beforeEach(() => vi.clearAllMocks())
 
+  it('默认选择沙涌长盛花园及其核查坐标', () => {
+    const location = useAnalysisCenter()
+
+    expect(location.center.value).toMatchObject({
+      lng: 113.53382359909054,
+      lat: 23.08901171541019,
+      address: '广州市黄埔区沙涌长盛花园',
+      selectionMethod: 'default',
+      source: 'local_snapshot',
+    })
+    expect(location.addressQuery.value).toBe('广州市黄埔区沙涌长盛花园')
+    expect(location.coordinateLng.value).toBe('113.533824')
+    expect(location.coordinateLat.value).toBe('23.089012')
+  })
+
   it('从地址候选选择后使用同一地址和坐标提交并生成报告', async () => {
     api.searchAddressCandidates.mockResolvedValue([
       { lng: 113.501, lat: 23.111, address: '广州市黄埔区候选一', source: 'real_api', provider: 'baidu' },
