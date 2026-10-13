@@ -8,7 +8,7 @@ import AppHeader from './components/AppHeader.vue'
 import FirstUseGuide from './components/FirstUseGuide.vue'
 import MapStage from './components/MapStage.vue'
 
-const mocks = vi.hoisted(() => ({ runAnalysis: vi.fn(), loadHistory: vi.fn(), restoreCenter: vi.fn() }))
+const mocks = vi.hoisted(() => ({ runAnalysis: vi.fn(), supplementAnalysis: vi.fn(), loadHistory: vi.fn(), restoreCenter: vi.fn() }))
 
 vi.mock('./services/analysisApi', () => ({
   fetchMapStatus: vi.fn().mockResolvedValue({ mode: 'real', provider_mode: 'real', provider: 'baidu', source: 'real_api', real_api_configured: true, real_api_probe_endpoint: '/api/map/probe', mock_available: true, snapshot_available: false, message: '已配置' }),
@@ -25,8 +25,8 @@ vi.mock('./composables/useAnalysisCenter', () => ({
 }))
 vi.mock('./composables/useAnalysis', () => ({
   useAnalysis: () => ({
-    mode: ref('demo'), minutes: ref(15), visibleCategories: ref(['market']), showNormal: ref(false), showSparse: ref(true), showCritical: ref(true),
-    loading: ref(false), progress: ref(0), report: ref(null), error: ref(''), runAnalysis: mocks.runAnalysis, toggleCategory: vi.fn(), applyReport: vi.fn(),
+    mode: ref('demo'), minutes: ref(15), analysisCategories: ref(['market']), visibleCategories: ref(['market']), showNormal: ref(false), showSparse: ref(true), showCritical: ref(true),
+    loading: ref(false), progress: ref(0), report: ref(null), error: ref(''), runAnalysis: mocks.runAnalysis, supplementAnalysis: mocks.supplementAnalysis, setVisibleCategories: vi.fn(), toggleCategory: vi.fn(), applyReport: vi.fn(),
   }),
 }))
 vi.mock('./composables/useReportHistory', () => ({
@@ -42,6 +42,8 @@ vi.mock('./composables/useSimulation', () => ({
 describe('真实地图分析启动方式', () => {
   beforeEach(() => {
     mocks.runAnalysis.mockReset()
+    mocks.supplementAnalysis.mockReset()
+    mocks.loadHistory.mockReset()
     window.localStorage.setItem('life-circle:first-use-guide:v1', 'completed')
   })
 
@@ -78,5 +80,17 @@ describe('真实地图分析启动方式', () => {
     expect(mocks.restoreCenter).toHaveBeenCalledWith(center)
     expect(wrapper.getComponent(AnalysisControls).props()).toMatchObject({ minutes: 20, mode: 'analysis', visibleCategories: ['medical', 'pharmacy'] })
     expect(mocks.runAnalysis).toHaveBeenCalledTimes(1)
+  })
+
+  it('补充体检通过专用流程提交，成功后刷新历史', async () => {
+    mocks.supplementAnalysis.mockResolvedValue(true)
+    const wrapper = shallowMount(App)
+    await nextTick()
+    mocks.loadHistory.mockClear()
+    wrapper.getComponent(AnalysisControls).vm.$emit('supplement-analysis', ['market', 'pharmacy'])
+    await nextTick()
+    expect(mocks.supplementAnalysis).toHaveBeenCalledWith(['market', 'pharmacy'])
+    expect(mocks.runAnalysis).not.toHaveBeenCalled()
+    expect(mocks.loadHistory).toHaveBeenCalledTimes(1)
   })
 })

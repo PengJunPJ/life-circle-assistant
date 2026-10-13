@@ -67,19 +67,33 @@
     </div>
     <div class="panel-section layer-panel">
       <div class="layer-section-title">
-        <div><label>设施与服务区域</label><small>选择地图上要展示的图层</small></div>
-        <span class="layer-count" role="status" aria-live="polite" aria-atomic="true">{{ visibleCategories.length }}/{{ ALL_CATEGORIES.length }} 类</span>
+        <div><label>{{ report ? '地图设施展示' : '本次体检设施' }}</label><small>{{ report ? `本报告已体检 ${displayCategories.length} 类；勾选只改变地图显示` : '仅分析勾选的设施类别' }}</small></div>
+        <span class="layer-count" role="status" aria-live="polite" aria-atomic="true">{{ displayedCount }}/{{ displayCategories.length }} 类</span>
       </div>
       <div class="facility-selection-actions" role="group" aria-label="设施类别快捷选择">
-        <button type="button" :disabled="ALL_CATEGORIES.every(category => visibleCategories.includes(category))" @click="emit('update:visibleCategories', [...ALL_CATEGORIES])">全选</button>
-        <button type="button" :disabled="!visibleCategories.length" @click="emit('update:visibleCategories', [])">全部取消</button>
+        <button type="button" :disabled="loading || displayCategories.every(category => visibleCategories.includes(category))" @click="emit('update:visibleCategories', [...displayCategories])">{{ report ? '全选展示' : '全选' }}</button>
+        <button type="button" :disabled="loading || !displayedCount" @click="emit('update:visibleCategories', [])">{{ report ? '全部隐藏' : '全部取消' }}</button>
       </div>
       <div class="facility-list layer-facility-list">
-        <button v-for="category in ALL_CATEGORIES" :key="category" type="button" :style="{ '--facility-color': categoryColor(category) }" :class="['facility-toggle', { selected: visibleCategories.includes(category) }]" :aria-pressed="visibleCategories.includes(category)" @click="emit('toggle-category', category)">
+        <button v-for="category in ALL_CATEGORIES" :key="category" type="button" :style="{ '--facility-color': categoryColor(category) }" :class="['facility-toggle', { selected: isDisplayed(category), unanalyzed: !displayCategories.includes(category) }]" :disabled="loading || !displayCategories.includes(category)" :aria-pressed="isDisplayed(category)" :aria-label="`${FACILITY_LABELS[category]}${displayCategories.includes(category) ? '' : '，未体检，补充体检后可展示'}`" @click="emit('toggle-category', category)">
           <span class="facility-icon" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ FACILITY_ICONS[category] }}</span>
-          <span class="facility-name">{{ FACILITY_LABELS[category] }}</span>
-          <span class="check" aria-hidden="true">{{ visibleCategories.includes(category) ? '✓' : '' }}</span>
+          <span class="facility-copy"><span class="facility-name">{{ FACILITY_LABELS[category] }}</span><small v-if="!displayCategories.includes(category)" class="facility-unavailable">未体检</small></span>
+          <span class="check" aria-hidden="true">{{ isDisplayed(category) ? '✓' : '' }}</span>
         </button>
+      </div>
+      <div v-if="report && unanalyzedCategories.length" class="supplement-analysis">
+        <fieldset :disabled="loading || resolving || searching">
+          <legend>补充体检</legend>
+          <p>选择未体检类别，生成包含原有类别的新报告。</p>
+          <div class="supplement-category-list">
+            <label v-for="category in unanalyzedCategories" :key="category">
+              <input v-model="supplementCategories" type="checkbox" :value="category" />{{ FACILITY_LABELS[category] }}
+            </label>
+          </div>
+        </fieldset>
+        <p class="supplement-note">沿用本报告的地点、{{ report.parameters.minutes }} 分钟及分析精度，合并类别重新测算。</p>
+        <button class="supplement-submit" type="button" :disabled="loading || resolving || searching || !supplementCategories.length" @click="emit('supplement-analysis', [...supplementCategories])">{{ loading ? '正在体检…' : `补充体检${supplementCategories.length ? `（${supplementCategories.length}类）` : ''}` }}</button>
+        <p v-if="analysisError" class="location-error" role="alert">{{ analysisError }}；原报告已保留，可重试。</p>
       </div>
       <div class="coverage-list" aria-label="服务区域状态图层">
         <div class="coverage-item" :class="{ active: showNormal }">
@@ -99,21 +113,22 @@
         </div>
       </div>
     </div>
-    <button v-if="!intentActive" class="primary-action" data-guide="run-analysis" type="button" aria-describedby="analysis-source-note" :disabled="loading || resolving || Boolean(locationError) || center.supportStatus !== 'supported'" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : mapStatus?.real_api_configured ? '开始真实分析' : '开始快照体检' }}<span aria-hidden="true">↗</span></button>
+    <button v-if="!intentActive" class="primary-action" data-guide="run-analysis" type="button" aria-describedby="analysis-source-note" :disabled="loading || resolving || Boolean(locationError) || center.supportStatus !== 'supported' || (!report && !visibleCategories.length)" @click="emit('run')"><Refresh :class="{ spin: loading }" />{{ loading ? '正在分析…' : report ? '重新体检已分析类别' : mapStatus?.real_api_configured ? '开始真实分析' : '开始快照体检' }}<span aria-hidden="true">↗</span></button>
     <div id="analysis-source-note" class="api-note"><span class="api-indicator" :class="{ real: mapStatus?.real_api_configured || source === 'baidu' || source === 'real_api' }" aria-hidden="true"></span><span>当前：{{ mapStatus?.real_api_configured ? '已配置真实模式（分析时调用百度 API）' : source === 'baidu' || source === 'real_api' ? '百度地图真实测算结果' : '本地百度数据快照' }}</span></div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import NaturalLanguageAnalysis from './NaturalLanguageAnalysis.vue'
 import type { ConfirmedAnalysisIntent } from '../types/analysisIntent'
 import { ArrowLeft, Location, Refresh, Search } from '@element-plus/icons-vue'
 import { ALL_CATEGORIES, FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { AnalysisCenter, CoordinateSystem, LocationCandidate } from '../types/location'
-import type { AnalysisMode, AnalysisMinutes, MapProbeResult, MapStatus } from '../types/report'
+import type { AnalysisMode, AnalysisMinutes, MapProbeResult, MapStatus, Report } from '../types/report'
 
 const intentActive = ref(false)
+const supplementCategories = ref<string[]>([])
 const walkingTimeOptions: AnalysisMinutes[] = [10, 15, 20]
 const props = defineProps<{
   center: AnalysisCenter
@@ -128,6 +143,8 @@ const props = defineProps<{
   resolving: boolean
   mode: AnalysisMode
   minutes: AnalysisMinutes
+  report: Report | null
+  analysisError: string
   visibleCategories: string[]
   showNormal: boolean
   showSparse: boolean
@@ -141,6 +158,13 @@ const props = defineProps<{
   realMapReady: boolean
   mobileOpen: boolean
 }>()
+const displayCategories = computed(() => props.report
+  ? ALL_CATEGORIES.filter(category => props.report?.parameters.categories.includes(category))
+  : ALL_CATEGORIES)
+const unanalyzedCategories = computed(() => ALL_CATEGORIES.filter(category => !displayCategories.value.includes(category)))
+const isDisplayed = (category: string) => displayCategories.value.includes(category) && props.visibleCategories.includes(category)
+const displayedCount = computed(() => displayCategories.value.filter(isDisplayed).length)
+watch(() => props.report?.report_id, () => { supplementCategories.value = [] })
 const readinessTitle = computed(() => {
   if (props.mapStatusLoading) return '正在检测地图服务'
   if (!props.mapStatus) return '无法读取地图服务状态'
@@ -187,6 +211,7 @@ const emit = defineEmits<{
   'apply-coordinates': []
   'toggle-category': [value: string]
   run: []
+  'supplement-analysis': [categories: string[]]
   'confirm-intent': [intent: ConfirmedAnalysisIntent]
   'refresh-map-status': []
   'probe-map-api': []

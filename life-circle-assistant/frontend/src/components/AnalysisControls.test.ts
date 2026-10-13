@@ -2,7 +2,9 @@
 import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import AnalysisControls from './AnalysisControls.vue'
-import type { MapStatus } from '../types/report'
+import { readFileSync } from 'node:fs'
+import type { MapStatus, Report } from '../types/report'
+import { ALL_CATEGORIES, DEFAULT_CATEGORIES } from '../constants/facilities'
 
 const realStatus: MapStatus = {
   mode: 'real',
@@ -23,6 +25,7 @@ function mountControls(mapStatus: MapStatus | null, realMapReady: boolean) {
       addressQuery: '', candidates: [], coordinateLng: '113.4872', coordinateLat: '23.1068',
       coordinateSystem: 'bd09', coordinateConversionNote: '', locationError: '',
       searching: false, resolving: false, mode: 'demo', minutes: 15, visibleCategories: ['market'],
+      report: null, analysisError: '',
       showNormal: false, showSparse: true, showCritical: true, loading: false, source: mapStatus?.source,
       mapStatus, mapStatusLoading: false,
       mapProbeResult: mapStatus?.real_api_configured
@@ -63,5 +66,63 @@ describe('地图测试就绪状态', () => {
 
     expect(wrapper.emitted('update:coordinateSystem')).toEqual([['wgs84']])
     expect(select.findAll('option')).toHaveLength(3)
+  })
+})
+
+describe('按需体检的设施展示与补充入口', () => {
+  const fixture: Report = JSON.parse(readFileSync('../docs/validation/reports/hongshan-haiyundonglu-20260921.json', 'utf8'))
+  function fourCategoryReport() {
+    const report = structuredClone(fixture)
+    report.parameters.categories = [...DEFAULT_CATEGORIES]
+    return report
+  }
+
+  it('体检前全选七类；完成后只能全选报告范围，其余类别标注未体检', async () => {
+    const wrapper = mountControls(realStatus, true)
+    await wrapper.get('.facility-selection-actions button').trigger('click')
+    expect(wrapper.emitted('update:visibleCategories')?.at(-1)).toEqual([ALL_CATEGORIES])
+    await wrapper.setProps({ report: fourCategoryReport(), visibleCategories: ['medical'] })
+    expect(wrapper.get('.layer-section-title').text()).toContain('本报告已体检 4 类')
+    expect(wrapper.get('.layer-count').text()).toBe('1/4 类')
+    await wrapper.get('.facility-selection-actions button').trigger('click')
+    expect(wrapper.emitted('update:visibleCategories')?.at(-1)).toEqual([DEFAULT_CATEGORIES])
+    const unanalyzed = wrapper.findAll('.facility-toggle.unanalyzed')
+    expect(unanalyzed.map(button => button.text())).toEqual(['菜菜市场未体检', '药药店未体检', '园公园绿地未体检'])
+    for (const button of unanalyzed) {
+      expect(button.attributes('disabled')).toBeDefined()
+      expect(button.attributes('aria-pressed')).toBe('false')
+    }
+  })
+
+  it('全部隐藏只提交展示筛选；主动选择未体检类别后才能补充', async () => {
+    const wrapper = mountControls(realStatus, true)
+    await wrapper.setProps({ report: fourCategoryReport(), visibleCategories: [...DEFAULT_CATEGORIES] })
+    await wrapper.findAll('.facility-selection-actions button')[1]!.trigger('click')
+    expect(wrapper.emitted('update:visibleCategories')?.at(-1)).toEqual([[]])
+    expect(wrapper.emitted('run')).toBeUndefined()
+    expect(wrapper.get('.supplement-submit').attributes('disabled')).toBeDefined()
+    await wrapper.get('.supplement-category-list input[value="market"]').setValue(true)
+    expect(wrapper.get('.supplement-submit').text()).toContain('1类')
+    await wrapper.get('.supplement-submit').trigger('click')
+    expect(wrapper.emitted('supplement-analysis')).toEqual([[['market']]])
+    expect(wrapper.emitted('toggle-category')).toBeUndefined()
+    await wrapper.setProps({ loading: true })
+    expect(wrapper.get('.supplement-submit').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('.facility-selection-actions button').attributes('disabled')).toBeDefined()
+    await wrapper.setProps({ loading: false, analysisError: '测算失败' })
+    expect(wrapper.get('.supplement-analysis [role="alert"]').text()).toContain('原报告已保留')
+  })
+
+  it('新报告包含补充类别后解除禁用，并清空补充选择', async () => {
+    const report = fourCategoryReport()
+    const wrapper = mountControls(realStatus, true)
+    await wrapper.setProps({ report, visibleCategories: [...DEFAULT_CATEGORIES] })
+    await wrapper.get('.supplement-category-list input[value="market"]').setValue(true)
+    await wrapper.setProps({ report: { ...report, report_id: 'supplemented', parameters: { ...report.parameters, categories: [...DEFAULT_CATEGORIES, 'market'] } }, visibleCategories: [...DEFAULT_CATEGORIES, 'market'] })
+    const market = wrapper.findAll('.facility-toggle').find(button => button.text().includes('菜市场'))!
+    expect(market.attributes('disabled')).toBeUndefined()
+    expect(market.attributes('aria-pressed')).toBe('true')
+    expect(wrapper.findAll('.facility-toggle.unanalyzed')).toHaveLength(2)
+    expect(wrapper.get('.supplement-submit').attributes('disabled')).toBeDefined()
   })
 })

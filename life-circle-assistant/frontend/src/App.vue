@@ -29,6 +29,8 @@
         :resolving="resolving"
         :mode="mode"
         :minutes="minutes"
+        :report="report"
+        :analysis-error="analysisError"
         :visible-categories="visibleCategories"
         :show-normal="showNormal"
         :show-sparse="showSparse"
@@ -46,7 +48,7 @@
         @update:coordinate-system="coordinateSystem = $event; coordinateConversionNote = ''"
         @update:mode="mode = $event"
         @update:minutes="minutes = $event"
-        @update:visibleCategories="visibleCategories = $event"
+        @update:visibleCategories="setVisibleCategories"
         @update:show-normal="showNormal = $event"
         @update:show-sparse="showSparse = $event"
         @update:show-critical="showCritical = $event"
@@ -55,6 +57,7 @@
         @apply-coordinates="applyCoordinateInput"
         @toggle-category="toggleCategory"
         @run="startAnalysis"
+        @supplement-analysis="startSupplementAnalysis"
         @confirm-intent="startIntentAnalysis"
         @refresh-map-status="refreshMapStatus"
         @probe-map-api="probeConfiguredMapApi"
@@ -293,6 +296,7 @@ const {
 const {
   mode,
   minutes,
+  analysisCategories,
   visibleCategories,
   showNormal,
   showSparse,
@@ -303,6 +307,8 @@ const {
   report,
   error: analysisError,
   runAnalysis,
+  supplementAnalysis,
+  setVisibleCategories,
   toggleCategory,
   applyReport,
 } = useAnalysis(center)
@@ -410,6 +416,7 @@ async function startIntentAnalysis(intent: ConfirmedAnalysisIntent) {
   restoreCenter(intent.center)
   minutes.value = intent.minutes
   mode.value = intent.mode
+  analysisCategories.value = [...intent.categories]
   visibleCategories.value = [...intent.categories]
   await startAnalysis()
 }
@@ -418,6 +425,15 @@ async function startAnalysis() {
   selectedRecommendationId.value = null
   await runAnalysis()
   if (report.value) await loadHistory()
+}
+
+async function startSupplementAnalysis(categories: string[]) {
+  if (loading.value || resolving.value || searching.value) return
+  const completed = await supplementAnalysis(categories)
+  if (completed) {
+    selectedRecommendationId.value = null
+    await loadHistory()
+  }
 }
 
 async function handleOpenHistory(reportId: string) {

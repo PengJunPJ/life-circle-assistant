@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import type { Report, ServiceAreaFeature } from '../types/report'
 import MapStage from './MapStage.vue'
+import { ALL_CATEGORIES, DEFAULT_CATEGORIES } from '../constants/facilities'
 
 const area = {
   type: 'Feature',
@@ -33,6 +34,25 @@ vi.mock('../composables/useMapRenderer', () => ({
 }))
 
 describe('地图服务区域键盘证据入口', () => {
+  it('图例只包含本报告已分析且选中展示的类别，补充后才显示新增类别', async () => {
+    selectedServiceArea.value = null
+    hoverTarget.value = null
+    const report = { recommendations: [], parameters: { categories: [...DEFAULT_CATEGORIES] }, service_areas: { type: 'FeatureCollection', features: [] }, pois: [] } as unknown as Report
+    const wrapper = mount(MapStage, {
+      props: {
+        report, analysisCenter: { lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' },
+        minutes: 15, visibleCategories: [...ALL_CATEGORIES], showNormal: false, showSparse: true, showCritical: true,
+        loading: false, progress: 0, focusRecommendationId: null, simulation: null, simulationPicking: false,
+      },
+    })
+    expect(wrapper.findAll('.facility-legend-item').map(item => item.text())).toEqual(['医医疗服务', '学小学', '购购物', '养养老'])
+    await wrapper.setProps({ report: { ...report, parameters: { ...report.parameters, categories: [...ALL_CATEGORIES] } } })
+    expect(wrapper.findAll('.facility-legend-item')).toHaveLength(7)
+    await wrapper.setProps({ visibleCategories: [] })
+    expect(wrapper.find('.facility-legend').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('可聚焦按钮支持回车选择区域并展示判定依据', async () => {
     selectedServiceArea.value = null
     const report = { recommendations: [], service_areas: { type: 'FeatureCollection', features: [area] } } as unknown as Report

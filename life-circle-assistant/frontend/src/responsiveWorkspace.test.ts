@@ -19,8 +19,8 @@ vi.mock('./composables/useAnalysisCenter', () => ({
 }))
 vi.mock('./composables/useAnalysis', () => ({
   useAnalysis: () => ({
-    mode: ref('demo'), minutes: ref(15), visibleCategories: ref(['market']), showNormal: ref(false), showSparse: ref(true), showCritical: ref(true),
-    loading: ref(false), progress: ref(0), report: ref(null), error: ref(''), runAnalysis: vi.fn(), toggleCategory: vi.fn(), applyReport: vi.fn(),
+    mode: ref('demo'), minutes: ref(15), analysisCategories: ref(['market']), visibleCategories: ref(['market']), showNormal: ref(false), showSparse: ref(true), showCritical: ref(true),
+    loading: ref(false), progress: ref(0), report: ref(null), error: ref(''), runAnalysis: vi.fn(), supplementAnalysis: vi.fn(), setVisibleCategories: vi.fn(), toggleCategory: vi.fn(), applyReport: vi.fn(),
   }),
 }))
 vi.mock('./composables/useReportHistory', () => ({
@@ -84,7 +84,7 @@ describe('响应式工作台布局契约', () => {
   it('主要状态、控件和地图信息提供辅助技术可识别的表达', () => {
     const wrapper = shallowMount(App)
     expect(wrapper.get('[role="status"]').attributes('aria-live')).toBe('polite')
-    expect(controls).toContain(':aria-pressed="visibleCategories.includes(category)"')
+    expect(controls).toContain(':aria-pressed="isDisplayed(category)"')
     expect(controls).toContain('aria-label="输入坐标系"')
     expect(controls).toContain('使用输入的 ${coordinateSystemLabel} 坐标')
     expect(mapStage).toContain('aria-label="重新运行当前分析"')

@@ -92,7 +92,9 @@ const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
 const minutes = toRef(props, 'minutes')
-const visibleCategories = toRef(props, 'visibleCategories')
+const visibleCategories = computed(() => props.report
+  ? props.visibleCategories.filter(category => props.report?.parameters?.categories.includes(category))
+  : props.visibleCategories)
 const legendCategories = computed(() => ALL_CATEGORIES.filter(category => visibleCategories.value.includes(category)))
 const hasVisibleCandidates = computed(() => props.report?.recommendations.some(recommendation =>
   visibleCategories.value.includes(recommendation.category) && recommendation.candidate_locations.length > 0,
