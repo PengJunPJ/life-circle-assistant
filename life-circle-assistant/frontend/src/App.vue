@@ -25,40 +25,38 @@
         :coordinate-system="coordinateSystem"
         :coordinate-conversion-note="coordinateConversionNote"
         :location-error="locationError"
+        :location-pending="locationPending"
+        :center-picking="centerPicking"
         :searching="searching"
         :resolving="resolving"
         :mode="mode"
         :minutes="minutes"
+        :minutes-valid="minutesValid"
         :report="report"
         :analysis-error="analysisError"
-        :visible-categories="visibleCategories"
-        :show-normal="showNormal"
-        :show-sparse="showSparse"
-        :show-critical="showCritical"
+        :analysis-categories="analysisCategories"
+        :supplement-count="supplementCategories.length"
         :loading="loading"
-        :source="report?.source || center.source"
         :map-status="mapStatus"
         :map-status-loading="mapStatusLoading"
         :map-probe-result="mapProbeResult"
         :map-probe-loading="mapProbeLoading"
         :real-map-ready="realMapReady"
-        @update:address-query="addressQuery = $event"
+        @update:address-query="updateAddressQuery"
         @update:coordinate-lng="coordinateLng = $event"
         @update:coordinate-lat="coordinateLat = $event"
         @update:coordinate-system="coordinateSystem = $event; coordinateConversionNote = ''"
         @update:mode="mode = $event"
-        @update:minutes="minutes = $event"
-        @update:visibleCategories="setVisibleCategories"
-        @update:show-normal="showNormal = $event"
-        @update:show-sparse="showSparse = $event"
-        @update:show-critical="showCritical = $event"
+        @update:minutes="minutes = $event; minutesValid = true"
+        @update:analysis-categories="setAnalysisCategories"
+        @update:input-blocked="inputBlocked = $event"
+        @update:intent-busy="intentBusy = $event"
         @search-address="searchCandidates"
         @select-candidate="selectCandidate"
         @apply-coordinates="applyCoordinateInput"
-        @toggle-category="toggleCategory"
+        @pick-center="beginCenterPick"
         @run="startAnalysis"
-        @supplement-analysis="startSupplementAnalysis"
-        @confirm-intent="startIntentAnalysis"
+        @fill-intent="fillIntentParameters"
         @refresh-map-status="refreshMapStatus"
         @probe-map-api="probeConfiguredMapApi"
         @toggle-collapse="collapsedControls = !collapsedControls"
@@ -67,7 +65,7 @@
       <MapStage
         :report="report"
         :analysis-center="center"
-        :minutes="minutes"
+        :minutes="report?.parameters.minutes ?? minutes"
         :visible-categories="visibleCategories"
         :show-normal="showNormal"
         :show-sparse="showSparse"
@@ -80,10 +78,16 @@
         :focus-recommendation-id="selectedRecommendationId"
         :simulation="simulationResult"
         :simulation-picking="simulationPicking"
+        :center-picking="centerPicking"
         @map-ready="handleMapReady"
-        @select-center="selectMapPoint"
+        @select-center="handleCenterPick"
         @select-simulation-location="selectSimulationMapLocation"
-        @refresh="startAnalysis"
+        @update:visible-categories="setVisibleCategories"
+        @update:show-normal="showNormal = $event"
+        @update:show-sparse="showSparse = $event"
+        @update:show-critical="showCritical = $event"
+        @prepare-supplement="prepareSupplement"
+        @cancel-center-pick="cancelCenterPick"
         @service-area-select="handleServiceAreaSelect"
         @expand-all="expandAllPanels"
         @collapse-all="collapseAllPanels"
@@ -123,7 +127,7 @@
         @load-more-history="loadMoreHistory"
         @simulate-candidate="simulateRecommendationCandidate"
         @update:simulation-category="selectSimulationCategory"
-        @pick-simulation-location="beginSimulationMapPick"
+        @pick-simulation-location="beginSimulationPick"
         @run-simulation="runSimulation"
         @clear-simulation="clearSimulation"
         @assistant-simulation="applyAssistantSimulation"
@@ -188,7 +192,8 @@
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { fetchMapStatus, probeMapApi as requestMapApiProbe } from './services/analysisApi'
 import type { MapProbeResult, MapStatus } from './types/report'
-import type { ConfirmedAnalysisIntent } from './types/analysisIntent'
+import type { AnalysisIntent } from './types/analysisIntent'
+import { ALL_CATEGORIES } from './constants/facilities'
 import { useAnalysis } from './composables/useAnalysis'
 import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
@@ -276,6 +281,10 @@ const guideOpen = ref(false)
 const controlsTrigger = ref<HTMLButtonElement | null>(null)
 const reportTrigger = ref<HTMLButtonElement | null>(null)
 const workspaceRef = ref<HTMLElement | null>(null)
+const centerPicking = ref(false)
+const minutesValid = ref(true)
+const inputBlocked = ref(false)
+const intentBusy = ref(false)
 const {
   center,
   addressQuery,
@@ -287,6 +296,9 @@ const {
   searching,
   resolving,
   error: locationError,
+  locationPending,
+  updateAddressQuery,
+  requireLocation,
   searchCandidates,
   selectCandidate,
   restoreCenter,
@@ -297,6 +309,7 @@ const {
   mode,
   minutes,
   analysisCategories,
+  supplementCategories,
   visibleCategories,
   showNormal,
   showSparse,
@@ -307,9 +320,8 @@ const {
   report,
   error: analysisError,
   runAnalysis,
-  supplementAnalysis,
   setVisibleCategories,
-  toggleCategory,
+  setAnalysisCategories,
   applyReport,
 } = useAnalysis(center)
 const {
@@ -404,6 +416,11 @@ function collapseAllPanels() {
 }
 
 function handleWorkspaceKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && centerPicking.value) {
+    event.preventDefault()
+    cancelCenterPick()
+    return
+  }
   if (event.key === 'Escape' && activeMobilePanel.value) {
     const panel = activeMobilePanel.value
     event.preventDefault()
@@ -411,29 +428,67 @@ function handleWorkspaceKeydown(event: KeyboardEvent) {
   }
 }
 
-async function startIntentAnalysis(intent: ConfirmedAnalysisIntent) {
-  if (loading.value || resolving.value || searching.value || intent.center.supportStatus !== 'supported') return
-  restoreCenter(intent.center)
-  minutes.value = intent.minutes
-  mode.value = intent.mode
-  analysisCategories.value = [...intent.categories]
-  visibleCategories.value = [...intent.categories]
-  await startAnalysis()
+async function fillIntentParameters(intent: AnalysisIntent) {
+  if (loading.value || resolving.value || searching.value) return
+  minutesValid.value = intent.draft.minutes !== null
+  if (intent.draft.minutes) minutes.value = intent.draft.minutes
+  mode.value = intent.draft.mode
+  setAnalysisCategories(intent.draft.categories)
+  if (intent.draft.use_current_center) {
+    if (center.value.supportStatus === 'supported') restoreCenter(center.value)
+    else requireLocation()
+    return
+  }
+  if (!intent.draft.address.trim()) { requireLocation(); return }
+  updateAddressQuery(intent.draft.address)
+  await searchCandidates()
 }
 
 async function startAnalysis() {
+  if (loading.value || resolving.value || searching.value || centerPicking.value || inputBlocked.value || locationPending.value || !minutesValid.value || locationError.value || center.value.supportStatus !== 'supported') return
   selectedRecommendationId.value = null
-  await runAnalysis()
-  if (report.value) await loadHistory()
-}
-
-async function startSupplementAnalysis(categories: string[]) {
-  if (loading.value || resolving.value || searching.value) return
-  const completed = await supplementAnalysis(categories)
-  if (completed) {
-    selectedRecommendationId.value = null
+  const completed = await runAnalysis()
+  if (completed && report.value) {
+    restoreCenter({ lng: report.value.center.lng, lat: report.value.center.lat, address: report.value.center.address, source: report.value.source, selectionMethod: report.value.center.selection_method || report.value.parameters.center_selection_method || 'default' })
     await loadHistory()
   }
+}
+
+function prepareSupplement() {
+  if (!report.value || loading.value || resolving.value || searching.value || intentBusy.value) return
+  const original = report.value
+  restoreCenter({ ...center.value, ...original.center, source: original.source, selectionMethod: original.center.selection_method || original.parameters.center_selection_method || 'default' })
+  minutes.value = original.parameters.minutes
+  minutesValid.value = true
+  mode.value = original.parameters.mode
+  setAnalysisCategories([...ALL_CATEGORIES])
+  collapsedControls.value = false
+  if (window.matchMedia('(max-width: 820px)').matches) activeMobilePanel.value = 'controls'
+}
+
+function beginCenterPick() {
+  if (loading.value || resolving.value || searching.value || intentBusy.value) return
+  clearSimulation()
+  centerPicking.value = true
+  if (activeMobilePanel.value) closeMobilePanel(activeMobilePanel.value)
+}
+
+function beginSimulationPick() {
+  centerPicking.value = false
+  beginSimulationMapPick()
+}
+
+function cancelCenterPick() {
+  centerPicking.value = false
+  if (window.matchMedia('(max-width: 820px)').matches) activeMobilePanel.value = 'controls'
+}
+
+async function handleCenterPick(lng: number, lat: number) {
+  if (loading.value || resolving.value || searching.value || intentBusy.value) return
+  const picking = centerPicking.value
+  await selectMapPoint(lng, lat)
+  centerPicking.value = false
+  if (picking && window.matchMedia('(max-width: 820px)').matches) activeMobilePanel.value = 'controls'
 }
 
 async function handleOpenHistory(reportId: string) {
@@ -515,6 +570,7 @@ function closeFirstUseGuide(completed: boolean) {
 }
 
 function applySelectedReport(selected: NonNullable<typeof report.value>) {
+  minutesValid.value = true
   selectedRecommendationId.value = null
   restoreCenter({
     lng: selected.center.lng,

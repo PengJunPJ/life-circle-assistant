@@ -13,14 +13,14 @@ vi.mock('./composables/useAnalysisCenter', () => ({
     center: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
     addressQuery: ref('测试中心'), candidates: ref([]), coordinateLng: ref('113.4872'), coordinateLat: ref('23.1068'),
     coordinateSystem: ref('bd09'), coordinateConversionNote: ref(''),
-    searching: ref(false), resolving: ref(false), error: ref(''), searchCandidates: vi.fn(), selectCandidate: vi.fn(),
+    searching: ref(false), resolving: ref(false), error: ref(''), locationPending: ref(false), updateAddressQuery: vi.fn(), requireLocation: vi.fn(), searchCandidates: vi.fn(), selectCandidate: vi.fn(),
     restoreCenter: vi.fn(), selectMapPoint: vi.fn(), applyCoordinateInput: vi.fn(),
   }),
 }))
 vi.mock('./composables/useAnalysis', () => ({
   useAnalysis: () => ({
     mode: ref('demo'), minutes: ref(15), analysisCategories: ref(['market']), visibleCategories: ref(['market']), showNormal: ref(false), showSparse: ref(true), showCritical: ref(true),
-    loading: ref(false), progress: ref(0), report: ref(null), error: ref(''), runAnalysis: vi.fn(), supplementAnalysis: vi.fn(), setVisibleCategories: vi.fn(), toggleCategory: vi.fn(), applyReport: vi.fn(),
+    loading: ref(false), progress: ref(0), report: ref(null), error: ref(''), runAnalysis: vi.fn(), supplementCategories: ref([]), setVisibleCategories: vi.fn(), setAnalysisCategories: vi.fn(), applyReport: vi.fn(),
   }),
 }))
 vi.mock('./composables/useReportHistory', () => ({
@@ -84,10 +84,12 @@ describe('响应式工作台布局契约', () => {
   it('主要状态、控件和地图信息提供辅助技术可识别的表达', () => {
     const wrapper = shallowMount(App)
     expect(wrapper.get('[role="status"]').attributes('aria-live')).toBe('polite')
-    expect(controls).toContain(':aria-pressed="isDisplayed(category)"')
+    expect(controls).toContain(':aria-pressed="analysisCategories.includes(category)"')
     expect(controls).toContain('aria-label="输入坐标系"')
     expect(controls).toContain('使用输入的 ${coordinateSystemLabel} 坐标')
-    expect(mapStage).toContain('aria-label="重新运行当前分析"')
+    expect(mapStage).toContain('<MapLayerControls')
+    expect(styles).toMatch(/\.controls-scroll\s*\{[^}]*min-height:\s*0;[^}]*overflow-y:\s*auto;/s)
+    expect(styles).toMatch(/\.analysis-footer\s*\{[^}]*flex:\s*0 0 auto;/s)
     expect(mapStage).toContain('红色网纹与感叹号')
     expect(mapStage).toContain('黄色斜纹与三角形')
   })

@@ -5,8 +5,8 @@
       <div class="layer-status" aria-label="地图核心图例">
         <span class="legend-item"><span class="legend-origin" aria-hidden="true"></span>起点</span>
         <span class="legend-item"><span class="legend-isochrone" aria-hidden="true"></span>{{ minutes }}分钟等时圈</span>
-        <span class="legend-item risk-legend"><span class="status-symbol critical" aria-hidden="true">!</span>重点盲区</span>
-        <span class="legend-item risk-legend"><span class="status-symbol sparse" aria-hidden="true">△</span>设施稀疏区</span>
+        <span v-if="showCritical" class="legend-item risk-legend"><span class="status-symbol critical" aria-hidden="true">!</span>重点盲区</span>
+        <span v-if="showSparse" class="legend-item risk-legend"><span class="status-symbol sparse" aria-hidden="true">△</span>设施稀疏区</span>
       </div>
       <div class="map-toolbar-actions">
         <span v-if="routePreview" class="route-chip" role="status">步行路线 · {{ routePreview.poi.name }} · {{ Math.round(routePreview.route.duration_s / 60) }} 分钟</span>
@@ -16,7 +16,7 @@
           <button type="button" :disabled="allCollapsed" title="一键收起两侧面板" aria-label="一键收起两侧面板" @click="emit('collapse-all')"><Fold /></button>
         </div>
         <button class="mobile-legend-toggle" type="button" aria-controls="mobile-map-legend" :aria-expanded="showMobileLegend" @click="showMobileLegend = !showMobileLegend">图例</button>
-        <button class="icon-btn" type="button" aria-label="重新运行当前分析" :disabled="loading" @click="emit('refresh')"><Refresh /></button>
+        <MapLayerControls :report="report" :visible-categories="visibleCategories" :loading="loading" :show-normal="showNormal" :show-sparse="showSparse" :show-critical="showCritical" @update:visible-categories="emit('update:visibleCategories', $event)" @update:show-normal="emit('update:showNormal', $event)" @update:show-sparse="emit('update:showSparse', $event)" @update:show-critical="emit('update:showCritical', $event)" @prepare-supplement="emit('prepare-supplement')" />
       </div>
     </div>
     <div v-if="legendCategories.length || hasVisibleCandidates || simulation" class="facility-legend" aria-label="设施类别图例">
@@ -34,7 +34,8 @@
       <span v-if="hasVisibleCandidates"><b class="category-symbol candidate-legend" aria-hidden="true">候</b>规划候选点</span>
       <span v-if="simulation"><b class="category-symbol simulation-legend" aria-hidden="true">拟</b>假设设施和模拟区域</span>
     </div>
-    <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking }" role="region" aria-label="百度地图生活圈分析区域"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking }" role="img" aria-label="生活圈分析地图画布" @click="handleCanvasClick" @mousemove="handleCanvasMouseMove" @mouseleave="handleCanvasMouseLeave"></canvas>
+    <div v-if="centerPicking" class="center-pick-banner" role="status"><Location /><span>点击地图确认体检位置</span><button type="button" @click="emit('cancel-center-pick')">取消</button></div>
+    <div ref="mapContainer" class="map-container" :class="{ hidden: !realMapReady, picking: simulationPicking || centerPicking }" role="region" aria-label="百度地图生活圈分析区域"></div><canvas ref="mapCanvas" class="map-canvas" :class="{ hidden: realMapReady, picking: simulationPicking || centerPicking }" role="img" aria-label="生活圈分析地图画布" @click="handleCanvasClick" @mousemove="handleCanvasMouseMove" @mouseleave="handleCanvasMouseLeave"></canvas>
     <MapHoverCard
       :target="hoverTarget"
       :minutes="minutes"
@@ -76,19 +77,20 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
-import { Close, Expand, Fold, Refresh } from '@element-plus/icons-vue'
+import { Close, Expand, Fold, Location } from '@element-plus/icons-vue'
 import ElMessage from 'element-plus/es/components/message/index'
 import { ALL_CATEGORIES, FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
 import { fetchWalkingRoute } from '../services/analysisApi'
 import MapHoverCard from './MapHoverCard.vue'
+import MapLayerControls from './MapLayerControls.vue'
 import type { Poi } from '../types/report'
 import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
 import type { SimulationResult } from '../types/simulation'
 
-const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number; progressLabel?: string; allExpanded?: boolean; allCollapsed?: boolean; focusRecommendationId: string | null; simulation: SimulationResult | null; simulationPicking: boolean }>()
-const emit = defineEmits<{ refresh: [] ; 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'expand-all': []; 'collapse-all': [] }>()
+const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number; progressLabel?: string; allExpanded?: boolean; allCollapsed?: boolean; focusRecommendationId: string | null; simulation: SimulationResult | null; simulationPicking: boolean; centerPicking?: boolean }>()
+const emit = defineEmits<{ 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'expand-all': []; 'collapse-all': []; 'update:visibleCategories': [categories: string[]]; 'update:showNormal': [value: boolean]; 'update:showSparse': [value: boolean]; 'update:showCritical': [value: boolean]; 'prepare-supplement': []; 'cancel-center-pick': [] }>()
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
 const minutes = toRef(props, 'minutes')
@@ -105,6 +107,7 @@ const showCritical = toRef(props, 'showCritical')
 const focusRecommendationId = toRef(props, 'focusRecommendationId')
 const simulation = toRef(props, 'simulation')
 const simulationPicking = toRef(props, 'simulationPicking')
+const centerPicking = computed(() => Boolean(props.centerPicking))
 const showMobileLegend = ref(false)
 const elapsedSeconds = ref(0)
 let elapsedTimer: number | undefined
@@ -131,6 +134,7 @@ const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceA
   focusRecommendationId,
   simulation,
   simulationPicking,
+  centerPicking,
   onSelectCenter: (lng, lat) => emit('select-center', lng, lat),
   onSelectSimulationLocation: (lng, lat) => emit('select-simulation-location', lng, lat),
 })

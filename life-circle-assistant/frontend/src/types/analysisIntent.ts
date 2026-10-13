@@ -1,4 +1,3 @@
-import type { AnalysisCenter } from './location'
 import type { AnalysisMinutes, AnalysisMode } from './report'
 
 export type IntentDraft = {
@@ -16,11 +15,4 @@ export type AnalysisIntent = {
   model: string | null
   missing_fields: ('location' | 'minutes' | 'categories')[]
   message: string
-}
-
-export type ConfirmedAnalysisIntent = {
-  center: AnalysisCenter
-  minutes: AnalysisMinutes
-  mode: AnalysisMode
-  categories: string[]
 }

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { DEFAULT_CENTER } from '../constants/facilities'
 import { convertCoordinate, reverseGeocode, searchAddressCandidates } from '../services/analysisApi'
 import type { AnalysisCenter, CenterSelectionMethod, CoordinateSystem, LocationCandidate } from '../types/location'
@@ -22,6 +22,22 @@ export function useAnalysisCenter() {
   const searching = ref(false)
   const resolving = ref(false)
   const error = ref('')
+  const pendingAddress = ref(false)
+  const locationPending = computed(() => pendingAddress.value || coordinateSystem.value !== 'bd09'
+    || coordinateLng.value !== center.value.lng.toFixed(6) || coordinateLat.value !== center.value.lat.toFixed(6))
+
+  function updateAddressQuery(query: string) {
+    addressQuery.value = query
+    pendingAddress.value = query.trim() !== center.value.address
+    candidates.value = []
+    error.value = ''
+  }
+
+  function requireLocation() {
+    pendingAddress.value = true
+    candidates.value = []
+    error.value = '请搜索地址或在地图上确认位置'
+  }
 
   function validateCoordinates(lng: number, lat: number, system: CoordinateSystem = 'bd09') {
     const label = system === 'wgs84' ? 'WGS84' : system === 'gcj02' ? 'GCJ-02' : 'BD-09'
@@ -49,10 +65,13 @@ export function useAnalysisCenter() {
     coordinateConversionNote.value = ''
     candidates.value = []
     error.value = ''
+    pendingAddress.value = false
   }
 
   async function searchCandidates() {
+    if (searching.value || resolving.value) return false
     const query = addressQuery.value.trim()
+    pendingAddress.value = true
     if (!query) {
       error.value = '请输入要搜索的地址'
       candidates.value = []
@@ -61,11 +80,14 @@ export function useAnalysisCenter() {
     searching.value = true
     error.value = ''
     try {
-      candidates.value = await searchAddressCandidates(query)
+      const found = await searchAddressCandidates(query)
+      if (query !== addressQuery.value.trim()) return false
+      candidates.value = found
       if (!candidates.value.length) {
         error.value = '没有找到可选择的地址候选'
         return false
       }
+      if (found.length === 1) selectCandidate(found[0]!)
       return true
     } catch (reason: any) {
       candidates.value = []
@@ -178,6 +200,9 @@ export function useAnalysisCenter() {
     searching,
     resolving,
     error,
+    locationPending,
+    updateAddressQuery,
+    requireLocation,
     searchCandidates,
     selectCandidate,
     restoreCenter,

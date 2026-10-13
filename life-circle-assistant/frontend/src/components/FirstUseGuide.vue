@@ -24,7 +24,7 @@
     <el-tour-step
       target="[data-guide='analysis-center']"
       title="选择分析中心点"
-      description="输入地址搜索，或选择 WGS84、GCJ-02、BD-09 后填写坐标，也可直接点击地图。外部坐标会先通过百度 Geoconv V2 转换为 BD-09。"
+      description="默认使用自主设置：搜索地址或点击地图选点。也可切换一句话填写，将描述填入同一套参数；多个地址候选需在位置区确认。"
       placement="right"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"
@@ -32,7 +32,7 @@
     <el-tour-step
       target="[data-guide='analysis-parameters']"
       title="设置体检参数"
-      description="页面已默认选择“正式分析”和 15 分钟，并勾选医疗服务、小学、购物、养老四类设施；正式分析会向百度发起更多步行路线请求。"
+      description="选择步行时间和本次体检设施，默认勾选医疗服务、小学、购物、养老。分析精度和坐标在高级设置中；地图图层只控制报告的显示。"
       placement="right"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"
@@ -40,7 +40,7 @@
     <el-tour-step
       target="[data-guide='run-analysis']"
       title="手动开始体检"
-      description="确认页面显示真实服务就绪后点击“开始真实分析”。正式分析可能需要等待，请不要连续重复提交。"
+      description="检查底部的地点、步行时间和设施数量后点击“开始体检”。一句话填写不会自动启动；新增类别可通过同一个按钮补充体检。"
       placement="right-end"
       :prev-button-props="previousButton"
       :next-button-props="nextButton"

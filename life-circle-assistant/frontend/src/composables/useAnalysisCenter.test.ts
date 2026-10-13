@@ -18,6 +18,7 @@ import { useAnalysisCenter } from './useAnalysisCenter'
 
 function reportFor(params: any) {
   return {
+    parameters: { ...params },
     source: params.center_selection_method === 'address' ? 'baidu' : 'local_snapshot',
     center: {
       lng: params.lng,
@@ -150,5 +151,25 @@ describe('统一分析中心选点流程', () => {
     const analysis = useAnalysis(invalid.center)
     await analysis.runAnalysis()
     expect(api.createAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('编辑地址与坐标标记待确认，单一候选自动确认，失败不复用旧位置', async () => {
+    const location = useAnalysisCenter()
+    expect(location.locationPending.value).toBe(false)
+    location.updateAddressQuery('新社区')
+    expect(location.locationPending.value).toBe(true)
+    api.searchAddressCandidates.mockResolvedValueOnce([{ lng: 113.49, lat: 23.11, address: '新社区已确认', source: 'real_api', provider: 'baidu' }])
+    await location.searchCandidates()
+    expect(location.locationPending.value).toBe(false)
+    expect(location.addressQuery.value).toBe('新社区已确认')
+    location.coordinateLng.value = '113.500000'
+    expect(location.locationPending.value).toBe(true)
+    location.coordinateLng.value = '113.490000'
+    expect(location.locationPending.value).toBe(false)
+    location.updateAddressQuery('无法找到的地址')
+    api.searchAddressCandidates.mockRejectedValueOnce(new Error('地址不存在'))
+    await location.searchCandidates()
+    expect(location.locationPending.value).toBe(true)
+    expect(location.center.value.address).toBe('新社区已确认')
   })
 })

@@ -40,11 +40,12 @@ type MapRendererOptions = {
   focusRecommendationId: Ref<string | null>
   simulation: Ref<SimulationResult | null>
   simulationPicking: Ref<boolean>
+  centerPicking?: Ref<boolean>
   onSelectCenter: (lng: number, lat: number) => void
   onSelectSimulationLocation: (lng: number, lat: number) => void
 }
 
-export function useMapRenderer({ report, analysisCenter, minutes, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, onSelectCenter, onSelectSimulationLocation }: MapRendererOptions) {
+export function useMapRenderer({ report, analysisCenter, minutes, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, centerPicking = ref(false), onSelectCenter, onSelectSimulationLocation }: MapRendererOptions) {
   const mapCanvas = ref<HTMLCanvasElement | null>(null)
   const mapContainer = ref<HTMLDivElement | null>(null)
   const realMapReady = ref(false)
@@ -345,9 +346,10 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
     if (!canvas || realMapReady.value) return
     const rect = canvas.getBoundingClientRect()
     const point = { x: event.clientX - rect.left, y: event.clientY - rect.top }
-    if (simulationPicking.value) {
+    if (simulationPicking.value || centerPicking.value) {
       const location = unproject(point.x, point.y, rect.width, rect.height)
-      onSelectSimulationLocation(location.lng, location.lat)
+      if (simulationPicking.value) onSelectSimulationLocation(location.lng, location.lat)
+      else onSelectCenter(location.lng, location.lat)
       return
     }
     const poiHit = hitTestPoi(point, rect.width, rect.height)
@@ -379,7 +381,7 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
   }
 
   function handleCanvasMouseMove(event: MouseEvent) {
-    if (realMapReady.value || simulationPicking.value) return
+    if (realMapReady.value || simulationPicking.value || centerPicking.value) return
     const canvas = mapCanvas.value
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
@@ -478,7 +480,11 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
           fillOpacity: selected ? .42 : focused ? .42 : dimmed ? .08 : zone.properties.kind === 'normal' ? .08 : .25,
         })
         areaPolygon.addEventListener('click', (event: any) => {
-          selectServiceArea(zone)
+          if (centerPicking.value) {
+            const point = event?.point || serviceAreaCenter(zone)
+            onSelectCenter(point.lng, point.lat)
+          }
+          else selectServiceArea(zone)
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(areaPolygon)
@@ -535,6 +541,7 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
         const point = new BMap.Point(poi.lng, poi.lat)
         const marker = new BMap.Marker(point)
         const showAt = (event: any, sticky = false) => {
+          if (centerPicking.value || simulationPicking.value) return
           const pixel = event?.pixel || baiduMap.pointToOverlayPixel(point)
           scheduleHover(poi, pixel.x, pixel.y, sticky)
         }
@@ -545,7 +552,8 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
           overlay.addEventListener('mouseover', (event: any) => showAt(event))
           overlay.addEventListener('mouseout', () => requestClearHover())
           overlay.addEventListener('click', (event: any) => {
-            showAt(event, true)
+            if (centerPicking.value) onSelectCenter(poi.lng, poi.lat)
+            else showAt(event, true)
             event?.domEvent?.stopPropagation?.()
           })
         })
@@ -558,7 +566,8 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
         marker.setTitle(`${recommendation.category_label}规划候选点 · ${candidate.region_id}`)
         marker.addEventListener('click', (event: any) => {
           const candidateArea = serviceAreaById(candidate.region_id)
-          if (candidateArea) selectServiceArea(candidateArea)
+          if (centerPicking.value) onSelectCenter(candidate.lng, candidate.lat)
+          else if (candidateArea) selectServiceArea(candidateArea)
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(marker)
@@ -611,6 +620,7 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
   })
   // 报告或分析中心变化后，旧路线不再对应新结果，自动清除
   watch([report, analysisCenter], () => { routePreview.value = null })
+  watch(centerPicking, picking => { if (picking) clearHover() })
   onMounted(async () => {
     window.addEventListener('resize', resize)
     window.addEventListener('life-circle:theme', redrawForTheme)

@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import ElMessage from 'element-plus/es/components/message/index'
 import { ALL_CATEGORIES, DEFAULT_CATEGORIES } from '../constants/facilities'
 import { createAnalysis, waitForAnalysis } from '../services/analysisApi'
@@ -19,6 +19,13 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
   const progressLabel = ref('')
   const report = ref<Report | null>(null)
   const error = ref('')
+  const supplementCategories = computed(() => {
+    const original = report.value
+    if (!original || original.center.lng !== center.value.lng || original.center.lat !== center.value.lat
+      || original.parameters.minutes !== minutes.value || original.parameters.mode !== mode.value
+      || !original.parameters.categories.every(category => analysisCategories.value.includes(category))) return []
+    return ALL_CATEGORIES.filter(category => analysisCategories.value.includes(category) && !original.parameters.categories.includes(category))
+  })
 
   watch(center, (nextCenter) => {
     if (report.value
@@ -86,6 +93,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
   }
 
   function runAnalysis() {
+    if (supplementCategories.value.length) return supplementAnalysis(supplementCategories.value)
     return executeAnalysis({
       lng: center.value.lng,
       lat: center.value.lat,
@@ -94,7 +102,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
       categories: [...analysisCategories.value],
       center_address: center.value.address,
       center_selection_method: center.value.selectionMethod,
-    })
+    }, Boolean(report.value))
   }
 
   async function supplementAnalysis(categories: string[]) {
@@ -119,7 +127,12 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     if (loading.value) return
     const available = report.value?.parameters.categories ?? ALL_CATEGORIES
     visibleCategories.value = ALL_CATEGORIES.filter(category => categories.includes(category) && available.includes(category))
-    if (!report.value) analysisCategories.value = [...visibleCategories.value]
+  }
+
+  function setAnalysisCategories(categories: string[]) {
+    if (loading.value) return
+    analysisCategories.value = ALL_CATEGORIES.filter(category => categories.includes(category))
+    if (!report.value) visibleCategories.value = [...analysisCategories.value]
   }
 
   function toggleCategory(category: string) {
@@ -132,6 +145,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     mode,
     minutes,
     analysisCategories,
+    supplementCategories,
     visibleCategories,
     showNormal,
     showSparse,
@@ -144,6 +158,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     runAnalysis,
     supplementAnalysis,
     setVisibleCategories,
+    setAnalysisCategories,
     toggleCategory,
     applyReport,
   }
