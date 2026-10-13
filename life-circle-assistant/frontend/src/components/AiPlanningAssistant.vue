@@ -76,7 +76,7 @@ watch(() => props.report.report_id, async () => {
     const items = (await fetchReportInterpretations(props.report.report_id)).items
     if (current !== version) return
     result.value = items[0] || null
-    previousTurnId.value = items.find(item => item.prompt_version === 'tool-planner-v1')?.id
+    previousTurnId.value = items.find(item => ['tool-planner-v1', 'tool-planner-v2'].includes(item.prompt_version))?.id
   } catch { /* 历史解读不存在时保持空状态 */ }
 }, { immediate: true })
 async function run(params: { intent: AiInterpretationIntent; grid_id?: string; category?: string; simulation_id?: string; question?: string }) {

@@ -23,7 +23,7 @@ from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
 from .maps.walking import WalkingService
 from .mock_data import CATEGORIES, CENTER
-from .planning_assistant import run_planning_assistant
+from .planning_assistant import SUPPORTED_PROMPT_VERSIONS, run_planning_assistant
 from .schemas import (
     AnalysisIntentRequest,
     AnalysisIntentResponse,
@@ -479,7 +479,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         previous = None
         if payload.previous_turn_id:
             previous = report_repository.get_ai_interpretation(report_id, payload.previous_turn_id)
-            if not previous or previous.get("prompt_version") != "tool-planner-v1":
+            if not previous or previous.get("prompt_version") not in SUPPORTED_PROMPT_VERSIONS:
                 raise HTTPException(status_code=422, detail="上一轮规划问答不存在或不属于当前报告")
         try:
             result = await run_planning_assistant(

@@ -143,8 +143,8 @@ describe('工具规划助手', () => {
     expect(vi.mocked(planReport).mock.lastCall?.[1].previous_turn_id).toBeUndefined()
   })
 
-  it('历史问答可恢复工具记录和服务端上下文', async () => {
-    vi.mocked(fetchReportInterpretations).mockResolvedValue({ items: [response({ mode: 'tool_rules' })] })
+  it.each(['tool-planner-v1', 'tool-planner-v2'])('历史问答 %s 可恢复工具记录和服务端上下文', async (prompt_version) => {
+    vi.mocked(fetchReportInterpretations).mockResolvedValue({ items: [response({ mode: 'tool_rules', prompt_version })] })
     const wrapper = setup()
     await flushPromises()
     expect(wrapper.text()).toContain('规则工具 · 模型未启用')

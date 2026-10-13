@@ -34,7 +34,8 @@ def answer(summary, refs, *, clarification=False):
                 "summary": summary,
                 "evidence_refs": refs,
                 "needs_clarification": clarification,
-            }
+            },
+            ensure_ascii=False,
         ),
     }
 
@@ -45,9 +46,19 @@ class ScriptedModel:
     def __init__(self, script):
         self.script = list(script)
         self.messages = []
+        self.json_messages = []
 
     async def generate_tools(self, *, messages, tools):
         self.messages.append(copy.deepcopy(messages))
+        step = self.script.pop(0)
+        if isinstance(step, Exception):
+            raise step
+        return step(messages) if callable(step) else step
+
+    async def generate(self, *, system, user):
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+        self.messages.append(copy.deepcopy(messages))
+        self.json_messages.append(copy.deepcopy(messages))
         step = self.script.pop(0)
         if isinstance(step, Exception):
             raise step
@@ -131,10 +142,15 @@ def test_native_model_executes_full_chain_with_real_simulation_and_persists(setu
     assert model.messages[1][-1]["tool_call_id"] == "facilities"
 
 
-def test_followup_uses_server_saved_context_and_rejects_foreign_turn(setup_report):
+@pytest.mark.parametrize("prompt_version", ["tool-planner-v1", "tool-planner-v2"])
+def test_followup_uses_server_saved_context_and_rejects_foreign_turn(setup_report, prompt_version):
     app, client, _, report = setup_report
     url = f"/api/reports/{report['report_id']}/ai/plan"
     previous = client.post(url, json={"message": "查询菜市场"}).json()
+    previous.pop("id")
+    previous = app.state.report_repository.save_ai_interpretation(
+        report["report_id"], {**previous, "prompt_version": prompt_version}, question="查询菜市场"
+    )
 
     def final(messages):
         context = json.loads(messages[1]["content"])
@@ -171,21 +187,27 @@ def test_compare_planning_options_executes_independent_simulations_and_ranks(set
         for recommendation in report["recommendations"]
         if recommendation.get("candidate_locations")
     }
-    model = ScriptedModel([
-        call("compare_planning_options", {
-            "goal": "improve_overall_score",
-            "options": [
-                {"category": "market", "location_id": candidates["market"]},
-                {"category": "school", "location_id": candidates["school"]},
-            ],
-        }, "compare"),
-        lambda messages: answer("这些独立位置可作为进一步核验的候选。", last_result(messages)["evidence_refs"]),
-    ])
+    model = ScriptedModel(
+        [
+            call(
+                "compare_planning_options",
+                {
+                    "goal": "improve_overall_score",
+                    "options": [
+                        {"category": "market", "location_id": candidates["market"]},
+                        {"category": "school", "location_id": candidates["school"]},
+                    ],
+                },
+                "compare",
+            ),
+            lambda messages: answer("这些独立位置可作为进一步核验的候选。", last_result(messages)["evidence_refs"]),
+        ]
+    )
     app.state.llm_provider = model
     with patch.object(provider, "walking_matrix", wraps=provider.walking_matrix) as walking:
         result = client.post(
             f"/api/reports/{report['report_id']}/ai/plan",
-                json={"message": "比较新增菜市场与小学，优先提高综合指数"},
+            json={"message": "比较新增菜市场与小学，优先提高综合指数"},
         ).json()
     assert walking.call_count >= 2
     comparison = result["comparisons"][0]
@@ -206,13 +228,19 @@ def test_duplicate_comparison_options_are_rejected_before_route_calls(setup_repo
     candidate = next(rec for rec in report["recommendations"] if rec["category"] == "market")["candidate_locations"][0]
     tools = PlanningTools(report, provider, PlanningRequest(message="比较", comparison_goal="increase_coverage"))
     with patch.object(provider, "walking_matrix", wraps=provider.walking_matrix) as walking:
-        result = asyncio.run(tools.execute("compare_planning_options", {
-            "goal": "increase_coverage",
-            "options": [
-                {"category": "market", "location_id": candidate["id"]},
-                {"category": "market", "location_id": candidate["id"]},
-            ],
-        }, "duplicate"))
+        result = asyncio.run(
+            tools.execute(
+                "compare_planning_options",
+                {
+                    "goal": "increase_coverage",
+                    "options": [
+                        {"category": "market", "location_id": candidate["id"]},
+                        {"category": "market", "location_id": candidate["id"]},
+                    ],
+                },
+                "duplicate",
+            )
+        )
     assert "不可重复" in result["error"]
     assert walking.call_count == 0
     assert not tools.simulations
@@ -263,13 +291,17 @@ def test_timed_out_comparison_keeps_completed_options_and_marks_pending(setup_re
 
     async def invoke():
         async with asyncio.timeout(0.05):
-            await tools.execute("compare_planning_options", {
-                "goal": "improve_overall_score",
-                "options": [
-                    {"category": "market", "location_id": candidates["market"]},
-                    {"category": "school", "location_id": candidates["school"]},
-                ],
-            }, "timeout")
+            await tools.execute(
+                "compare_planning_options",
+                {
+                    "goal": "improve_overall_score",
+                    "options": [
+                        {"category": "market", "location_id": candidates["market"]},
+                        {"category": "school", "location_id": candidates["school"]},
+                    ],
+                },
+                "timeout",
+            )
 
     with patch.object(ReportSimulationService, "run", delayed_run), pytest.raises(TimeoutError):
         asyncio.run(invoke())
@@ -342,6 +374,195 @@ def test_fabricated_claims_degrade_to_actual_results(setup_report, final):
     assert "99" not in result["summary"]
     assert "invented" not in {item["id"] for item in result["evidence_refs"]}
     assert "证据校验" in result["data_quality_notice"]
+
+
+@pytest.mark.parametrize("language", ["json", "JSON", ""])
+def test_fenced_final_answer_keeps_model_mode_and_canonical_evidence(setup_report, language):
+    _, _, provider, report = setup_report
+
+    def final(messages):
+        result = last_result(messages)
+        response = answer("菜市场服务仍需结合现场通行条件核验。", result["evidence_refs"])
+        response["content"] = f" \n```{language}\n{response['content']}\n```\n "
+        return response
+
+    model = ScriptedModel([call("query_facilities", {"category": "market"}), final])
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+
+    assert result["mode"] == "llm_tools"
+    assert result["evidence_refs"] == result["tool_calls"][0]["result"]["evidence_refs"]
+    assert len(result["tool_calls"]) == 1
+    assert len(model.messages) == 2
+    assert not model.json_messages
+
+
+@pytest.mark.parametrize("summary", ["匹配到一处菜市场设施。", "匹配到两处菜市场设施。", "步行需要8分钟。"])
+def test_numeric_final_answer_is_corrected_once_using_existing_evidence(setup_report, summary):
+    _, _, provider, report = setup_report
+
+    def final(messages):
+        response = answer(summary, last_result(messages)["evidence_refs"])
+        response["content"] = f"```json\n{response['content']}\n```"
+        return response
+
+    def corrected(messages):
+        context = last_result(messages)
+        assert summary in context["answer"]
+        assert context["question"] == "查询菜市场"
+        assert context["tool_results"][0]["evidence_refs"]
+        return {
+            "summary": "菜市场服务仍需结合现场通行条件核验。",
+            "evidence_refs": context["allowed_evidence_refs"],
+            "needs_clarification": False,
+        }
+
+    model = ScriptedModel([call("query_facilities", {"category": "market"}), final, corrected])
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+
+    assert result["mode"] == "llm_tools"
+    assert result["summary"] == "菜市场服务仍需结合现场通行条件核验。"
+    assert result["evidence_refs"] == result["tool_calls"][0]["result"]["evidence_refs"]
+    assert len(result["tool_calls"]) == 1
+    assert len(model.messages) == 3
+    assert len(model.json_messages) == 1
+
+
+def test_answer_correction_preserves_simulation_without_executing_it_again(setup_report):
+    _, _, provider, report = setup_report
+
+    def final(messages):
+        return answer("类别评分增加99分。", last_result(messages)["evidence_refs"])
+
+    def corrected(messages):
+        context = last_result(messages)
+        assert context["tool_results"][0]["simulation"]["delta"]["category_score"] > 0
+        return {
+            "summary": "候选位置有助于改善菜市场服务，仍需现场核验。",
+            "evidence_refs": context["allowed_evidence_refs"],
+        }
+
+    model = ScriptedModel(
+        [
+            call("simulate_facility", {"category": "market", "location_id": "selected_map_point"}),
+            final,
+            corrected,
+        ]
+    )
+    with patch.object(
+        ReportSimulationService, "run", autospec=True, side_effect=ReportSimulationService.run
+    ) as simulate:
+        result = asyncio.run(
+            run_planning_assistant(
+                model,
+                provider,
+                report,
+                PlanningRequest(message="模拟新增菜市场", selected_location={"lng": 113.5, "lat": 23.1}),
+            )
+        )
+    assert result["mode"] == "llm_tools"
+    assert simulate.call_count == 1
+    assert len(result["simulations"]) == 1
+    simulation = result["simulations"][0]
+    tool_simulation = result["tool_calls"][0]["result"]["simulation"]
+    assert simulation["id"] == tool_simulation["id"]
+    assert simulation["delta"] == tool_simulation["delta"]
+    assert simulation["hypothetical_facility"] == tool_simulation["hypothetical_facility"]
+    assert len(result["tool_calls"]) == 1
+
+
+@pytest.mark.parametrize(
+    "repair",
+    [
+        {"summary": "评分增加九十九分。", "evidence_refs": [], "needs_clarification": True},
+        {"summary": "改善很明显。", "evidence_refs": [{"type": "simulation", "id": "invented"}]},
+        RuntimeError("provider error with sk-private-value"),
+    ],
+)
+def test_failed_answer_correction_degrades_and_keeps_completed_tools(setup_report, repair):
+    _, _, provider, report = setup_report
+    model = ScriptedModel(
+        [
+            call("query_facilities", {"category": "market"}),
+            lambda messages: answer("匹配到一处菜市场设施。", last_result(messages)["evidence_refs"]),
+            repair,
+        ]
+    )
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert result["mode"] == "tool_rules_degraded"
+    assert len(model.json_messages) == 1
+    assert len(model.messages) == 3
+    assert len(result["tool_calls"]) == 1
+    assert result["tool_calls"][0]["status"] == "completed"
+    assert result["evidence_refs"] == result["tool_calls"][0]["result"]["evidence_refs"]
+    assert "sk-private-value" not in json.dumps(result)
+    assert "invented" not in {ref["id"] for ref in result["evidence_refs"]}
+
+
+def test_fenced_fabricated_evidence_is_not_repaired_or_accepted(setup_report):
+    _, _, provider, report = setup_report
+    final = answer("匹配到一处菜市场设施。", [{"type": "facility", "id": "invented"}])
+    final["content"] = f"```json\n{final['content']}\n```"
+    model = ScriptedModel([call("query_facilities", {"category": "market"}), final])
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert result["mode"] == "tool_rules_degraded"
+    assert not model.json_messages
+    assert len(result["tool_calls"]) == 1
+    assert "invented" not in {ref["id"] for ref in result["evidence_refs"]}
+
+
+def test_answer_correction_respects_model_round_limit(setup_report):
+    _, _, provider, report = setup_report
+    model = ScriptedModel(
+        [
+            *[call("query_facilities", {"category": "market"}, str(index)) for index in range(4)],
+            lambda messages: answer("匹配到一处菜市场设施。", last_result(messages)["evidence_refs"]),
+        ]
+    )
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert result["mode"] == "tool_rules_degraded"
+    assert len(model.messages) == 5
+    assert not model.json_messages
+    assert len(result["tool_calls"]) == 4
+    assert all(item["status"] == "completed" for item in result["tool_calls"])
+    assert "轮次达到上限" in result["data_quality_notice"]
+
+
+def test_answer_correction_timeout_keeps_tools_and_uses_total_request_budget(setup_report, monkeypatch):
+    _, _, provider, report = setup_report
+    monkeypatch.setattr("app.planning_assistant.REQUEST_TIMEOUT_SECONDS", 0.01)
+
+    class SlowCorrectionModel(ScriptedModel):
+        async def generate(self, **kwargs):
+            await asyncio.sleep(1)
+
+    model = SlowCorrectionModel(
+        [
+            call("query_facilities", {"category": "market"}),
+            lambda messages: answer("匹配到一处菜市场设施。", last_result(messages)["evidence_refs"]),
+        ]
+    )
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert result["mode"] == "tool_rules_degraded"
+    assert len(result["tool_calls"]) == 1
+    assert result["tool_calls"][0]["status"] == "completed"
+    assert result["evidence_refs"] == result["tool_calls"][0]["result"]["evidence_refs"]
+    assert "超时" in result["data_quality_notice"]
+
+
+@pytest.mark.parametrize("template", ["说明：\n```json\n%s\n```", "```json\n%s\n```\n额外说明", "```json\n%s"])
+def test_only_complete_json_fence_is_accepted(setup_report, template):
+    _, _, provider, report = setup_report
+
+    def final(messages):
+        response = answer("菜市场服务仍需现场核验。", last_result(messages)["evidence_refs"])
+        response["content"] = template % response["content"]
+        return response
+
+    model = ScriptedModel([call("query_facilities", {"category": "market"}), final])
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert result["mode"] == "tool_rules_degraded"
+    assert len(result["tool_calls"]) == 1
+    assert not model.json_messages
 
 
 def test_model_failure_after_simulation_keeps_computed_result_without_rerun(setup_report):
