@@ -277,6 +277,10 @@ def test_pdf_export_contains_required_sections_and_expected_page_range():
         "广州市黄埔区萝岗街道样例社区",
         "分析范围与空间摘要",
         "评分与核心指标",
+        "设施覆盖柱状图",
+        "设施覆盖雷达图",
+        "设施指标评分热力图",
+        "雷达图至少需要 3 类有效评分",
         "重点服务盲区",
         "补充小学服务点",
         "数据质量与方法披露",
@@ -330,3 +334,26 @@ def test_pdf_main_pages_render_to_legible_pngs(tmp_path):
         assert width >= 790
         assert height >= 1100
         assert len(data) >= 20_000
+
+
+def test_pdf_charts_distinguish_missing_scores_and_keep_three_chart_sections():
+    report = _standard_report()
+    report["category_scores"][0]["score"] = None
+    report["category_scores"][0]["components"][0]["score"] = None
+    report["category_scores"][1]["score"] = 0
+    _, text = _extract_text(build_pdf_export(report).content)
+    assert "无数据" in text
+    assert "当前 1 类有效评分" in text
+    for title in ("设施覆盖柱状图", "设施覆盖雷达图", "设施指标评分热力图"):
+        assert title in text
+
+
+def test_pdf_charts_render_radar_with_three_categories_and_handle_empty_report():
+    report = _standard_report()
+    report["category_scores"].append({**report["category_scores"][0], "category": "medical", "label": "医疗服务", "score": 75})
+    _, text = _extract_text(build_pdf_export(report).content)
+    assert "雷达图至少需要" not in text
+    assert "医疗服务" in text
+    report["category_scores"] = []
+    _, text = _extract_text(build_pdf_export(report).content)
+    assert text.count("暂无设施评分数据") == 3
