@@ -17,7 +17,7 @@
       <button v-for="tab in tabs" :id="`report-tab-${tab.id}`" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" :aria-controls="`report-page-${tab.id}`" :tabindex="activeTab === tab.id ? 0 : -1" @click="selectTab(tab.id)" @keydown="handleTabKey($event, tab.id)">{{ tab.label }}</button>
     </div>
     <div ref="scrollRef" class="report-scroll">
-      <div v-if="auxiliary" class="auxiliary-heading"><strong>{{ auxiliary === 'history' ? '历史与比较' : auxiliary === 'details' ? '报告说明' : '导出报告' }}</strong><button type="button" @click="auxiliary = null">{{ report ? '返回体检' : '返回' }} <ArrowRight /></button></div>
+      <div v-if="auxiliary" class="auxiliary-heading"><strong>{{ auxiliary === 'history' ? '历史与比较' : auxiliary === 'details' ? '报告说明' : '导出报告' }}</strong><button type="button" @click="selectTab(activeTab)">{{ report ? '返回体检' : '返回' }} <ArrowRight /></button></div>
       <ReportHistory v-show="auxiliary === 'history'"
         :items="historyItems" :total="historyTotal" :loading="historyLoading" :loading-more="historyLoadingMore"
         :has-more="historyHasMore" :query="historyQuery" :error="historyError" :opening-report-id="openingReportId"
@@ -33,6 +33,9 @@
           <button type="button" aria-label="查看报告数据与计算说明" @click="toggleAuxiliary('details')">查看说明</button>
         </div>
         <section v-show="!auxiliary && activeTab === 'overview'" id="report-page-overview" role="tabpanel" aria-labelledby="report-tab-overview">
+          <button type="button" class="multisource-validation-entry" :class="multisourceStatus" :aria-label="`高德辅助验证：${multisourceStatusLabel}，查看详情`" aria-controls="multisource-validation-details" @click="showMultisourceDetails">
+            <span>高德辅助验证</span><strong>{{ multisourceStatusLabel }}</strong><ArrowRight aria-hidden="true" />
+          </button>
           <div class="overview-score">
             <div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ scoreText }}<small v-if="overallScore !== null">/100</small></div></div>
             <div class="overview-context"><strong>{{ report.parameters.minutes }} 分钟步行</strong><span>{{ report.scoring.valid_category_count }}/{{ report.parameters.categories.length }} 类参与评分</span></div>
@@ -69,10 +72,10 @@
         <section v-show="auxiliary === 'details'" class="report-details" aria-label="报告数据与计算说明">
           <DataQualityDetails :quality="report.data_quality" />
           <section class="report-section"><div class="section-title"><span>评分说明</span></div><p class="page-intro">{{ report.scoring.explanation }}</p><p class="page-intro">{{ report.summary.score_explanation }}</p></section>
-          <section v-if="report.multisource_validation" class="report-section multisource-validation" aria-labelledby="multisource-validation-title">
+          <section id="multisource-validation-details" ref="multisourceRef" class="report-section multisource-validation" tabindex="-1" aria-labelledby="multisource-validation-title">
             <div class="section-title"><span id="multisource-validation-title">高德辅助验证</span></div>
-            <div class="multisource-validation-status" :class="report.multisource_validation.status"><strong>{{ multisourceStatusLabel }}</strong><span>{{ report.multisource_validation.message || multisourceSummary }}</span></div>
-            <div v-if="report.multisource_validation.status === 'complete'" class="multisource-validation-metrics"><span><b>{{ report.multisource_validation.matched_count || 0 }}</b>匹配</span><span><b>{{ report.multisource_validation.review_count || 0 }}</b>待复核</span><span><b>{{ report.multisource_validation.conflict_count || 0 }}</b>冲突</span><span><b>{{ report.multisource_validation.unmatched_count || 0 }}</b>未匹配</span></div>
+            <div class="multisource-validation-status" :class="multisourceStatus"><strong>{{ multisourceStatusLabel }}</strong><span>{{ report.multisource_validation?.message || multisourceSummary }}</span></div>
+            <div v-if="report.multisource_validation?.status === 'complete'" class="multisource-validation-metrics"><span><b>{{ report.multisource_validation.matched_count || 0 }}</b>匹配</span><span><b>{{ report.multisource_validation.review_count || 0 }}</b>待复核</span><span><b>{{ report.multisource_validation.conflict_count || 0 }}</b>冲突</span><span><b>{{ report.multisource_validation.unmatched_count || 0 }}</b>未匹配</span></div>
           </section>
           <section class="report-section execution-section" aria-labelledby="execution-title">
             <div class="section-title"><span id="execution-title">执行与缓存指标</span></div>
@@ -157,18 +160,22 @@ const planningBusy = ref(false)
 const focusedRecommendationId = ref<string | null>(null)
 const scrollRef = ref<HTMLElement | null>(null)
 const simulationRef = ref<HTMLElement | null>(null)
+const multisourceRef = ref<HTMLElement | null>(null)
 const overallScore = computed(() => props.report?.summary.score ?? null)
 const scoreText = computed(() => overallScore.value === null ? '—' : overallScore.value)
 const scoreTone = computed(() => overallScore.value === null ? 'unavailable' : overallScore.value >= 80 ? 'good' : overallScore.value >= 60 ? 'fair' : 'risk')
 const dataLimited = computed(() => props.report?.completeness === 'partial' || props.report?.data_quality.overall_status !== 'good')
 const priorityRecommendations = computed(() => [...(props.report?.recommendations || [])].sort((a, b) => a.priority_rank - b.priority_rank).slice(0, 2))
+const multisourceStatus = computed(() => props.report?.multisource_validation?.status || 'missing')
 const multisourceStatusLabel = computed(() => {
-  const status = props.report?.multisource_validation?.status
+  const status = multisourceStatus.value
+  if (status === 'missing') return '本报告未进行辅助验证'
   return status === 'complete' ? '验证已完成' : status === 'failed' ? '验证未完成' : '验证未启用'
 })
 const multisourceSummary = computed(() => {
   const validation = props.report?.multisource_validation
-  if (!validation || validation.status === 'disabled') return '当前只使用百度地图生成正式体检结论。'
+  if (!validation) return '本报告没有辅助验证记录，体检结论来自百度地图主分析。'
+  if (validation.status === 'disabled') return '当前只使用百度地图生成正式体检结论。'
   if (validation.status === 'failed') return '高德请求失败，百度主分析结果仍然有效。'
   return `高德返回 ${validation.returned_count || 0} 条观察记录，未参与评分、盲区或步行计算。`
 })
@@ -187,6 +194,12 @@ function toggleCollapseIfDesktop() {
 function resetScroll() { if (scrollRef.value) scrollRef.value.scrollTop = 0 }
 function selectTab(tab: ReportTab) { activeTab.value = tab; auxiliary.value = null; resetScroll() }
 function toggleAuxiliary(view: Auxiliary) { auxiliary.value = auxiliary.value === view ? null : view; resetScroll() }
+async function showMultisourceDetails() {
+  auxiliary.value = 'details'
+  await nextTick()
+  multisourceRef.value?.scrollIntoView({ block: 'start' })
+  multisourceRef.value?.focus({ preventScroll: true })
+}
 function handleTabKey(event: KeyboardEvent, tab: ReportTab) {
   const index = tabs.findIndex(item => item.id === tab)
   const target = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1
@@ -260,6 +273,14 @@ button:focus-visible { outline: 2px solid var(--report-accent); outline-offset: 
 .quality-banner.limited { color: #815b21; background: #fff1d9; }
 .quality-banner.limited svg, .quality-banner.limited button { color: inherit; }
 :global(html[data-theme="dark"] .quality-banner.limited) { color: #ffcf8a; background: rgba(255,181,71,.12); }
+.multisource-validation-entry { display: grid; grid-template-columns: auto minmax(0, 1fr) 12px; align-items: center; gap: 7px; width: 100%; min-height: 34px; margin-bottom: 6px; padding: 8px; border-radius: 4px; background: var(--report-soft); color: var(--report-ink); text-align: left; font-size: 12px; }
+.multisource-validation-entry strong { color: var(--report-muted); text-align: right; font-size: 11px; font-weight: 500; overflow-wrap: anywhere; }
+.multisource-validation-entry svg { width: 12px; height: 12px; color: var(--report-muted); }
+.multisource-validation-entry:hover { box-shadow: inset 0 0 0 1px var(--report-accent); }
+.multisource-validation-entry.complete strong { color: var(--report-accent); }
+.multisource-validation-entry.failed strong { color: #b35439; }
+:global(html[data-theme="dark"] .multisource-validation-entry.failed strong) { color: #ffb29e; }
+.multisource-validation:focus-visible { outline: 2px solid var(--report-accent); outline-offset: -2px; }
 .overview-score { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0 0; }
 .score-label { font-size: 12px; }
 .score-value { font-size: 44px; line-height: 1.2; }

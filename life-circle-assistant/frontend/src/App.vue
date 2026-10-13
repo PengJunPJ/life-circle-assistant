@@ -590,10 +590,6 @@ function handleServiceAreaSelect(serviceAreaId: string | null) {
   }
   const recommendation = recommendationForServiceArea(report.value.recommendations, serviceAreaId)
   selectedRecommendationId.value = recommendation?.id || null
-  if (recommendation) {
-    collapsedReport.value = false
-    if (window.matchMedia('(max-width: 820px)').matches) activeMobilePanel.value = 'report'
-  }
 }
 
 onMounted(() => {

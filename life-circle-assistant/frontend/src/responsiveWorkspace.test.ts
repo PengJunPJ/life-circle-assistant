@@ -1,12 +1,17 @@
 // @vitest-environment jsdom
-import { nextTick, ref } from 'vue'
-import { shallowMount } from '@vue/test-utils'
+import { defineComponent, nextTick, ref } from 'vue'
+import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.vue'
 import controls from './components/AnalysisControls.vue?raw'
 import mapStage from './components/MapStage.vue?raw'
+import MapStage from './components/MapStage.vue'
+import type { Report } from './types/report'
 
 const styles = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8')
+const fixture: Report = JSON.parse(readFileSync('../docs/validation/reports/hongshan-haiyundonglu-20260921.json', 'utf8'))
+const analysisReport = ref<Report | null>(null)
+const ReportPanelStub = defineComponent({ name: 'ReportPanel', props: ['planningGridId', 'selectedRecommendationId'], template: '<aside />' })
 
 vi.mock('./composables/useAnalysisCenter', () => ({
   useAnalysisCenter: () => ({
@@ -20,7 +25,7 @@ vi.mock('./composables/useAnalysisCenter', () => ({
 vi.mock('./composables/useAnalysis', () => ({
   useAnalysis: () => ({
     mode: ref('demo'), minutes: ref(15), analysisCategories: ref(['market']), visibleCategories: ref(['market']), showNormal: ref(false), showSparse: ref(true), showCritical: ref(true),
-    loading: ref(false), progress: ref(0), report: ref(null), error: ref(''), runAnalysis: vi.fn(), supplementCategories: ref([]), setVisibleCategories: vi.fn(), setAnalysisCategories: vi.fn(), applyReport: vi.fn(),
+    loading: ref(false), progress: ref(0), report: analysisReport, error: ref(''), runAnalysis: vi.fn(), supplementCategories: ref([]), setVisibleCategories: vi.fn(), setAnalysisCategories: vi.fn(), applyReport: vi.fn(),
   }),
 }))
 vi.mock('./composables/useReportHistory', () => ({
@@ -36,6 +41,7 @@ vi.mock('./composables/useSimulation', () => ({
 describe('响应式工作台布局契约', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
+    analysisReport.value = null
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
   })
 
@@ -93,6 +99,35 @@ describe('响应式工作台布局契约', () => {
     expect(mapStage).toContain('红色网纹与感叹号')
     expect(mapStage).toContain('黄色斜纹与三角形')
   })
+
+  for (const mobile of [true, false]) {
+    it(`${mobile ? '手机' : '桌面'}查看区域保留报告开合状态，并继续关联报告建议和规划区域`, async () => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: mobile ? 390 : 1440 })
+      analysisReport.value = structuredClone(fixture)
+      const wrapper = shallowMount(App, { global: { stubs: { ReportPanel: ReportPanelStub } } })
+      await flushPromises()
+      const report = wrapper.getComponent({ name: 'ReportPanel' })
+      if (!mobile) {
+        report.vm.$emit('toggle-collapse')
+        await nextTick()
+        expect(wrapper.get('.workspace').classes()).toContain('right-collapsed')
+      }
+      const recommendation = fixture.recommendations[0]!
+      const gridId = recommendation.target_region_ids[0]!
+      const map = wrapper.getComponent(MapStage)
+      map.vm.$emit('service-area-select', gridId)
+      await nextTick()
+      expect(map.props('focusRecommendationId')).toBe(recommendation.id)
+      expect(report.props('planningGridId')).toBe(gridId)
+      expect(wrapper.find('.mobile-panel-backdrop').exists()).toBe(false)
+      if (!mobile) expect(wrapper.get('.workspace').classes()).toContain('right-collapsed')
+      map.vm.$emit('service-area-select', null)
+      await nextTick()
+      expect(map.props('focusRecommendationId')).toBeNull()
+      expect(report.props('planningGridId')).toBeNull()
+      wrapper.unmount()
+    })
+  }
 })
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

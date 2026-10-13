@@ -21,6 +21,54 @@ function mountPanel(report = structuredClone(fixture)) {
   })
 }
 describe('报告信息分层与联动', () => {
+  it.each([
+    { status: 'complete', label: '验证已完成' },
+    { status: 'failed', label: '验证未完成' },
+    { status: 'disabled', label: '验证未启用' },
+  ] as const)('概览显示高德验证状态 $status，点击后直接定位详情', async ({ status, label }) => {
+    const report = structuredClone(fixture)
+    report.multisource_validation = { status, provider: 'amap', affects_primary_analysis: false, returned_count: 18, matched_count: 12, review_count: 2, conflict_count: 1, unmatched_count: 3 }
+    const wrapper = mountPanel(report)
+    const entry = wrapper.get('button.multisource-validation-entry')
+    expect(entry.isVisible()).toBe(true)
+    expect(entry.text()).toContain('高德辅助验证')
+    expect(entry.text()).toContain(label)
+    expect(wrapper.get('.multisource-validation').isVisible()).toBe(false)
+    await entry.trigger('click')
+    await flushPromises()
+    const details = wrapper.get('.multisource-validation')
+    expect(details.isVisible()).toBe(true)
+    expect(details.text()).toContain(label)
+    expect(document.activeElement).toBe(details.element)
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenLastCalledWith({ block: 'start' })
+    expect(wrapper.get('#report-page-overview').isVisible()).toBe(false)
+    expect(wrapper.emitted('toggle-collapse')).toBeUndefined()
+    if (status === 'complete') {
+      expect(details.get('.multisource-validation-metrics').text()).toBe('12匹配2待复核1冲突3未匹配')
+    } else {
+      expect(details.find('.multisource-validation-metrics').exists()).toBe(false)
+    }
+    await wrapper.get('.auxiliary-heading button').trigger('click')
+    expect(entry.isVisible()).toBe(true)
+    wrapper.unmount()
+  })
+  it('旧报告仍有验证状态与详情说明，换报告后状态同步更新', async () => {
+    const report = structuredClone(fixture)
+    delete report.multisource_validation
+    const wrapper = mountPanel(report)
+    expect(wrapper.get('.multisource-validation-entry').text()).toContain('本报告未进行辅助验证')
+    await wrapper.get('.multisource-validation-entry').trigger('click')
+    await flushPromises()
+    const details = wrapper.get('.multisource-validation')
+    expect(details.isVisible()).toBe(true)
+    expect(details.text()).toContain('本报告未进行辅助验证')
+    expect(details.find('.multisource-validation-metrics').exists()).toBe(false)
+    await wrapper.setProps({ report: { ...report, report_id: 'verified-report', multisource_validation: { status: 'complete', provider: 'amap', affects_primary_analysis: false } } })
+    expect(wrapper.get('.multisource-validation-entry').isVisible()).toBe(true)
+    expect(wrapper.get('.multisource-validation-entry').text()).toContain('验证已完成')
+    expect(wrapper.get('.multisource-validation-entry').text()).not.toContain('本报告未进行辅助验证')
+    wrapper.unmount()
+  })
   it('默认展示结论，历史和技术信息按需查看，质量提示始终可见', async () => {
     const report = structuredClone(fixture)
     report.completeness = 'partial'

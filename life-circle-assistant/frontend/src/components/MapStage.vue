@@ -50,28 +50,20 @@
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
     <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>{{ progressLabel || '正在计算真实步行可达性' }}… {{ progress }}% · 已耗时 {{ elapsedLabel }}</span></div>
     <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
-    <div v-if="keyboardServiceAreas.length" class="service-area-keyboard-list" role="group" aria-label="可查看判定证据的服务区域">
-      <span class="sr-only">使用 Tab 移动到区域按钮，按回车或空格定位并放大对应网格，同时查看判定依据。</span>
-      <button
-        v-for="area in keyboardServiceAreas"
-        :key="area.properties.grid_id"
-        type="button"
-        :aria-pressed="selectedServiceArea?.properties.grid_id === area.properties.grid_id"
-        :aria-label="`${area.properties.category_label}${area.properties.label} ${area.properties.grid_id}，定位并放大网格，查看判定依据`"
-        @click="selectServiceArea(area)"
-      >{{ area.properties.category_label }} · {{ area.properties.grid_id }} · {{ area.properties.label }}</button>
+    <div class="service-area-dock">
+      <MapServiceAreaBrowser ref="areaBrowserRef" :areas="keyboardServiceAreas" :names="serviceAreaNames" :selected-id="selectedServiceArea?.properties.grid_id || null" @select="selectServiceArea" @update:open="areaBrowserOpen = $event" />
+      <article v-if="selectedServiceArea" v-show="!areaBrowserOpen" ref="evidenceRef" class="service-area-evidence" tabindex="-1" aria-label="区域判定依据" aria-live="polite" @keydown.esc.stop.prevent="dismissServiceArea">
+        <button class="evidence-close" aria-label="关闭区域判定依据" @click="dismissServiceArea">×</button>
+        <div class="evidence-kicker">{{ serviceAreaNames.get(selectedServiceArea.properties.grid_id) || selectedServiceArea.properties.category_label }} · {{ selectedServiceArea.properties.label }}</div>
+        <strong>{{ selectedServiceArea.properties.nearest_facility_name || '候选范围内无同类设施' }}</strong>
+        <div class="evidence-metrics">
+          <span>步行时间 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_minutes, '分钟') }}</b></span>
+          <span>步行距离 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_distance_m, '米') }}</b></span>
+        </div>
+        <p>{{ selectedServiceArea.properties.basis }}</p>
+        <small>数据来源：{{ sourceLabel(selectedServiceArea.properties.source) }} · 置信度：{{ confidenceLabel(selectedServiceArea.properties.confidence) }}</small>
+      </article>
     </div>
-    <article v-if="selectedServiceArea" ref="evidenceRef" class="service-area-evidence" tabindex="-1" aria-label="区域判定依据" aria-live="polite">
-      <button class="evidence-close" aria-label="关闭区域判定依据" @click="closeServiceAreaEvidence">×</button>
-      <div class="evidence-kicker">{{ selectedServiceArea.properties.category_label }} · {{ selectedServiceArea.properties.label }}</div>
-      <strong>{{ selectedServiceArea.properties.nearest_facility_name || '候选范围内无同类设施' }}</strong>
-      <div class="evidence-metrics">
-        <span>步行时间 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_minutes, '分钟') }}</b></span>
-        <span>步行距离 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_distance_m, '米') }}</b></span>
-      </div>
-      <p>{{ selectedServiceArea.properties.basis }}</p>
-      <small>数据来源：{{ sourceLabel(selectedServiceArea.properties.source) }} · 置信度：{{ confidenceLabel(selectedServiceArea.properties.confidence) }}</small>
-    </article>
   </section>
 </template>
 
@@ -84,6 +76,7 @@ import { useMapRenderer } from '../composables/useMapRenderer'
 import { fetchWalkingRoute } from '../services/analysisApi'
 import MapHoverCard from './MapHoverCard.vue'
 import MapLayerControls from './MapLayerControls.vue'
+import MapServiceAreaBrowser from './MapServiceAreaBrowser.vue'
 import type { Poi } from '../types/report'
 import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
@@ -123,6 +116,16 @@ watch(() => props.loading, (value) => {
 }, { immediate: true })
 onBeforeUnmount(() => { if (elapsedTimer !== undefined) window.clearInterval(elapsedTimer) })
 const evidenceRef = ref<HTMLElement | null>(null)
+const areaBrowserRef = ref<InstanceType<typeof MapServiceAreaBrowser> | null>(null)
+const areaBrowserOpen = ref(false)
+const serviceAreaNames = computed(() => {
+  const counts = new Map<string, number>()
+  return new Map((props.report?.service_areas?.features || props.report?.zones?.features || []).map(area => {
+    const number = (counts.get(area.properties.category) || 0) + 1
+    counts.set(area.properties.category, number)
+    return [area.properties.grid_id, `${area.properties.category_label} · 区域 ${number}`]
+  }))
+})
 const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceArea, hoverTarget, routePreview, setRoutePreview, retainHover, clearHover, visibleServiceAreas, selectServiceArea, handleCanvasClick, handleCanvasMouseMove, handleCanvasMouseLeave, closeServiceAreaEvidence } = useMapRenderer({
   report,
   analysisCenter,
@@ -139,6 +142,11 @@ const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceA
   onSelectSimulationLocation: (lng, lat) => emit('select-simulation-location', lng, lat),
 })
 const keyboardServiceAreas = computed(() => visibleServiceAreas())
+
+function dismissServiceArea() {
+  closeServiceAreaEvidence()
+  areaBrowserRef.value?.focusTrigger()
+}
 
 const routeLoading = ref(false)
 const routeAvailable = computed(() => props.report?.calculation_mode?.provider_mode === 'real')
