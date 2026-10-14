@@ -26,11 +26,11 @@
         </div>
       </article>
       <p v-if="busy" class="conversation-empty" role="status">正在核验当前上下文与证据…</p>
+      <ExecutionCheckpointReview v-if="task?.status === 'failed' && !analyzing" :key="task.id" :execution-id="task.id" allow-resume @resume="emit('retry-task')" />
     </div>
     <div v-if="pending" class="conversation-confirmation" role="status"><p>{{ pending.label }}</p><small>本次上限：{{ pending.budget.max_route_pairs }}条路线 · {{ pending.budget.max_model_calls }}次模型调用</small><button type="button" :disabled="busy || analyzing" @click="emit('confirm')">确认执行</button></div>
     <p v-if="error" class="conversation-error" role="alert">{{ error }}<button v-if="canRetry" type="button" :disabled="busy" @click="emit('retry')">重试本条消息</button><button v-else-if="!ready" type="button" :disabled="restoring" @click="emit('reconnect')">重新连接</button></p>
     <div v-if="task" class="conversation-task" role="status"><span>{{ analyzing ? `${progressLabel || '正在体检'} · ${progress}%` : task.status === 'cancelled' ? '体检已取消' : task.status === 'failed' ? '体检失败' : '体检已完成' }}</span><button v-if="analyzing" type="button" :disabled="cancelling" @click="emit('cancel-task')">{{ cancelling ? '取消中' : '取消体检' }}</button><button v-else-if="task.status === 'cancelled'" type="button" @click="emit('retry-task')">重新体检</button></div>
-    <ExecutionCheckpointReview v-if="task?.status === 'failed' && !analyzing" :key="task.id" :execution-id="task.id" allow-resume @resume="emit('retry-task')" />
     <form class="conversation-composer" @submit.prevent="submit">
       <textarea v-model="message" rows="2" maxlength="1000" aria-label="和生活圈助手对话" :disabled="!ready || busy" :placeholder="analyzing ? '体检进行中，可询问进度或说：取消体检' : '例如：只看1公里稀缺图层；定位东南角；预算10万元规划药店'" @keydown="handleKeydown" />
       <button type="submit" :disabled="!ready || busy || !message.trim()">{{ busy ? '处理中' : '发送' }}</button>
@@ -189,7 +189,7 @@ watch(() => props.turns.length, async () => {
 </script>
 
 <style scoped>
-.conversation-workspace { position: absolute; z-index: 7; right: 16px; bottom: 20px; width: var(--conversation-width); min-width: 0; max-width: none; margin: 0; border: 1px solid #a9cfc0; border-top: 3px solid #2f8f80; border-radius: 10px; background: rgba(249,252,248,.98); box-shadow: 0 10px 28px rgba(24,52,49,.2); color: #24483f; }
+.conversation-workspace { --conversation-bottom-offset: 20px; --conversation-safe-top: 106px; position: absolute; z-index: 7; right: 16px; bottom: var(--conversation-bottom-offset); width: var(--conversation-width); min-width: 0; max-width: none; max-height: calc(100% - var(--conversation-safe-top) - var(--conversation-bottom-offset)); display: flex; flex-direction: column; margin: 0; overflow: hidden; border: 1px solid #a9cfc0; border-top: 3px solid #2f8f80; border-radius: 10px; background: rgba(249,252,248,.98); box-shadow: 0 10px 28px rgba(24,52,49,.2); color: #24483f; }
 .conversation-workspace.dragging { user-select: none; }
 .conversation-heading { padding: 8px 12px 6px; }
 .conversation-heading-row { display: flex; align-items: center; gap: 5px; touch-action: none; cursor: grab; }
@@ -201,7 +201,7 @@ watch(() => props.turns.length, async () => {
 .conversation-title { display: grid; gap: 2px; min-width: 0; }.conversation-heading strong { font-size: 12px; }.conversation-heading small { color: #668078; font-size: 9px; }.conversation-state { margin-left: auto; padding: 3px 7px; border-radius: 10px; background: #e4f2eb; color: #367b68; font-size: 9px; font-style: normal; white-space: nowrap; }.conversation-toggle { color: #5e7b72; font-size: 15px; line-height: 1; }
 .conversation-context { margin: 5px 0 0; font-size: 10px; color: #667c73; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .conversation-quick-actions { display: flex; gap: 6px; margin-top: 7px; overflow-x: auto; scrollbar-width: none; }.conversation-quick-actions::-webkit-scrollbar { display: none; }.conversation-quick-actions button { flex: 0 0 auto; min-height: 25px; padding: 3px 8px; border: 1px solid #c6ddd2; border-radius: 13px; background: #f1f8f4; color: #397568; font-size: 9px; white-space: nowrap; }.conversation-quick-actions button:hover:not(:disabled) { border-color: #69a995; background: #e3f2ea; }.conversation-quick-actions button:disabled { cursor: default; opacity: .52; }
-.conversation-transcript { max-height: min(320px, 35dvh); overflow-y: auto; overscroll-behavior: contain; padding: 0 12px; font-size: 11px; line-height: 1.7; scrollbar-width: thin; }
+.conversation-transcript { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 0 12px; font-size: 11px; line-height: 1.7; scrollbar-width: thin; }
 .conversation-empty { color: #73877f; font-size: 11px; }.conversation-turn { padding: 9px 0; border-top: 1px solid #dce6e0; overflow-wrap: anywhere; }
 .conversation-turn p { margin: 3px 0 7px; white-space: pre-line; }.conversation-turn p > span { display: block; font-size: 9px; opacity: .6; }.conversation-user { color: #637f75; }.conversation-answer { color: #24483f; }
 .conversation-turn details { margin-top: 6px; }.conversation-turn summary { cursor: pointer; font-size: 10px; }.conversation-turn ul { padding-left: 16px; }.conversation-turn li small { display: block; opacity: .6; font-size: 9px; }
@@ -219,5 +219,5 @@ html[data-theme="dark"] .conversation-hide { color: #9db8b8; }html[data-theme="d
 html[data-theme="dark"] .conversation-launcher { background: transparent; color: inherit; box-shadow: none; }html[data-theme="dark"] .conversation-launcher:hover { background: transparent; }
 @keyframes assistant-breathe { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.035); } }
 @media (prefers-reduced-motion: reduce) { .conversation-launcher-icon { animation: none; } }
-@media (max-width: 820px) { .conversation-workspace { left: 8px; right: 8px; bottom: 76px; width: auto; z-index: 3; }.conversation-launcher { right: 12px; bottom: calc(76px + var(--conversation-launcher-lift)); z-index: 4; }.conversation-heading { padding-top: 8px; }.conversation-transcript { max-height: min(240px, 30dvh); }.conversation-composer textarea { font-size: 16px; line-height: 1.35; min-height: 45px; }.conversation-context { max-width: 100%; }.conversation-confirmation small { min-width: 150px; } }
+@media (max-width: 820px) { .conversation-workspace { --conversation-bottom-offset: 76px; --conversation-safe-top: 8px; left: 8px; right: 8px; width: auto; z-index: 3; }.conversation-launcher { right: 12px; bottom: calc(76px + var(--conversation-launcher-lift)); z-index: 4; }.conversation-heading { padding-top: 8px; }.conversation-composer textarea { font-size: 16px; line-height: 1.35; min-height: 45px; }.conversation-context { max-width: 100%; }.conversation-confirmation small { min-width: 150px; } }
 </style>

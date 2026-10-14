@@ -48,6 +48,11 @@ describe('地图上的对话入口', () => {
     expect(wrapper.emitted('cancel-task')).toHaveLength(1)
   })
 
+  it('失败任务的计费核对内容放在会话滚动区内', () => {
+    const wrapper = mount(ConversationWorkspace, { props: { ...props, task: { id: 'task', status: 'failed', progress: 100, stage: 'failed', stage_label: '调用中断' } } })
+    expect(wrapper.find('.conversation-transcript .checkpoint-review').exists()).toBe(true)
+  })
+
   it('可隐藏AI规划助手，并通过机器人入口恢复', async () => {
     const wrapper = mount(ConversationWorkspace, { props })
     await wrapper.get('.conversation-hide').trigger('click')
