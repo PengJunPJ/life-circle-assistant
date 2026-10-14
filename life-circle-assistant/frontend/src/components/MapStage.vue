@@ -17,10 +17,13 @@
     </div>
     <p v-if="statusLayers?.sampling && samplingLayers" class="map-evidence-legend" role="status">青绿点：真实观测 · 青绿外沿：仅中心可达 · 蓝色：估计 · 灰色：未决 · 未进入正式评分</p>
     <p v-if="combination" class="map-evidence-legend combination-legend" role="status">组合假设情景 · {{ combination.hypothetical_facilities.length }}处新增设施</p>
-    <div v-if="legendCategories.length || hasVisibleCandidates || simulation" class="facility-legend" aria-label="设施类别图例">
-      <span v-for="category in legendCategories" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
-      <span v-if="hasVisibleCandidates" class="facility-legend-item candidate-legend"><b aria-hidden="true">候</b>规划候选点</span>
-      <span v-if="simulation" class="facility-legend-item simulation-legend"><b aria-hidden="true">拟</b>假设设施/模拟区域</span>
+    <div class="map-top-right">
+      <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
+      <div v-if="legendCategories.length || hasVisibleCandidates || simulation" class="facility-legend" aria-label="设施类别图例">
+        <span v-for="category in legendCategories" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
+        <span v-if="hasVisibleCandidates" class="facility-legend-item candidate-legend"><b aria-hidden="true">候</b>规划候选点</span>
+        <span v-if="simulation" class="facility-legend-item simulation-legend"><b aria-hidden="true">拟</b>假设设施/模拟区域</span>
+      </div>
     </div>
     <div v-if="showMobileLegend" id="mobile-map-legend" class="mobile-map-legend" role="region" aria-label="地图完整图例">
       <button type="button" aria-label="关闭地图图例" @click="showMobileLegend = false">×</button>
@@ -47,7 +50,6 @@
     />
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
     <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>{{ progressLabel || '正在计算真实步行可达性' }}… {{ progress }}% · 已耗时 {{ elapsedLabel }}</span></div>
-    <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
     <div class="service-area-dock">
       <MapServiceAreaBrowser ref="areaBrowserRef" :areas="keyboardServiceAreas" :names="serviceAreaNames" :selected-id="selectedServiceArea?.properties.grid_id || null" @select="selectServiceArea" @update:open="areaBrowserOpen = $event" />
       <article v-if="selectedServiceArea" v-show="!areaBrowserOpen" ref="evidenceRef" class="service-area-evidence" tabindex="-1" aria-label="区域判定依据" aria-live="polite" @keydown.esc.stop.prevent="dismissServiceArea">

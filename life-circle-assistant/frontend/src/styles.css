@@ -488,6 +488,37 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
   .export-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
+/* 工作台切换保持内容位置稳定，仅做轻量显隐。 */
+.control-panel,
+.report-panel { transition: opacity .12s ease, visibility .12s ease; }
+.control-panel.collapsed,
+.report-panel.collapsed { transform: none; opacity: 0; visibility: hidden; pointer-events: none; }
+.control-panel:not(.collapsed),
+.report-panel:not(.collapsed) { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* 分析中心与设施图例共享右上角布局，避免互相遮挡。 */
+.map-top-right { position: absolute; z-index: 3; top: 66px; left: var(--hud-left); right: var(--hud-right); display: flex; align-items: flex-start; justify-content: flex-end; gap: 8px; min-width: 0; pointer-events: none; }
+.map-top-right > * { pointer-events: auto; }
+.map-top-right .map-caption,
+.map-top-right .facility-legend { position: relative; top: auto; right: auto; bottom: auto; left: auto; min-width: 0; }
+.map-top-right .map-caption { flex: 0 1 auto; width: max-content; max-width: min(52%, 620px); padding: 8px 11px; }
+.map-top-right .map-caption strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-top-right .facility-legend { flex: 0 1 auto; max-width: min(48%, 560px); overflow-x: auto; }
+
+@media (max-width: 820px) {
+  .control-panel,
+  .report-panel { transform: none; transition: opacity .1s ease, visibility .1s ease; }
+  .control-panel.collapsed,
+  .report-panel.collapsed { transform: none; }
+  .control-panel.mobile-open,
+  .report-panel.mobile-open { transform: none; opacity: 1; visibility: visible; pointer-events: auto; }
+  .map-top-right { top: 57px; left: 8px; right: 8px; flex-direction: column; align-items: stretch; gap: 6px; }
+  .map-top-right .map-caption { width: 100%; max-width: 100%; padding: 8px 10px; gap: 7px; }
+  .map-top-right .map-caption > span:last-child { display: none; }
+  .map-top-right .facility-legend { display: none; }
+  .has-conversation .map-caption { right: auto; bottom: auto; }
+}
+
 @media (max-width: 820px) and (max-height: 500px) {
   .service-area-menu, .service-area-evidence { max-height: calc(100dvh - 264px - env(safe-area-inset-bottom)); }
   .service-area-menu { padding: 8px 10px; }

@@ -45,6 +45,8 @@ describe('地图服务区域键盘证据入口', () => {
         loading: false, progress: 0, focusRecommendationId: null, simulation: null, simulationPicking: false,
       },
     })
+    expect(wrapper.get('.map-top-right .map-caption').text()).toContain('测试中心')
+    expect(wrapper.get('.map-top-right').element.children[0]).toBe(wrapper.get('.map-caption').element)
     expect(wrapper.findAll('.facility-legend-item').map(item => item.text())).toEqual(['医医疗服务', '学小学', '购购物', '养养老'])
     await wrapper.setProps({ report: { ...report, parameters: { ...report.parameters, categories: [...ALL_CATEGORIES] } } })
     expect(wrapper.findAll('.facility-legend-item')).toHaveLength(7)

@@ -47,4 +47,14 @@ describe('地图上的对话入口', () => {
     await wrapper.get('.conversation-task button').trigger('click')
     expect(wrapper.emitted('cancel-task')).toHaveLength(1)
   })
+
+  it('可隐藏AI规划助手，并通过机器人入口恢复', async () => {
+    const wrapper = mount(ConversationWorkspace, { props })
+    await wrapper.get('.conversation-hide').trigger('click')
+    expect(wrapper.find('.conversation-workspace').exists()).toBe(false)
+    expect(wrapper.get('.conversation-launcher').attributes('aria-label')).toBe('显示AI规划助手')
+    expect(wrapper.emitted('resize')).toContainEqual([0])
+    await wrapper.get('.conversation-launcher').trigger('click')
+    expect(wrapper.find('.conversation-workspace').exists()).toBe(true)
+  })
 })
