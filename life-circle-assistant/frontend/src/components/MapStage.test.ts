@@ -45,8 +45,9 @@ describe('地图服务区域键盘证据入口', () => {
         loading: false, progress: 0, focusRecommendationId: null, simulation: null, simulationPicking: false,
       },
     })
-    expect(wrapper.get('.map-top-right .map-caption').text()).toContain('测试中心')
-    expect(wrapper.get('.map-top-right').element.children[0]).toBe(wrapper.get('.map-caption').element)
+    expect(wrapper.get('.map-toolbar .map-caption').text()).toContain('测试中心')
+    expect(wrapper.get('.map-toolbar').element.children[0]).toBe(wrapper.get('.map-caption').element)
+    expect(wrapper.find('.map-top-right .map-caption').exists()).toBe(false)
     expect(wrapper.findAll('.facility-legend-item').map(item => item.text())).toEqual(['医医疗服务', '学小学', '购购物', '养养老'])
     await wrapper.setProps({ report: { ...report, parameters: { ...report.parameters, categories: [...ALL_CATEGORIES] } } })
     expect(wrapper.findAll('.facility-legend-item')).toHaveLength(7)
@@ -66,7 +67,11 @@ describe('地图服务区域键盘证据入口', () => {
         loading: false, progress: 0, focusRecommendationId: null, simulation: null, simulationPicking: false,
       },
     })
+    expect(wrapper.get('.map-top-right').element.children[0]).toBe(wrapper.get('.service-area-dock').element)
+    expect(wrapper.findAll('.map-top-right .facility-legend')).toHaveLength(0)
+    expect(wrapper.get('.service-area-dock').element.children[0]).toBe(wrapper.get('.service-area-browser').element)
     await wrapper.get('.service-area-trigger').trigger('click')
+    expect(wrapper.findAll('.service-area-menu')).toHaveLength(1)
     const button = wrapper.get('.service-area-row')
     expect(button.attributes('aria-label')).toContain('查看判定依据')
     expect(button.text()).toContain('小学 · 区域 1')

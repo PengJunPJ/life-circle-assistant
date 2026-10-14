@@ -2,6 +2,7 @@
   <section class="map-stage" aria-label="生活圈分析地图">
     <p class="sr-only">地图是主要工作区域。键盘用户可在分析参数面板中通过地址候选或经纬度完成选点。</p>
     <div class="map-toolbar">
+      <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
       <div class="layer-status" aria-label="地图核心图例">
         <span class="legend-item"><span class="legend-origin" aria-hidden="true"></span>起点</span>
         <span class="legend-item"><span class="legend-isochrone" aria-hidden="true"></span>{{ minutes }}分钟等时圈</span>
@@ -18,7 +19,20 @@
     <p v-if="statusLayers?.sampling && samplingLayers" class="map-evidence-legend" role="status">青绿点：真实观测 · 青绿外沿：仅中心可达 · 蓝色：估计 · 灰色：未决 · 未进入正式评分</p>
     <p v-if="combination" class="map-evidence-legend combination-legend" role="status">组合假设情景 · {{ combination.hypothetical_facilities.length }}处新增设施</p>
     <div class="map-top-right">
-      <div class="map-caption"><span class="caption-kicker">分析中心</span><strong>{{ analysisCenter.address }}</strong><span>{{ analysisCenter.lng.toFixed(6) }}, {{ analysisCenter.lat.toFixed(6) }}</span></div>
+      <div class="service-area-dock">
+        <MapServiceAreaBrowser ref="areaBrowserRef" :areas="keyboardServiceAreas" :names="serviceAreaNames" :selected-id="selectedServiceArea?.properties.grid_id || null" @select="selectServiceArea" @update:open="areaBrowserOpen = $event" />
+        <article v-if="selectedServiceArea" v-show="!areaBrowserOpen" ref="evidenceRef" class="service-area-evidence" tabindex="-1" aria-label="区域判定依据" aria-live="polite" @keydown.esc.stop.prevent="dismissServiceArea">
+          <button class="evidence-close" aria-label="关闭区域判定依据" @click="dismissServiceArea">×</button>
+          <div class="evidence-kicker">{{ serviceAreaNames.get(selectedServiceArea.properties.grid_id) || selectedServiceArea.properties.category_label }} · {{ selectedServiceArea.properties.label }}</div>
+          <strong>{{ selectedServiceArea.properties.nearest_facility_name || '候选范围内无同类设施' }}</strong>
+          <div class="evidence-metrics">
+            <span>步行时间 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_minutes, '分钟') }}</b></span>
+            <span>步行距离 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_distance_m, '米') }}</b></span>
+          </div>
+          <p>{{ selectedServiceArea.properties.basis }}</p>
+          <small>数据来源：{{ sourceLabel(selectedServiceArea.properties.source) }} · 置信度：{{ confidenceLabel(selectedServiceArea.properties.confidence) }}</small>
+        </article>
+      </div>
       <div v-if="legendCategories.length || hasVisibleCandidates || simulation" class="facility-legend" aria-label="设施类别图例">
         <span v-for="category in legendCategories" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
         <span v-if="hasVisibleCandidates" class="facility-legend-item candidate-legend"><b aria-hidden="true">候</b>规划候选点</span>
@@ -50,20 +64,6 @@
     />
     <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
     <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>{{ progressLabel || '正在计算真实步行可达性' }}… {{ progress }}% · 已耗时 {{ elapsedLabel }}</span></div>
-    <div class="service-area-dock">
-      <MapServiceAreaBrowser ref="areaBrowserRef" :areas="keyboardServiceAreas" :names="serviceAreaNames" :selected-id="selectedServiceArea?.properties.grid_id || null" @select="selectServiceArea" @update:open="areaBrowserOpen = $event" />
-      <article v-if="selectedServiceArea" v-show="!areaBrowserOpen" ref="evidenceRef" class="service-area-evidence" tabindex="-1" aria-label="区域判定依据" aria-live="polite" @keydown.esc.stop.prevent="dismissServiceArea">
-        <button class="evidence-close" aria-label="关闭区域判定依据" @click="dismissServiceArea">×</button>
-        <div class="evidence-kicker">{{ serviceAreaNames.get(selectedServiceArea.properties.grid_id) || selectedServiceArea.properties.category_label }} · {{ selectedServiceArea.properties.label }}</div>
-        <strong>{{ selectedServiceArea.properties.nearest_facility_name || '候选范围内无同类设施' }}</strong>
-        <div class="evidence-metrics">
-          <span>步行时间 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_minutes, '分钟') }}</b></span>
-          <span>步行距离 <b>{{ formatMetric(selectedServiceArea.properties.nearest_walk_distance_m, '米') }}</b></span>
-        </div>
-        <p>{{ selectedServiceArea.properties.basis }}</p>
-        <small>数据来源：{{ sourceLabel(selectedServiceArea.properties.source) }} · 置信度：{{ confidenceLabel(selectedServiceArea.properties.confidence) }}</small>
-      </article>
-    </div>
   </section>
 </template>
 
