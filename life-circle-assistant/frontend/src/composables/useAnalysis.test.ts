@@ -3,12 +3,13 @@ import { readFileSync } from 'node:fs'
 import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ALL_CATEGORIES, DEFAULT_CATEGORIES } from '../constants/facilities'
-import { createAnalysis, waitForAnalysis } from '../services/analysisApi'
+import { createAnalysis, resumeAnalysisTask, retryAnalysisTask, waitForAnalysis } from '../services/analysisApi'
+import { AnalysisTaskTerminalError } from '../services/analysisTaskError'
 import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
 import { useAnalysis } from './useAnalysis'
 
-vi.mock('../services/analysisApi', () => ({ createAnalysis: vi.fn(), waitForAnalysis: vi.fn() }))
+vi.mock('../services/analysisApi', () => ({ createAnalysis: vi.fn(), waitForAnalysis: vi.fn(), cancelAnalysisTask: vi.fn(), retryAnalysisTask: vi.fn(), resumeAnalysisTask: vi.fn() }))
 vi.mock('element-plus/es/components/message/index', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
 
 const fixture: Report = JSON.parse(readFileSync('../docs/validation/reports/hongshan-haiyundonglu-20260921.json', 'utf8'))
@@ -31,6 +32,19 @@ describe('体检范围与地图展示分离', () => {
     vi.mocked(createAnalysis).mockResolvedValue({ id: 'task', status: 'completed', progress: 100, stage: 'completed', stage_label: '已完成' })
   })
   afterEach(() => { scope?.stop() })
+  it('失败任务复用原任务断点，取消任务创建重试任务，不重发已完成路线', async () => {
+    const { controller } = setup()
+    const source = { id: 'failed-task', status: 'failed' as const, progress: 55, stage: 'walking', stage_label: '中断', request: fixture.parameters }
+    controller.currentTask.value = source
+    vi.mocked(resumeAnalysisTask).mockResolvedValue({ ...source, status: 'queued' })
+    vi.mocked(waitForAnalysis).mockResolvedValue(fixture)
+    expect(await controller.retryCurrentTask()).toBe(true)
+    expect(resumeAnalysisTask).toHaveBeenCalledWith('failed-task'); expect(retryAnalysisTask).not.toHaveBeenCalled()
+    controller.currentTask.value = { ...source, id: 'cancelled-task', status: 'cancelled' }
+    vi.mocked(retryAnalysisTask).mockResolvedValue({ ...source, id: 'replacement-task', status: 'queued' })
+    expect(await controller.retryCurrentTask()).toBe(true)
+    expect(retryAnalysisTask).toHaveBeenCalledWith('cancelled-task')
+  })
 
   it('首次体检只请求勾选范围，不默认查询七类', async () => {
     const { controller } = setup()
@@ -156,5 +170,36 @@ describe('体检范围与地图展示分离', () => {
     expect(createAnalysis).toHaveBeenCalledWith(expect.objectContaining({ categories: ['market'], minutes: controller.minutes.value }))
     expect(controller.report.value).toEqual(original)
     expect(controller.analysisCategories.value).toEqual(['market'])
+  })
+
+  it('另一页面取消后台任务后保留取消终态，刷新恢复时不伪装成失败', async () => {
+    const { controller } = setup()
+    vi.mocked(waitForAnalysis).mockRejectedValue(new AnalysisTaskTerminalError({ id: 'task', status: 'cancelled', progress: 48, stage: 'cancelled', stage_label: '用户取消' }))
+    expect(await controller.followTask({ id: 'task', status: 'running', progress: 40, stage: 'walking', stage_label: '计算中' })).toBe(false)
+    expect(controller.currentTask.value?.status).toBe('cancelled')
+    expect(controller.currentTask.value?.progress).toBe(48)
+    expect(controller.loading.value).toBe(false)
+    expect(controller.report.value).toBeNull()
+    expect(controller.error.value).toBe('')
+  })
+
+  it('任务恢复完成后使用返回报告，不额外创建体检任务', async () => {
+    const { controller } = setup()
+    const result = report(['market'])
+    vi.mocked(waitForAnalysis).mockResolvedValue(result)
+    expect(await controller.followTask({ id: 'task', status: 'completed', progress: 100, stage: 'completed', stage_label: '已完成', result })).toBe(true)
+    expect(controller.currentTask.value?.status).toBe('completed')
+    expect(controller.report.value?.report_id).toBe(result.report_id)
+    expect(createAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('新建任务请求失败不把上次成功任务覆盖成失败', async () => {
+    const { controller } = setup()
+    vi.mocked(waitForAnalysis).mockResolvedValue(report())
+    await controller.runAnalysis()
+    vi.mocked(createAnalysis).mockRejectedValue(new Error('创建请求失败'))
+    expect(await controller.runAnalysis()).toBe(false)
+    expect(controller.currentTask.value).toBeNull()
+    expect(controller.error.value).toBe('创建请求失败')
   })
 })

@@ -5,6 +5,7 @@ from .structured import (
     build_geojson_export,
     build_json_export,
 )
+from .wgs84 import build_wgs84_geojson_export
 
 __all__ = [
     "ExportArtifact",
@@ -12,4 +13,5 @@ __all__ = [
     "build_geojson_export",
     "build_json_export",
     "build_pdf_export",
+    "build_wgs84_geojson_export",
 ]

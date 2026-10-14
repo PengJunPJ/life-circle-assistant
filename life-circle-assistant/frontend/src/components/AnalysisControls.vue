@@ -80,6 +80,7 @@ const props = defineProps<{
   locationError: string; locationPending: boolean; centerPicking?: boolean; searching: boolean; resolving: boolean
   mode: AnalysisMode; minutes: AnalysisMinutes; minutesValid: boolean; report: Report | null; analysisError: string
   analysisCategories: string[]; supplementCount: number; loading: boolean
+  assistantBusy?: boolean
   mapStatus: MapStatus | null; mapStatusLoading: boolean; mapProbeResult: MapProbeResult | null; mapProbeLoading: boolean; realMapReady: boolean; mobileOpen: boolean
 }>()
 const emit = defineEmits<{
@@ -92,7 +93,7 @@ const emit = defineEmits<{
 const entry = ref<'manual' | 'natural'>('manual')
 const intentBlocked = ref(false)
 const intentBusy = ref(false)
-const busy = computed(() => props.loading || props.resolving || props.searching || intentBusy.value)
+const busy = computed(() => props.loading || props.resolving || props.searching || intentBusy.value || props.assistantBusy)
 const inputBlocked = computed(() => intentBusy.value || (entry.value === 'natural' && intentBlocked.value))
 watch(inputBlocked, value => emit('update:inputBlocked', value), { immediate: true })
 watch(intentBusy, value => emit('update:intentBusy', value))

@@ -323,6 +323,11 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
 .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 .mobile-panel-heading, .mobile-workspace-actions, .mobile-panel-backdrop, .mobile-legend-toggle, .mobile-map-legend { display: none; }
 .service-area-dock { position: absolute; z-index: 4; left: var(--hud-left); bottom: 74px; width: min(360px, calc(100% - var(--hud-left) - var(--hud-right))); }
+.has-conversation .map-caption { right: var(--hud-right); min-width: 0; bottom: calc(var(--conversation-height) + 28px); }
+.has-conversation .map-caption strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.has-conversation .map-scale { bottom: calc(var(--conversation-height) + 33px); }
+.has-conversation .service-area-dock { bottom: calc(var(--conversation-height) + 74px); }
+.has-conversation .service-area-menu, .has-conversation .service-area-evidence { max-height: max(70px, min(420px, calc(100dvh - var(--conversation-height) - 240px))); }
 .service-area-browser { position: relative; width: 100%; }
 .service-area-trigger { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid #d4e0da; border-radius: 5px; background: rgba(249,252,248,.96); box-shadow: 0 3px 10px rgba(36,70,66,.08); color: #395b56; font-size: 11px; text-align: left; }
 .service-area-trigger > svg { flex: 0 0 15px; width: 15px; }
@@ -491,6 +496,9 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
   .map-scale { display: none; }
   .service-area-evidence { max-height: min(38dvh, calc(100dvh - 230px - env(safe-area-inset-bottom))); }
   .service-area-dock { left: 8px; right: 8px; bottom: calc(109px + env(safe-area-inset-bottom)); width: auto; }
+  .has-conversation .map-caption { right: 8px; bottom: calc(var(--conversation-height) + 84px + env(safe-area-inset-bottom)); }
+  .has-conversation .service-area-dock { bottom: calc(var(--conversation-height) + 124px + env(safe-area-inset-bottom)); }
+  .has-conversation .service-area-menu, .has-conversation .service-area-evidence { max-height: max(70px, min(300px, calc(100dvh - var(--conversation-height) - 270px - env(safe-area-inset-bottom)))); }
   .service-area-menu { max-height: min(420px, calc(100dvh - 264px - env(safe-area-inset-bottom))); }
   .map-loading { padding-bottom: 62px; }
   .export-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -17,7 +18,15 @@ from .analysis import AnalysisApplicationService, compare_reports
 from .analysis.simulations import ReportSimulationService, SimulationValidationError
 from .analysis_intent import parse_analysis_intent
 from .bootstrap import configure_runtime
-from .exports import build_csv_export, build_geojson_export, build_json_export, build_pdf_export
+from .execution_budget import ANALYSIS_ROUTE_PAIR_LIMIT, BudgetMapProvider
+from .execution_ledger import LedgerMapProvider, bind_execution, execution_router, new_request_ledger
+from .exports import (
+    build_csv_export,
+    build_geojson_export,
+    build_json_export,
+    build_pdf_export,
+    build_wgs84_geojson_export,
+)
 from .llm import enhance_interpretation, llm_configuration
 from .maps import MapProvider, MapProviderError
 from .maps.support import is_in_supported_huangpu_area, require_supported_huangpu_area
@@ -66,38 +75,91 @@ def cors_allow_origins() -> list[str]:
 async def execute_analysis_task(app: FastAPI, task_id: str, analysis_request: AnalyzeRequest) -> None:
     task_repository: TaskRepository = app.state.task_repository
     report_repository: ReportRepository = app.state.report_repository
-    task_repository.mark_running(task_id)
+    if not task_repository.mark_running(task_id):
+        return
+    active_task = asyncio.current_task()
+    app.state.active_analysis_tasks[task_id] = active_task
+    ledger = app.state.execution_repository.ensure(task_id, "analysis_task")
+    app.state.execution_repository.finish(task_id, "running")
 
     def update_stage(code: str, label: str, progress: int) -> None:
+        if (task_repository.get(task_id) or {}).get("status") == "cancelled":
+            raise asyncio.CancelledError()
         task_repository.update_stage(task_id, code, label, progress)
 
+    bounded_provider = BudgetMapProvider(
+        LedgerMapProvider(
+            app.state.map_provider.provider
+            if isinstance(app.state.map_provider, LedgerMapProvider)
+            else app.state.map_provider,
+            ledger,
+        ),
+        ANALYSIS_ROUTE_PAIR_LIMIT,
+        cancelled=lambda: (task_repository.get(task_id) or {}).get("status") == "cancelled",
+    )
     walking_service = WalkingService(
-        app.state.map_provider,
+        bounded_provider,
         app.state.walking_cache_repository,
         app.state.walking_settings,
     )
     service = AnalysisApplicationService(
-        app.state.map_provider,
+        bounded_provider,
         update_stage,
         walking_service,
         facility_validator=getattr(app.state, "amap_validator", None),
+        adjacency_repository=getattr(app.state, "spatial_evidence_repository", None),
     )
     try:
-        report = await service.run(task_id, analysis_request)
+        with bind_execution(ledger):
+            report = await service.run(task_id, analysis_request)
+        if app.state.execution_repository.uncertain(task_id):
+            raise MapProviderError("任务有计费状态未决的检查点，请先核对账本再续算", code="checkpoint_uncertain")
+        app.state.execution_repository.finish(task_id, "completed")
+        report["execution_ledger"] = ledger.summary()
+        usage = report["execution_ledger"]["usage"]
+        report["execution"]["api_calls"] = usage.get("map_http_attempts", 0)
+        report["execution"]["metrics"]["native_isochrone_api_calls"] = usage.get("native_http_attempts", 0)
+        report["execution"]["api_calls_source"] = "isolated_task_execution_ledger"
+        report["execution_budget"] = {
+            "max_route_pairs": bounded_provider.limit,
+            "route_pairs_requested": bounded_provider.used,
+            "physical_route_pairs_used": bounded_provider.physical_route_pairs_used,
+            "unit": "路线对；缓存命中不计入，百度实际 HTTP 尝试包含重试和降级调用；快照不产生 HTTP",
+        }
         task_repository.update_request(task_id, report["request"])
         report_repository.save_for_task(task_id, report)
+    except asyncio.CancelledError:
+        if (task_repository.get(task_id) or {}).get("status") == "cancelled":
+            app.state.execution_repository.finish(task_id, "cancelled")
+        else:
+            # 应用关闭导致的中断保留 running/checkpoints，下一次启动自动续算。
+            task_repository.update_stage(task_id, "interrupted", "服务中断，等待检查点恢复", 0)
+            app.state.execution_repository.finish(task_id, "interrupted")
     except Exception as exc:
         task = task_repository.get(task_id) or {}
         active_stage_label = task.get("stage_label") or "分析"
         task_repository.fail(task_id, str(exc), stage_label=f"{active_stage_label}失败")
+        app.state.execution_repository.finish(task_id, "failed")
+    finally:
+        app.state.active_analysis_tasks.pop(task_id, None)
 
 
 def create_app(provider: MapProvider | None = None, database_path: str | Path | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        resumed = [
+            asyncio.create_task(execute_analysis_task(_app, task["id"], AnalyzeRequest.model_validate(task["request"])))
+            for task in _app.state.resumable_tasks
+        ]
         try:
             yield
         finally:
+            stopping = list(set(resumed + list(_app.state.active_analysis_tasks.values())))
+            for task in stopping:
+                if not task.done():
+                    task.cancel()
+            if stopping:
+                await asyncio.gather(*stopping, return_exceptions=True)
             client = getattr(resolved_provider, "client", None)
             close = getattr(client, "aclose", None)
             if close is not None:
@@ -110,6 +172,10 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             llm_provider = getattr(_app.state, "llm_provider", None)
             if llm_provider is not None:
                 await llm_provider.close()
+            for attribute in ("semantic_embedder", "observation_ocr_provider"):
+                adapter = getattr(_app.state, attribute, None)
+                if adapter is not None:
+                    await adapter.close()
 
     app = FastAPI(title="15分钟生活圈智能体检与规划助手", version=APP_VERSION, lifespan=lifespan)
     app.add_middleware(
@@ -117,10 +183,56 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
         allow_origins=cors_allow_origins(),
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type"],
-        expose_headers=["Content-Disposition", "X-Report-Id", "X-Coordinate-System"],
+        expose_headers=["Content-Disposition", "X-Report-Id", "X-Coordinate-System", "X-Execution-Id"],
     )
     # 将基础设施装配集中到 bootstrap，避免 create_app 同时承担太多职责。
     resolved_provider = configure_runtime(app, provider=provider, database_path=database_path)
+    from .workspace_routes import workspace_router
+
+    app.include_router(workspace_router(execute_analysis_task))
+    from .ai_extensions import extension_router
+
+    app.include_router(extension_router())
+    from .planning_portfolio import portfolio_router
+
+    app.include_router(portfolio_router())
+    app.include_router(execution_router())
+    from .governance_routes import governance_router
+
+    app.include_router(governance_router())
+    from .geo_routes import geo_router
+
+    app.include_router(geo_router())
+
+    @app.middleware("http")
+    async def execution_middleware(request: Request, call_next):
+        ledger = new_request_ledger(request.app.state.execution_repository, f"{request.method}:{request.url.path}")
+        with bind_execution(ledger):
+            try:
+                response = await call_next(request)
+                request.app.state.execution_repository.finish(
+                    ledger.id, "completed" if response.status_code < 400 else "failed"
+                )
+                response.headers["X-Execution-Id"] = ledger.id
+                return response
+            except Exception:
+                request.app.state.execution_repository.finish(ledger.id, "failed")
+                raise
+
+    @app.post("/api/analyze/{task_id}/resume")
+    def resume_analysis(task_id: str, request: Request, background_tasks: BackgroundTasks):
+        original = request.app.state.task_repository.get(task_id)
+        if not original:
+            raise HTTPException(404, "任务不存在")
+        if original["status"] != "failed" or not request.app.state.execution_repository.get(task_id):
+            raise HTTPException(409, "只支持具有检查点的失败任务续算")
+        if request.app.state.execution_repository.uncertain(task_id):
+            raise HTTPException(409, "先核对未决检查点并记录计费复核，不能直接重放收费请求")
+        task = request.app.state.task_repository.queue_resume(task_id)
+        background_tasks.add_task(
+            execute_analysis_task, request.app, task_id, AnalyzeRequest.model_validate(task["request"])
+        )
+        return task
 
     @app.get("/api/health")
     def health(request: Request, map_provider: MapProvider = Depends(get_map_provider)):
@@ -384,6 +496,30 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             task["result"] = report_repository.get(task["report_id"])
         return task
 
+    @app.post("/api/analyze/{task_id}/cancel")
+    def cancel_analysis(task_id: str, request: Request):
+        task = request.app.state.task_repository.cancel(task_id)
+        if task is None:
+            raise HTTPException(status_code=404, detail="体检任务不存在")
+        active = request.app.state.active_analysis_tasks.get(task_id)
+        if task["status"] == "cancelled" and active is not None:
+            # 路由在线程池执行；在线程安全回调中取消正在等待的 HTTP/采样协程。
+            active.get_loop().call_soon_threadsafe(active.cancel)
+        return task
+
+    @app.post("/api/analyze/{task_id}/retry")
+    def retry_analysis(task_id: str, request: Request, background_tasks: BackgroundTasks):
+        original = request.app.state.task_repository.get(task_id)
+        if original is None:
+            raise HTTPException(status_code=404, detail="体检任务不存在")
+        if original["status"] not in {"failed", "cancelled"}:
+            raise HTTPException(status_code=409, detail="只有失败、中断或已取消任务可以重试")
+        parameters = AnalyzeRequest.model_validate(original["request"])
+        task = request.app.state.task_repository.create(parameters.model_dump(), retry_of_task_id=task_id)
+        if task["status"] == "queued":
+            background_tasks.add_task(execute_analysis_task, request.app, task["id"], parameters)
+        return task
+
     @app.get("/api/report/{task_id}")
     def get_report(
         task_id: str,
@@ -536,7 +672,7 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
     @app.get("/api/reports/{report_id}/exports/{export_format}")
     def export_completed_report(
         report_id: str,
-        export_format: Literal["json", "csv", "geojson", "pdf"],
+        export_format: Literal["json", "csv", "geojson", "geojson-wgs84", "pdf"],
         report_repository: ReportRepository = Depends(get_report_repository),
     ):
         report = report_repository.get(report_id)
@@ -551,16 +687,22 @@ def create_app(provider: MapProvider | None = None, database_path: str | Path | 
             "json": build_json_export,
             "csv": build_csv_export,
             "geojson": build_geojson_export,
+            "geojson-wgs84": build_wgs84_geojson_export,
             "pdf": build_pdf_export,
         }
-        artifact = builders[export_format](report)
+        try:
+            artifact = builders[export_format](report)
+        except ValueError as exc:
+            if export_format != "geojson-wgs84":
+                raise
+            raise HTTPException(status_code=422, detail=f"标准 GeoJSON 导出失败：{exc}") from exc
         return Response(
             content=artifact.content,
             media_type=artifact.media_type,
             headers={
                 "Content-Disposition": artifact.content_disposition,
                 "X-Report-Id": report_id,
-                "X-Coordinate-System": "BD-09",
+                "X-Coordinate-System": "WGS84" if export_format == "geojson-wgs84" else "BD-09",
             },
         )
 

@@ -4,7 +4,6 @@ import time
 import urllib.error
 import urllib.request
 
-
 API_BASE_URL = os.getenv("SMOKE_API_URL", "http://localhost:8000")
 WEB_BASE_URL = os.getenv("SMOKE_WEB_URL", "http://localhost:5173")
 
@@ -60,6 +59,37 @@ def main() -> None:
     if content_type != "application/pdf" or not pdf.startswith(b"%PDF-"):
         raise RuntimeError("容器无法从持久化报告生成有效 PDF")
 
+    standard = request_json(
+        f"{API_BASE_URL}/api/reports/{report['report_id']}/exports/geojson-wgs84"
+    )
+    if (
+        standard.get("coordinate_system") != "WGS84"
+        or standard.get("source_coordinate_system") != "BD-09"
+        or standard.get("parameters_coordinate_system") != "BD-09"
+        or standard.get("parameters") != report["request"]
+        or not standard.get("conversion_precision", {}).get("approximate")
+    ):
+        raise RuntimeError("容器标准 GeoJSON 未保留坐标来源、原始参数或近似说明")
+
+    audience = request_json(
+        f"{API_BASE_URL}/api/reports/{report['report_id']}/audience-report",
+        method="POST",
+        payload={"audience": "planner", "query": "评分和坐标规则"},
+    )
+    if (
+        audience.get("audience") != "planner"
+        or not audience.get("citations")
+        or not audience.get("norms")
+        or any(
+            norm.get("scope") != "项目规则"
+            or "/project_rules/" not in norm.get("source", "")
+            for norm in audience["norms"]
+        )
+    ):
+        raise RuntimeError("容器未打包项目规则或角色报告缺少可追溯引用")
+    if request_json(f"{API_BASE_URL}/api/reports/{report['report_id']}") != report:
+        raise RuntimeError("导出或角色报告修改了持久化来源报告")
+
     with urllib.request.urlopen(WEB_BASE_URL, timeout=5) as response:
         page = response.read().decode("utf-8")
     if response.status != 200 or '<div id="app"></div>' not in page:
@@ -69,7 +99,9 @@ def main() -> None:
     if proxied_health.get("status") != "ok" or proxied_health.get("mode") != "mock":
         raise RuntimeError(f"前端 Nginx 未正确同源代理后端 API：{proxied_health}")
 
-    print("容器冒烟验证通过：Nginx 静态前端与同源 API 可访问，后端健康，演示模式报告可生成 PDF。")
+    print(
+        "容器冒烟验证通过：前后端健康、同源代理、PDF、标准WGS84导出及随包规范角色报告；原报告不变。"
+    )
 
 
 if __name__ == "__main__":

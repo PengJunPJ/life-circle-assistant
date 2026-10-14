@@ -16,9 +16,11 @@
           <button type="button" :disabled="allCollapsed" title="一键收起两侧面板" aria-label="一键收起两侧面板" @click="emit('collapse-all')"><Fold /></button>
         </div>
         <button class="mobile-legend-toggle" type="button" aria-controls="mobile-map-legend" :aria-expanded="showMobileLegend" @click="showMobileLegend = !showMobileLegend">图例</button>
-        <MapLayerControls :report="report" :visible-categories="visibleCategories" :loading="loading" :show-normal="showNormal" :show-sparse="showSparse" :show-critical="showCritical" @update:visible-categories="emit('update:visibleCategories', $event)" @update:show-normal="emit('update:showNormal', $event)" @update:show-sparse="emit('update:showSparse', $event)" @update:show-critical="emit('update:showCritical', $event)" @prepare-supplement="emit('prepare-supplement')" />
+        <MapLayerControls :report="report" :visible-categories="visibleCategories" :loading="loading || interactionBlocked" :show-normal="showNormal" :show-sparse="showSparse" :show-critical="showCritical" :status-layers="statusLayers" @update:status-layers="emit('update:statusLayers', $event)" @update:visible-categories="emit('update:visibleCategories', $event)" @update:show-normal="emit('update:showNormal', $event)" @update:show-sparse="emit('update:showSparse', $event)" @update:show-critical="emit('update:showCritical', $event)" @prepare-supplement="emit('prepare-supplement')" />
       </div>
     </div>
+    <p v-if="statusLayers?.sampling && samplingLayers" class="map-evidence-legend" role="status">青绿点：真实观测 · 青绿外沿：仅中心可达 · 蓝色：估计 · 灰色：未决 · 未进入正式评分</p>
+    <p v-if="combination" class="map-evidence-legend combination-legend" role="status">组合假设情景 · {{ combination.hypothetical_facilities.length }}处新增设施</p>
     <div v-if="legendCategories.length || hasVisibleCandidates || simulation" class="facility-legend" aria-label="设施类别图例">
       <span v-for="category in legendCategories" :key="category" class="facility-legend-item"><b :style="{ background: categoryColor(category) }" aria-hidden="true">{{ categoryShort(category) }}</b>{{ FACILITY_LABELS[category] }}</span>
       <span v-if="hasVisibleCandidates" class="facility-legend-item candidate-legend"><b aria-hidden="true">候</b>规划候选点</span>
@@ -81,9 +83,10 @@ import type { Poi } from '../types/report'
 import type { AnalysisCenter } from '../types/location'
 import type { Report } from '../types/report'
 import type { SimulationResult } from '../types/simulation'
+import type { Combination, SamplingLayers, StatusLayers } from '../types/completion'
 
-const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; loading: boolean; progress: number; progressLabel?: string; allExpanded?: boolean; allCollapsed?: boolean; focusRecommendationId: string | null; simulation: SimulationResult | null; simulationPicking: boolean; centerPicking?: boolean }>()
-const emit = defineEmits<{ 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'expand-all': []; 'collapse-all': []; 'update:visibleCategories': [categories: string[]]; 'update:showNormal': [value: boolean]; 'update:showSparse': [value: boolean]; 'update:showCritical': [value: boolean]; 'prepare-supplement': []; 'cancel-center-pick': [] }>()
+const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; statusLayers?: StatusLayers; samplingLayers?: SamplingLayers | null; combination?: Combination | null; loading: boolean; interactionBlocked?: boolean; progress: number; progressLabel?: string; allExpanded?: boolean; allCollapsed?: boolean; focusRecommendationId: string | null; focusGridId?: string | null; simulation: SimulationResult | null; simulationPicking: boolean; centerPicking?: boolean }>()
+const emit = defineEmits<{ 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'expand-all': []; 'collapse-all': []; 'update:visibleCategories': [categories: string[]]; 'update:showNormal': [value: boolean]; 'update:showSparse': [value: boolean]; 'update:showCritical': [value: boolean]; 'update:statusLayers': [layers: Partial<StatusLayers>]; 'prepare-supplement': []; 'cancel-center-pick': [] }>()
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
 const minutes = toRef(props, 'minutes')
@@ -135,9 +138,13 @@ const { mapCanvas, mapContainer, realMapReady, mapLoadComplete, selectedServiceA
   showSparse,
   showCritical,
   focusRecommendationId,
+  focusGridId: computed(() => props.focusGridId || null),
   simulation,
   simulationPicking,
   centerPicking,
+  statusLayers: computed(() => props.statusLayers || { normal: props.showNormal, sparse: props.showSparse, critical: props.showCritical, unknown: true, scarcity: false, walking_timeout: false, gap_groups: false, sampling: false }),
+  samplingLayers: computed(() => props.samplingLayers || null),
+  combination: computed(() => props.combination || null),
   onSelectCenter: (lng, lat) => emit('select-center', lng, lat),
   onSelectSimulationLocation: (lng, lat) => emit('select-simulation-location', lng, lat),
 })
@@ -195,3 +202,8 @@ watch(selectedServiceArea, async (value) => {
   }
 })
 </script>
+<style scoped>
+.map-evidence-legend { position: absolute; z-index: 4; top: 98px; left: 14px; margin: 0; max-width: calc(100% - 28px); padding: 6px 9px; border-radius: 5px; color: #24483f; background: rgba(248,252,250,.94); font-size: 10px; }
+.combination-legend { top: 128px; color: #286995; }
+html[data-theme="dark"] .map-evidence-legend { color: #cfe7e1; background: rgba(24,40,56,.94); }
+</style>

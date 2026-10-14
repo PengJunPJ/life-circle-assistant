@@ -3,6 +3,7 @@ import io
 from datetime import datetime
 
 from fastapi.testclient import TestClient
+from test_geospatial_report import ContractProvider
 
 from app.exports import build_json_export
 from app.main import create_app
@@ -20,7 +21,7 @@ def _create_standard_report(client: TestClient) -> dict:
 
 
 def test_json_csv_and_geojson_exports_are_consistent_with_the_same_persisted_report(tmp_path):
-    client = TestClient(create_app(database_path=tmp_path / "exports.db"))
+    client = TestClient(create_app(provider=ContractProvider(), database_path=tmp_path / "exports.db"))
     report = _create_standard_report(client)
     report_id = report["report_id"]
     completed_date = datetime.fromisoformat(report["completed_at"].replace("Z", "+00:00")).strftime("%Y%m%d")
@@ -91,6 +92,22 @@ def test_exports_only_allow_existing_completed_reports(tmp_path):
     assert missing.status_code == 404
     assert missing_pdf.status_code == 404
     assert invalid.status_code == 422
+
+
+def test_mock_estimated_routes_do_not_export_confirmed_planning_candidates(tmp_path):
+    client = TestClient(create_app(database_path=tmp_path / "estimated-exports.db"))
+    report = _create_standard_report(client)
+    assert report["recommendations"] == []
+    assert report["recommendation_summary"]["status"] == "calculation_incomplete"
+    estimated = [
+        feature["properties"]
+        for feature in report["service_areas"]["features"]
+        if feature["properties"]["source"] == "degraded_estimate"
+    ]
+    assert estimated
+    assert all(item["walking_reachability_status"] == "estimated" for item in estimated)
+    exported = client.get(f"/api/reports/{report['report_id']}/exports/geojson").json()
+    assert all(feature["properties"]["layer"] != "planning_candidate" for feature in exported["features"])
 
 
 def test_export_filename_removes_path_and_control_characters():

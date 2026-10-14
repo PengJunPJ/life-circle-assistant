@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from .ai_assistant import _quality_notice
 from .analysis.simulations import ReportSimulationService
 from .baidu import haversine_meters
+from .contracts.facts import FACT_CONTRACT_VERSION, build_evidence_catalog
 from .llm import LLMError, LLMProvider
 from .maps import MapProvider
 from .maps.support import require_supported_huangpu_area
@@ -185,6 +186,10 @@ class PlanningTools:
                 result = await self.compare_planning_options(args)
             else:
                 result = await self.simulate_facility(args)
+            result["claims"] = build_evidence_catalog(
+                self.report["report_id"], result.get("evidence_refs") or []
+            ).allowed_claims()
+            result["fact_contract_version"] = FACT_CONTRACT_VERSION
             entry.update(status="completed", result=result)
             return result
         except asyncio.CancelledError:
@@ -499,6 +504,8 @@ SYSTEM_PROMPT = """你是生活圈规划助手，使用提供的函数查询和�
 "needs_clarification":false}。直接输出 JSON，不要 Markdown 代码块或额外说明。
 只引用已成功工具结果中的证据或服务端上一轮证据。
 summary 只写定性解释和取舍，不重复任何数值、数量、步行时间、评分或改善量；系统会单独展示工具计算原文。
+可追加 claims 数组，每项仅含 report_id/type/id/slot，原样引用成功工具结果claims中的标识。
+服务器只渲染选中事实的原文；模型summary不会直接向用户展示，不能作为事实来源。
 不要写“一处”“两处”等数量，也不要用中文数字改写数值；可写“报告匹配到菜市场设施，具体数量与步行信息见工具结果”。
 没有可用证据时须 needs_clarification=true 并询问具体类别、网格或位置，不编造结果。"""
 
@@ -532,28 +539,45 @@ def _canonical(tools: PlanningTools, previous: dict[str, Any] | None) -> dict[tu
 
 
 def _validate_answer(
-    message: dict[str, Any], canonical: dict[tuple[str, str], dict[str, str]]
+    message: dict[str, Any], canonical: dict[tuple[str, str], dict[str, str]], report_id: str
 ) -> tuple[str, list[dict[str, str]]]:
     try:
         content = (message.get("content") or "").strip()
         fenced = re.fullmatch(r"```(?:json)?[ \t]*\r?\n(.*?)\r?\n```", content, flags=re.IGNORECASE | re.DOTALL)
         result = json.loads(fenced[1] if fenced else content)
+        if not isinstance(result, dict) or set(result) - {"summary", "evidence_refs", "needs_clarification", "claims"}:
+            raise ValueError
         summary = result["summary"]
         if not isinstance(summary, str) or not summary.strip() or len(summary) > 1200:
             raise ValueError
         refs = []
         for ref in result.get("evidence_refs", []):
+            if not isinstance(ref, dict) or set(ref) - {"type", "id", "label", "detail"}:
+                raise ValueError
             key = (ref["type"], ref["id"])
             if key not in canonical:
                 raise ValueError
             refs.append(canonical[key])
+        catalog = build_evidence_catalog(report_id, list(canonical.values()))
+        if "claims" in result:
+            selected = catalog.validate_claims(result["claims"])
+            refs = [claim["evidence_refs"][0] for claim in selected]
         if not refs and result.get("needs_clarification") is not True:
             raise ValueError
         # Reject fabricated evidence before considering a summary-only correction.
         # Numerical statements are rendered from canonical service results, never model prose.
         if re.search(r"\d|[零一二两三四五六七八九十百千万]+\s*(?:分钟|米|分|处|个|倍|%)", summary):
             raise AnswerCorrectionNeeded("模型摘要包含数量或数值，需要改为定性解释")
-        return summary.strip(), refs
+        # Even non-numeric prose can invent an absent facility or claim feasibility.
+        # Preserve the model's evidence selection, but render trusted service facts.
+        rendered = catalog.validate_claims(
+            [{"report_id": report_id, "type": ref["type"], "id": ref["id"], "slot": "detail"} for ref in refs]
+        )
+        return (
+            " ".join(claim["text"] for claim in rendered)
+            if rendered
+            else "请指定当前报告已分析的设施类别、网格或待核验候选位置。"
+        ), refs
     except (ValueError, TypeError, KeyError, AttributeError) as exc:
         raise PlanningError("模型回答缺少有效证据或包含未经核验的数值") from exc
 
@@ -578,7 +602,9 @@ async def _correct_answer(
         system=ANSWER_CORRECTION_PROMPT,
         user=json.dumps(context, ensure_ascii=False),
     )
-    return _validate_answer({"content": json.dumps(corrected, ensure_ascii=False)}, canonical)
+    return _validate_answer(
+        {"content": json.dumps(corrected, ensure_ascii=False)}, canonical, tools.report["report_id"]
+    )
 
 
 async def _rules(tools: PlanningTools, previous: dict[str, Any] | None) -> None:
@@ -663,6 +689,8 @@ async def run_planning_assistant(
     *,
     previous: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if previous and previous.get("report_id") != report["report_id"]:
+        raise PlanningError("上一轮证据不属于当前报告")
     tools = PlanningTools(report, map_provider, request)
     started = time.monotonic()
     mode = "tool_rules" if provider is None else "llm_tools"
@@ -708,7 +736,7 @@ async def run_planning_assistant(
                     calls = message.get("tool_calls")
                     if not calls:
                         try:
-                            summary, refs = _validate_answer(message, _canonical(tools, previous))
+                            summary, refs = _validate_answer(message, _canonical(tools, previous), report["report_id"])
                         except AnswerCorrectionNeeded:
                             if round_index + 1 >= MAX_MODEL_ROUNDS:
                                 raise PlanningError("本轮模型执行轮次达到上限，无法校正摘要") from None
@@ -781,6 +809,8 @@ async def run_planning_assistant(
         "summary": summary,
         "recommendations": [],
         "evidence_refs": refs,
+        "claims": build_evidence_catalog(report["report_id"], refs).allowed_claims(),
+        "fact_contract_version": FACT_CONTRACT_VERSION,
         "mode": mode,
         "model": getattr(provider, "model", "规则工具助手") if mode == "llm_tools" else "规则工具助手",
         "prompt_version": PROMPT_VERSION,

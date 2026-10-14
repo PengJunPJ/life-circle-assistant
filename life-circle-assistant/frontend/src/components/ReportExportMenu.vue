@@ -38,7 +38,8 @@ const feedbackKind = ref<'success' | 'error'>('success')
 const options: { format: ReportExportFormat; label: string; description: string; loadingLabel: string; loadingDescription: string }[] = [
   { format: 'json', label: 'JSON', description: '完整报告', loadingLabel: '正在导出', loadingDescription: '准备完整报告' },
   { format: 'csv', label: 'CSV', description: '指标与设施表', loadingLabel: '正在导出', loadingDescription: '准备表格数据' },
-  { format: 'geojson', label: 'GeoJSON', description: '空间图层', loadingLabel: '正在导出', loadingDescription: '准备空间图层' },
+  { format: 'geojson', label: 'GeoJSON', description: 'BD-09 空间图层（兼容格式）', loadingLabel: '正在导出', loadingDescription: '准备空间图层' },
+  { format: 'geojson-wgs84', label: '标准 GeoJSON（WGS84）', description: '近似坐标逆转换，供标准GIS交换', loadingLabel: '正在导出', loadingDescription: '准备 WGS84 空间图层' },
   { format: 'pdf', label: 'PDF', description: '评审与汇报版', loadingLabel: '正在生成', loadingDescription: '排版报告与地图' },
 ]
 

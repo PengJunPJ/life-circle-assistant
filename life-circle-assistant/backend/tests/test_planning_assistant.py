@@ -420,11 +420,82 @@ def test_numeric_final_answer_is_corrected_once_using_existing_evidence(setup_re
     result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
 
     assert result["mode"] == "llm_tools"
-    assert result["summary"] == "菜市场服务仍需结合现场通行条件核验。"
+    assert result["summary"] == " ".join(ref["detail"] for ref in result["evidence_refs"])
+    assert all(claim["slot"] == "detail" for claim in result["claims"])
     assert result["evidence_refs"] == result["tool_calls"][0]["result"]["evidence_refs"]
     assert len(result["tool_calls"]) == 1
     assert len(model.messages) == 3
     assert len(model.json_messages) == 1
+
+
+def test_non_numeric_fabrication_is_replaced_by_server_evidence(setup_report):
+    _, _, provider, report = setup_report
+    fabricated = "本社区的医院已经获批新址，所有居民均能抵达。"
+    model = ScriptedModel(
+        [
+            call("query_facilities", {"category": "market"}),
+            lambda messages: answer(fabricated, last_result(messages)["evidence_refs"]),
+        ]
+    )
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert fabricated not in result["summary"]
+    assert result["summary"] == " ".join(ref["detail"] for ref in result["evidence_refs"])
+    assert result["mode"] == "llm_tools"
+    assert result["claims"] and all(item["report_id"] == report["report_id"] for item in result["claims"])
+
+
+def test_native_final_can_select_exact_fact_slots_without_echoing_values(setup_report):
+    _, _, provider, report = setup_report
+
+    def final(messages):
+        claim = last_result(messages)["claims"][0]
+        return {
+            "content": json.dumps(
+                {
+                    "summary": "核查当前设施证据。",
+                    "claims": [{key: claim[key] for key in ("report_id", "type", "id", "slot")}],
+                },
+                ensure_ascii=False,
+            )
+        }
+
+    model = ScriptedModel([call("query_facilities", {"category": "market"}), final])
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert result["mode"] == "llm_tools"
+    assert len(result["claims"]) == 1
+    assert result["summary"] == result["claims"][0]["text"]
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"report_id": "foreign"},
+        {"slot": "score"},
+        {"value": 99},
+        {"id": "invented"},
+    ],
+)
+def test_native_claim_scope_slot_and_value_fabrication_degrade(setup_report, override):
+    _, _, provider, report = setup_report
+
+    def final(messages):
+        claim = last_result(messages)["claims"][0]
+        return {
+            "content": json.dumps(
+                {
+                    "summary": "依据事实回答。",
+                    "claims": [{**{key: claim[key] for key in ("report_id", "type", "id", "slot")}, **override}],
+                },
+                ensure_ascii=False,
+            )
+        }
+
+    model = ScriptedModel([call("query_facilities", {"category": "market"}), final])
+    result = asyncio.run(run_planning_assistant(model, provider, report, PlanningRequest(message="查询菜市场")))
+    assert result["mode"] == "tool_rules_degraded"
+    assert len(result["tool_calls"]) == 1
+    assert result["tool_calls"][0]["status"] == "completed"
+    assert result["claims"]
 
 
 def test_answer_correction_preserves_simulation_without_executing_it_again(setup_report):

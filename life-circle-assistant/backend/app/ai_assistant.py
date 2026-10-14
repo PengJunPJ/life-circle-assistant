@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+from .contracts.facts import FACT_CONTRACT_VERSION, build_fact_catalog
+
 AI_MODE = Literal["rule_template"]
 PROMPT_VERSION = "rule-template-v2"
 SUPPORTED_INTENTS = frozenset({"summary", "area_explanation", "ask", "priority", "simulation", "brief"})
@@ -107,7 +109,11 @@ def _filter_hallucinated_content(
     result: dict[str, Any],
     report: dict[str, Any],
 ) -> dict[str, Any]:
-    """过滤 AI 结果中的幻觉内容：无效证据引用、虚构评分、虚构步行时间等。"""
+    """过滤规则解读的无效实体引用。
+
+    仅检查实体存在性，不校验自由文本语义；模型出口必须经过 FactCatalog
+    选择与服务器渲染，不能把本函数当作模型事实门禁。
+    """
     index = _build_report_index(report)
 
     # 校验顶层证据引用
@@ -574,11 +580,17 @@ def _base_result(
     recommendations: list[dict[str, Any]],
     evidence: list[Evidence],
 ) -> dict[str, Any]:
+    canonical = build_fact_catalog(report).allowed_claims()
+    keys = {(item.ref_type, item.ref_id) for item in evidence}
+    claims = [item for item in canonical if (item["type"], item["id"]) in keys]
     return {
         "intent": intent,
+        "report_id": report.get("report_id") or report.get("id"),
         "summary": summary,
         "recommendations": recommendations,
         "evidence_refs": [item.as_dict() for item in evidence],
+        "claims": claims,
+        "fact_contract_version": FACT_CONTRACT_VERSION,
         "model": "规则模板",
         "mode": "rule_template",
         "prompt_version": PROMPT_VERSION,

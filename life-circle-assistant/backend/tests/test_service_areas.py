@@ -51,6 +51,17 @@ def test_partial_walking_failure_keeps_classification_and_reduces_confidence():
     assert result.confidence == "medium"
 
 
+def test_partial_failure_with_only_slow_routes_cannot_confirm_walking_gap():
+    result = classify_service_area_cell(evidence(nearby=0, candidates=2, walking=route(18), failures=1), 15)
+    assert result.kind == "unknown"
+    assert result.status == "calculation_incomplete"
+
+
+def test_same_point_zero_time_is_valid_nearest_route():
+    result = classify_service_area_cell(evidence(nearby=1, candidates=1, walking=route(0, 0)), 15)
+    assert result.kind == "normal"
+
+
 def test_all_walking_results_failed_does_not_claim_critical_blind_spot():
     result = classify_service_area_cell(evidence(nearby=0, candidates=1, walking=None, failures=1), 15)
     assert result.kind == "unknown"

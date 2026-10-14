@@ -350,7 +350,9 @@ def test_pdf_charts_distinguish_missing_scores_and_keep_three_chart_sections():
 
 def test_pdf_charts_render_radar_with_three_categories_and_handle_empty_report():
     report = _standard_report()
-    report["category_scores"].append({**report["category_scores"][0], "category": "medical", "label": "医疗服务", "score": 75})
+    report["category_scores"].append(
+        {**report["category_scores"][0], "category": "medical", "label": "医疗服务", "score": 75}
+    )
     _, text = _extract_text(build_pdf_export(report).content)
     assert "雷达图至少需要" not in text
     assert "医疗服务" in text

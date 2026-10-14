@@ -11,21 +11,33 @@ PRIORITY_LABELS = {"high": "高", "medium": "中"}
 def build_planning_recommendations(
     category_scores: list[dict[str, Any]],
     service_areas: dict[str, Any],
+    *,
+    gap_groups: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """只消费评分与类别级服务区域，生成可追溯且稳定的规划建议。"""
+    """消费已确认的重点缺口组；旧调用可只提供类别级服务区域。"""
 
     scores_by_category = {item["category"]: item for item in category_scores}
+    confirmed_regions = {
+        grid_id
+        for group in (gap_groups or {}).get("features", [])
+        if group["properties"].get("gap_kind") == "critical"
+        for grid_id in group["properties"]["grid_ids"]
+    }
+    unconfirmed_critical_count = 0
     critical_by_category: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for feature in service_areas.get("features", []):
         properties = feature.get("properties", {})
         if properties.get("kind") != "critical":
+            continue
+        if gap_groups is not None and properties.get("grid_id") not in confirmed_regions:
+            unconfirmed_critical_count += 1
             continue
         category = properties.get("category")
         if category in scores_by_category:
             critical_by_category[category].append(feature)
 
     recommendations = [
-        _build_category_recommendation(scores_by_category[category], features)
+        _build_category_recommendation(scores_by_category[category], features, gap_groups=gap_groups)
         for category, features in critical_by_category.items()
         if features
     ]
@@ -39,7 +51,7 @@ def build_planning_recommendations(
             "recommendation_count": len(recommendations),
             "target_region_count": sum(len(item["target_region_ids"]) for item in recommendations),
         }
-    elif any(score.get("valid_for_overall") is False for score in category_scores):
+    elif unconfirmed_critical_count or any(score.get("valid_for_overall") is False for score in category_scores):
         summary = {
             "status": "calculation_incomplete",
             "message": "部分所选类别缺少可核验的服务区域证据，暂不据此生成补充设施建议。",
@@ -59,11 +71,32 @@ def build_planning_recommendations(
 def _build_category_recommendation(
     score: dict[str, Any],
     features: list[dict[str, Any]],
+    *,
+    gap_groups: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     ordered_features = sorted(features, key=lambda item: item["properties"]["grid_id"])
     region_ids = [item["properties"]["grid_id"] for item in ordered_features]
-    clusters = _connected_clusters(ordered_features)
-    candidates = [_candidate_for_cluster(score, cluster, index) for index, cluster in enumerate(clusters, start=1)]
+    groups = [
+        group
+        for group in (gap_groups or {}).get("features", [])
+        if group["properties"].get("gap_kind") == "critical" and group["properties"]["category"] == score["category"]
+    ]
+    by_id = {feature["properties"]["grid_id"]: feature for feature in ordered_features}
+    clusters = (
+        [[by_id[grid_id] for grid_id in group["properties"]["grid_ids"] if grid_id in by_id] for group in groups]
+        if gap_groups is not None
+        else _connected_clusters(ordered_features)
+    )
+    candidates = [
+        _candidate_for_cluster(score, cluster, index) for index, cluster in enumerate(clusters, start=1) if cluster
+    ]
+    for candidate, group in zip(candidates, groups):
+        candidate.update(
+            gap_group_id=group["properties"]["id"],
+            gap_kind="critical",
+            adjacency_evidence=group["properties"]["adjacency_evidence"],
+            connectivity_status=group["properties"]["connectivity_status"],
+        )
     area_sqm = round(sum(_polygon_area_sqm(item["geometry"]["coordinates"][0]) for item in ordered_features))
     nearest = _nearest_facility_evidence(ordered_features)
     priority_level = _priority_level(score, ordered_features)
@@ -199,7 +232,34 @@ def _candidate_for_cluster(
             f"{len(related_region_ids)} 个同类盲区，便于后续模拟集中改善效果。"
         ),
         "selection_method": "critical_cluster_medoid_cell_centroid",
+        "site_verification_status": "unverified",
+        "buildable": None,
+        "disclosure": "候选为缺口片区内网格代表位置；地块权属、入口、用地、成本、容量需审核后才能作为建设方案。",
     }
+
+
+def build_gap_candidates(category_scores: list[dict], service_areas: dict, gap_groups: dict) -> list[dict]:
+    """全部缺口组各出一个内部代表点，保持缺口类型与空间证据。"""
+    scores = {score["category"]: score for score in category_scores}
+    by_id = {feature["properties"]["grid_id"]: feature for feature in service_areas.get("features", [])}
+    candidates = []
+    for index, group in enumerate(gap_groups.get("features", []), 1):
+        props = group["properties"]
+        cluster = [by_id[grid_id] for grid_id in props["grid_ids"] if grid_id in by_id]
+        if not cluster or props["category"] not in scores:
+            continue
+        candidate = _candidate_for_cluster(scores[props["category"]], cluster, index)
+        candidate.update(
+            id=f"candidate-{props['gap_kind']}-{props['category']}-{cluster[0]['properties']['grid_id']}",
+            gap_group_id=props["id"],
+            gap_kind=props["gap_kind"],
+            selection_method="verified_barrier_constrained_gap_medoid_cell_centroid",
+            connectivity_status=props["connectivity_status"],
+            adjacency_evidence=props["adjacency_evidence"],
+            reason=f"{props['gap_kind']}缺口片区{props['id']}的内部代表网格位置，尚非核验可建设地块。",
+        )
+        candidates.append(candidate)
+    return candidates
 
 
 def _polygon_centroid(coordinates: list[list[float]]) -> tuple[float, float]:

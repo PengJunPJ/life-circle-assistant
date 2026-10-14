@@ -26,6 +26,14 @@ class BaiduMapError(RuntimeError):
         self.rate_limited = rate_limited
 
 
+class PoiSearchResults(list):
+    """保持列表兼容性，同时携带本次查询的分页证据，避免共享 last_result 状态。"""
+
+    def __init__(self, items: list[dict[str, Any]], metadata: dict[str, Any]) -> None:
+        super().__init__(items)
+        self.metadata = metadata
+
+
 class BaiduMapClient:
     """百度地图 Web 服务客户端，统一处理请求、限流重试和返回结构。"""
 
@@ -39,6 +47,8 @@ class BaiduMapClient:
         self.qps = max(0.0, float(os.getenv("BAIDU_MAP_QPS", "1.5")))
         # 步行类请求的真实发出次数（含批量分块），供报告披露真实 API 调用量
         self.walking_request_count = 0
+        self.native_isochrone_request_count = 0
+        self.native_isochrone_enabled = os.getenv("BAIDU_NATIVE_ISOCHRONE_ENABLED", "false").lower() == "true"
         self._http_client: httpx.AsyncClient | None = None
         self._sleep = sleep
         self._monotonic = monotonic
@@ -57,6 +67,25 @@ class BaiduMapClient:
         for attempt in range(3):
             await self._wait_for_rate_limit()
             try:
+                from .execution_ledger import charge_external_many
+
+                # 必须在每次真实 HTTP 尝试前扣费，包括内部重试及批量失败的逐对回退。
+                if path == "/routematrix/v2/walking":
+                    from .execution_budget import charge_physical_route_pairs
+
+                    pairs = len(str(params["origins"]).split("|")) * len(str(params["destinations"]).split("|"))
+                    charge_physical_route_pairs(pairs, {"map_http_attempts": 1, "route_http_attempts": 1})
+                    self.walking_request_count += 1
+                elif path == "/directionlite/v1/walking":
+                    from .execution_budget import charge_physical_route_pairs
+
+                    charge_physical_route_pairs(1, {"map_http_attempts": 1, "route_http_attempts": 1})
+                    self.walking_request_count += 1
+                elif path == "/logistics_truck/v1/isochrone":
+                    charge_external_many({"map_http_attempts": 1, "native_http_attempts": 1})
+                    self.native_isochrone_request_count += 1
+                else:
+                    charge_external_many({"map_http_attempts": 1})
                 response = await self._client().get(f"{self.base_url}{path}", params=params)
                 if response.status_code == 429:
                     raise BaiduMapError(
@@ -138,6 +167,26 @@ class BaiduMapClient:
             "address": result.get("formatted_address") or address,
         }
 
+    async def native_isochrone(
+        self, center: tuple[float, float], duration_s: int, strategy: str = "foot_fastest"
+    ) -> dict[str, Any]:
+        if not self.native_isochrone_enabled:
+            raise BaiduMapError("原生等时圈未启用，账号权限与计费仍待核验", code="native_isochrone_disabled")
+        if strategy not in {"foot_fastest", "foot_shortest"}:
+            raise ValueError("仅支持原生步行最快或最短策略")
+        if isinstance(duration_s, bool) or not isinstance(duration_s, int) or not 0 < duration_s < 43_200:
+            raise ValueError("原生步行等时圈秒数必须介于0和43200之间")
+        return await self._request(
+            "/logistics_truck/v1/isochrone",
+            {
+                "profile": strategy,
+                "point": f"{center[0]},{center[1]}",
+                "timeLimit": duration_s,
+                "inputCrs": "bd09ll",
+                "outputCrs": "bd09ll",
+            },
+        )
+
     async def reverse_geocode(self, lng: float, lat: float) -> dict[str, Any]:
         payload = await self._request("/reverse_geocoding/v3/", {"location": f"{lat},{lng}", "extensions_poi": 0})
         result = payload.get("result") or {}
@@ -196,12 +245,52 @@ class BaiduMapClient:
     async def convert_coordinate(self, lng: float, lat: float, model: int) -> dict[str, float]:
         return (await self.convert_coordinates([(lng, lat)], model))[0]
 
-    async def search_poi(self, query: str, lng: float, lat: float, radius: int = 1000) -> list[dict[str, Any]]:
-        payload = await self._request(
-            "/place/v2/search",
-            {"query": query, "location": f"{lat},{lng}", "radius": radius, "scope": 2, "page_size": 20},
+    async def search_poi(
+        self, query: str, lng: float, lat: float, radius: int = 1000, *, max_pages: int = 3
+    ) -> PoiSearchResults:
+        if isinstance(max_pages, bool) or not isinstance(max_pages, int) or not 1 <= max_pages <= 20:
+            raise ValueError("地点检索分页预算必须为 1 到 20 页")
+        items: list[dict[str, Any]] = []
+        total: int | None = None
+        exhausted = False
+        for page in range(max_pages):
+            payload = await self._request(
+                "/place/v2/search",
+                {
+                    "query": query,
+                    "location": f"{lat},{lng}",
+                    "radius": radius,
+                    "scope": 2,
+                    "page_size": 20,
+                    "page_num": page,
+                },
+            )
+            results = payload.get("results") or []
+            if not isinstance(results, list) or any(not isinstance(item, dict) for item in results):
+                raise BaiduMapError("地点检索返回结构不正确", code="format_error")
+            raw_total = payload.get("total")
+            if isinstance(raw_total, int) and not isinstance(raw_total, bool) and raw_total >= 0:
+                total = raw_total
+            items.extend(results)
+            exhausted = len(results) < 20 or (total is not None and len(items) >= total)
+            if exhausted:
+                break
+        return PoiSearchResults(
+            items,
+            {
+                "query": query,
+                "radius_m": radius,
+                "pages_requested": page + 1,
+                "page_budget": max_pages,
+                "result_count": len(items),
+                "total_reported": total,
+                "query_exhausted": exhausted,
+                "truncated": not exhausted,
+                "truncation_reason": None if exhausted else "page_budget_exhausted",
+                "scope": "provider_keyword_results",
+                "is_full_inventory": False,
+            },
         )
-        return payload.get("results") or []
 
     async def search_poi_region(
         self,
@@ -222,7 +311,6 @@ class BaiduMapClient:
         return payload.get("results") or []
 
     async def walking_route(self, origin: tuple[float, float], destination: tuple[float, float]) -> dict[str, Any]:
-        self.walking_request_count += 1
         payload = await self._request(
             "/directionlite/v1/walking",
             {"origin": f"{origin[1]},{origin[0]}", "destination": f"{destination[1]},{destination[0]}"},
@@ -232,9 +320,12 @@ class BaiduMapClient:
         if not routes:
             raise BaiduMapError("两点之间没有可用步行路线")
         route = routes[0]
+        distance_m, duration_s = self._route_numbers(route.get("distance"), route.get("duration"))
+        if (distance_m == 0 or duration_s == 0) and origin != destination:
+            raise BaiduMapError("非同点路线返回零值，不能证明步行可达", code="route_unavailable")
         return {
-            "distance_m": float(route.get("distance", 0)),
-            "duration_s": float(route.get("duration", 0)),
+            "distance_m": distance_m,
+            "duration_s": duration_s,
             "steps": route.get("steps") or [],
         }
 
@@ -246,10 +337,11 @@ class BaiduMapClient:
         """百度批量算路（步行），一次请求返回 origins×destinations 的距离/耗时矩阵。
 
         返回行优先扁平列表，元素为 ``{"distance_m": float, "duration_s": float}``。
-        百度对单次请求的点对乘积有限制（实测 100 对可用、160 对报"点对数量超出限制"），
-        分块由调用方负责；本方法只校验返回规模与请求一致。
+        按官方步行矩阵每次最多 50 路线对约束，分块由调用方负责。
         """
-        self.walking_request_count += 1
+        expected = len(origins) * len(destinations)
+        if not 1 <= expected <= 50:
+            raise ValueError("步行矩阵单次请求必须为 1 到 50 个路线对")
         payload = await self._request(
             "/routematrix/v2/walking",
             {
@@ -258,25 +350,41 @@ class BaiduMapClient:
             },
         )
         rows = payload.get("result") or []
-        expected = len(origins) * len(destinations)
         if len(rows) != expected:
             raise BaiduMapError(
                 f"批量算路返回 {len(rows)} 条结果，与请求的 {expected} 个点对不一致",
                 code="format_error",
             )
         parsed: list[dict[str, Any]] = []
-        for item in rows:
+        for index, item in enumerate(rows):
             distance = (item or {}).get("distance") or {}
             duration = (item or {}).get("duration") or {}
             if "value" not in distance or "value" not in duration:
                 raise BaiduMapError("批量算路结果缺少 distance/duration 字段", code="format_error")
+            distance_m, duration_s = self._route_numbers(distance["value"], duration["value"])
+            same_point = origins[index // len(destinations)] == destinations[index % len(destinations)]
+            available = (distance_m > 0 and duration_s > 0) or (same_point and distance_m == duration_s == 0)
             parsed.append(
                 {
-                    "distance_m": float(distance["value"]),
-                    "duration_s": float(duration["value"]),
+                    "distance_m": distance_m if available else None,
+                    "duration_s": duration_s if available else None,
+                    "success": available,
+                    "error_code": None if available else "route_unavailable",
                 }
             )
         return parsed
+
+    @staticmethod
+    def _route_numbers(distance: Any, duration: Any) -> tuple[float, float]:
+        try:
+            if isinstance(distance, bool) or isinstance(duration, bool):
+                raise ValueError
+            numbers = (float(distance), float(duration))
+        except (TypeError, ValueError) as exc:
+            raise BaiduMapError("路线距离或时间不是有效数字", code="format_error") from exc
+        if any(not math.isfinite(value) or value < 0 for value in numbers):
+            raise BaiduMapError("路线距离或时间必须为非负有限数", code="format_error")
+        return numbers
 
     async def walking_routes(
         self, origin: tuple[float, float], destinations: Iterable[tuple[float, float]], concurrency: int = 6

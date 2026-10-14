@@ -7,6 +7,7 @@ import ReportPanel from './ReportPanel.vue'
 import RecommendationList from './RecommendationList.vue'
 import ReportHistory from './ReportHistory.vue'
 import SimulationPanel from './SimulationPanel.vue'
+import ExecutionSettlementReview from './ExecutionSettlementReview.vue'
 
 const fixture: Report = JSON.parse(readFileSync('../docs/validation/reports/hongshan-haiyundonglu-20260921.json', 'utf8'))
 beforeAll(() => {
@@ -21,6 +22,53 @@ function mountPanel(report = structuredClone(fixture)) {
   })
 }
 describe('报告信息分层与联动', () => {
+  it('人工结算刷新账本摘要，旧金额过时明确披露，切换报告不会串账', async () => {
+    const report = structuredClone(fixture)
+    report.execution_ledger = { id: 'ledger-1', status: 'completed', budget: {}, usage: { route_pairs: 10 }, versions: {}, cost: { currency: 'CNY', estimated_total: 2, settled_total: null, status: 'estimate_only' } }
+    const wrapper = mountPanel(report)
+    await wrapper.get('.report-actions button:nth-child(2)').trigger('click')
+    wrapper.findComponent(ExecutionSettlementReview).vm.$emit('ledger', { ...report.execution_ledger, cost: { ...report.execution_ledger.cost, status: 'manually_reconciled', settled_total: 0 } })
+    await flushPromises()
+    const summary = wrapper.get('[aria-label="统一预算与版本账本"]')
+    expect(summary.findAll('dd').at(-1)!.text()).toBe('0')
+    wrapper.findComponent(ExecutionSettlementReview).vm.$emit('ledger', { ...report.execution_ledger, cost: { ...report.execution_ledger.cost, status: 'settlement_stale', settlement_stale: true, settled_total: null } })
+    await flushPromises(); expect(summary.text()).toContain('旧结算已过时，待重新核对')
+    await wrapper.setProps({ report: { ...report, report_id: 'next-report', execution_ledger: { ...report.execution_ledger, id: 'ledger-2' } } })
+    await wrapper.get('.report-actions button:nth-child(2)').trigger('click')
+    expect(wrapper.get('[aria-label="统一预算与版本账本"]').text()).toContain('ledger-2')
+    expect(wrapper.get('[aria-label="统一预算与版本账本"]').text()).not.toContain('旧结算已过时')
+    wrapper.unmount()
+  })
+  it('全部缺口代表点按类型显示并可单设施模拟，不把代表点标为可建设地块', async () => {
+    const report = structuredClone(fixture)
+    const base = { id: 'candidate', category: 'market', coordinate_system: 'BD-09' as const, lng: report.center.lng, lat: report.center.lat, region_id: 'r1c1', related_region_ids: ['r1c1'], reason: '组内代表网格，地块条件待核验', selection_method: 'gap_medoid', gap_group_id: 'group', connectivity_status: 'geometric_with_verified_barrier_constraints' }
+    report.gap_candidates = [
+      { ...base, id: 'scarcity', gap_kind: 'scarcity' },
+      { ...base, id: 'timeout', gap_kind: 'walking_timeout' },
+      { ...base, id: 'critical', gap_kind: 'critical' },
+    ]
+    const wrapper = mountPanel(report)
+    await wrapper.get('#report-tab-recommendations').trigger('click')
+    const list = wrapper.get('.gap-candidate-list')
+    expect(list.text()).toContain('1公里设施稀缺'); expect(list.text()).toContain('已核验步行超时'); expect(list.text()).toContain('重点盲区')
+    expect(list.text()).toContain('可建设条件须另行核验')
+    await list.findAll('button')[0]!.trigger('click'); await flushPromises()
+    expect(wrapper.emitted('simulate-candidate')).toEqual([['market', report.gap_candidates[0]]])
+    wrapper.unmount()
+  })
+  it('分别展示附近设施稀缺与已确认步行缺口，不把未知网格纳入缺口', async () => {
+    const report = structuredClone(fixture)
+    report.spatial_statistics = { categories: [{ category: 'market', grid_count: 16, nearby_scarcity_count: 4, walking_gap_count: 2, walking_reachable_count: 10, unknown_walking_count: 4, unknown_scarcity_count: 1 }] }
+    report.gap_groups = { type: 'FeatureCollection', features: [] }
+    const wrapper = mountPanel(report)
+    await wrapper.get('#report-tab-facilities').trigger('click')
+    const stats = wrapper.get('.spatial-statistics')
+    expect(stats.isVisible()).toBe(true)
+    expect(stats.text()).toContain('附近稀缺 4 · 步行缺口 2')
+    expect(stats.text()).toContain('步行未知 4 · 稀缺未知 1')
+    expect(stats.text()).toContain('0 个已确认缺口片区')
+    wrapper.unmount()
+  })
   it.each([
     { status: 'complete', label: '验证已完成' },
     { status: 'failed', label: '验证未完成' },

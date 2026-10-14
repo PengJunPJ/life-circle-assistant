@@ -9,6 +9,7 @@
       <div class="coverage-list" aria-label="服务区域状态图层">
         <div v-for="layer in coverageLayers" :key="layer.key" class="coverage-item" :class="{ active: layer.value }"><span class="coverage-swatch" :class="layer.key" aria-hidden="true"></span><span class="coverage-copy"><strong>{{ layer.label }}</strong></span><el-switch :aria-label="`显示${layer.label}`" :model-value="layer.value" @update:model-value="updateCoverage(layer.key, $event)" /></div>
       </div>
+      <div class="coverage-list" aria-label="独立空间证据图层"><label v-for="layer in evidenceLayers" :key="layer.key" class="coverage-item"><input type="checkbox" :checked="statusLayers?.[layer.key] ?? false" :disabled="!report" @change="emit('update:statusLayers', { [layer.key]: ($event.target as HTMLInputElement).checked })" /><span class="coverage-copy"><strong>{{ layer.label }}</strong></span></label></div>
     </section>
   </div>
 </template>
@@ -18,8 +19,10 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Operation } from '@element-plus/icons-vue'
 import { ALL_CATEGORIES, FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { Report } from '../types/report'
-const props = defineProps<{ report: Report | null; visibleCategories: string[]; loading: boolean; showNormal: boolean; showSparse: boolean; showCritical: boolean }>()
-const emit = defineEmits<{ 'update:visibleCategories': [categories: string[]]; 'update:showNormal': [value: boolean]; 'update:showSparse': [value: boolean]; 'update:showCritical': [value: boolean]; 'prepare-supplement': [] }>()
+import type { StatusLayers } from '../types/completion'
+const props = defineProps<{ report: Report | null; visibleCategories: string[]; loading: boolean; showNormal: boolean; showSparse: boolean; showCritical: boolean; statusLayers?: StatusLayers }>()
+const emit = defineEmits<{ 'update:visibleCategories': [categories: string[]]; 'update:showNormal': [value: boolean]; 'update:showSparse': [value: boolean]; 'update:showCritical': [value: boolean]; 'update:statusLayers': [layers: Partial<StatusLayers>]; 'prepare-supplement': [] }>()
+const evidenceLayers = [{ key: 'scarcity', label: '1公里设施稀缺' }, { key: 'walking_timeout', label: '已核验步行超时' }, { key: 'gap_groups', label: '缺口连通片区' }, { key: 'sampling', label: '观测 / 估计 / 未决时间场' }, { key: 'unknown', label: '证据不足区域' }] as const
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)

@@ -33,9 +33,7 @@ def exclusion_reason(report: dict[str, Any], simulation: dict[str, Any], goal: s
         if any(f["properties"].get("kind") == "unknown" for group in grids for f in group):
             return "原始或模拟网格存在未知结果，不参与排名"
         # Reject unequal sampling footprints, even if a provider returns plausible deltas.
-        footprints = [
-            {f["properties"]["grid_id"]: f["geometry"] for f in group} for group in grids
-        ]
+        footprints = [{f["properties"]["grid_id"]: f["geometry"] for f in group} for group in grids]
         if footprints[0] != footprints[1]:
             return "原始与模拟网格范围不一致，不参与排名"
     metric = GOALS[goal][1]
@@ -61,9 +59,7 @@ def finalize_comparison(comparison: dict[str, Any]) -> dict[str, Any]:
             option["rank"] = ranks[improvement]
     best = ordered[0]["objective_improvement"] if ordered else None
     leaders = [option for option in ordered if option["objective_improvement"] == best]
-    comparison["preferred_option_ids"] = (
-        [option["id"] for option in leaders] if len(eligible) >= 2 and best > 0 else []
-    )
+    comparison["preferred_option_ids"] = [option["id"] for option in leaders] if len(eligible) >= 2 and best > 0 else []
     if len(eligible) < 2:
         conclusion = "可比较结果不足，无法确定优先方案。"
     elif best <= 0:
@@ -72,8 +68,12 @@ def finalize_comparison(comparison: dict[str, Any]) -> dict[str, Any]:
         names = "、".join(option["title"] for option in leaders)
         conclusion = f"按“{label}”，{names}{'并列' if len(leaders) > 1 else ''}优先；仍需现场核验。"
     comparison["summary"] = conclusion
-    comparison["evidence_refs"] = [{
-        "type": "comparison", "id": comparison["id"], "label": f"方案对比：{label}",
-        "detail": conclusion + DISCLOSURE,
-    }]
+    comparison["evidence_refs"] = [
+        {
+            "type": "comparison",
+            "id": comparison["id"],
+            "label": f"方案对比：{label}",
+            "detail": conclusion + DISCLOSURE,
+        }
+    ]
     return comparison

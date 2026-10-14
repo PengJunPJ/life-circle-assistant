@@ -57,11 +57,18 @@
           <div class="page-heading"><strong>设施覆盖明细</strong><span>{{ report.category_scores.length }} 类设施</span></div>
           <p class="page-intro">{{ report.scoring.explanation }}</p>
           <ScoreBreakdown :scores="report.category_scores" />
+          <section v-if="report.spatial_statistics" class="report-section spatial-statistics" aria-label="设施稀缺与步行缺口独立统计">
+            <div class="section-title"><span>空间缺口核验</span></div>
+            <p class="page-intro">1公里附近设施稀缺和步行超时分别统计。缺少路线证据的网格保留为未知。</p>
+            <dl class="spatial-statistics-list"><div v-for="item in report.spatial_statistics.categories" :key="item.category"><dt>{{ FACILITY_LABELS[item.category] || item.category }}</dt><dd>附近稀缺 {{ item.nearby_scarcity_count }} · 步行缺口 {{ item.walking_gap_count }}<small>步行未知 {{ item.unknown_walking_count }} · 稀缺未知 {{ item.unknown_scarcity_count }}</small></dd></div></dl>
+            <p v-if="report.gap_groups" class="page-intro">{{ report.gap_groups.features.length }} 个已确认缺口片区；按同类别网格连通关系分组。</p>
+          </section>
         </section>
         <section v-show="!auxiliary && activeTab === 'recommendations'" id="report-page-recommendations" role="tabpanel" aria-labelledby="report-tab-recommendations">
           <div class="page-heading"><strong>改善建议</strong><span>{{ report.recommendations.length }} 项</span></div>
           <p class="page-intro">{{ report.recommendation_summary.message }}</p>
           <RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="focusedRecommendationId" :active="!auxiliary && activeTab === 'recommendations'" :simulation-disabled="simulationLoading || planningBusy" @locate="locateRecommendation" @simulate="simulateCandidate" />
+          <details v-if="report.gap_candidates?.length" class="report-section gap-candidate-list"><summary>全部缺口片区代表点（{{ report.gap_candidates.length }}）</summary><p class="page-intro">分别列出设施稀缺、已核验步行超时与重点盲区的内部代表网格。代表点供假设模拟使用，可建设条件须另行核验。</p><article v-for="item in report.gap_candidates" :key="item.id"><strong>{{ FACILITY_LABELS[item.category] || item.category }} · {{ gapKindLabel(item.gap_kind) }}</strong><p>{{ item.related_region_ids.length }} 个网格 · {{ item.gap_group_id }}</p><p>{{ item.reason }}</p><small>连通证据：{{ connectivityLabel(item.connectivity_status) }}</small><button type="button" :disabled="simulationLoading || planningBusy" @click="simulateCandidate(item.category, item)">模拟该片区代表点</button></article></details>
           <div class="improvement-tools" aria-label="改善规划工具">
             <button type="button" :aria-expanded="openTool === 'simulation'" aria-controls="report-simulation" @click="toggleTool('simulation')"><TrendCharts />改善模拟</button>
             <button type="button" :aria-expanded="openTool === 'assistant'" aria-controls="report-assistant" @click="toggleTool('assistant')"><ChatDotRound />智能助手</button>
@@ -69,6 +76,7 @@
           <div v-show="openTool === 'simulation'" id="report-simulation" ref="simulationRef"><SimulationPanel :report="report" :category="simulationCategory" :location="simulationLocation" :result="simulationResult" :loading="simulationLoading || planningBusy" :picking="simulationPicking" :error="simulationError" @update:category="emit('update:simulation-category', $event)" @pick-map="emit('pick-simulation-location')" @run="emit('run-simulation')" @clear="emit('clear-simulation')" /></div>
           <div v-if="assistantOpened" v-show="openTool === 'assistant'" id="report-assistant"><AiPlanningAssistant :report="report" :simulation-location="simulationLocation" :simulation-category="simulationCategory" :grid-id="planningGridId" :disabled="simulationLoading" @busy="planningBusy = $event" @simulation-result="emit('assistant-simulation', $event)" /></div>
         </section>
+        <section v-if="activeTab === 'ai' && !auxiliary" id="report-page-ai" role="tabpanel" aria-labelledby="report-tab-ai"><div class="page-heading"><strong>核验与规划闭环</strong></div><AiCompletionWorkbench :key="report.report_id" :report="report" :governance-revision="governanceRevision" @new-report="emit('new-report', $event)" @sampling="emit('sampling', $event)" @combination="emit('combination', $event)" /></section>
         <section v-show="auxiliary === 'details'" class="report-details" aria-label="报告数据与计算说明">
           <DataQualityDetails :quality="report.data_quality" />
           <section class="report-section"><div class="section-title"><span>评分说明</span></div><p class="page-intro">{{ report.scoring.explanation }}</p><p class="page-intro">{{ report.summary.score_explanation }}</p></section>
@@ -82,7 +90,14 @@
             <dl class="execution-metrics"><div><dt>总耗时</dt><dd>{{ formatDuration(report.execution.total_duration_ms) }}</dd></div><div><dt>地图 API 调用</dt><dd>{{ report.execution.api_calls }}</dd></div><div><dt>缓存命中</dt><dd>{{ report.execution.cache.hits }}（{{ formatRate(report.execution.cache.hit_rate) }}）</dd></div><div><dt>缓存未命中</dt><dd>{{ report.execution.cache.misses }}</dd></div></dl>
             <div class="stage-duration-list" aria-label="主要阶段耗时"><span v-for="stage in stageDurations" :key="stage.code"><b>{{ stage.label }}</b><em>{{ formatDuration(stage.duration_ms) }}</em></span></div>
           </section>
+          <section v-if="executionLedger" class="report-section" aria-label="统一预算与版本账本">
+            <div class="section-title"><span>预算与版本账本</span></div><p class="page-intro">执行编号 {{ executionLedger.id }}</p>
+            <dl class="execution-metrics"><div><dt>输入词元</dt><dd>{{ executionLedger.usage.prompt_tokens ?? '未知' }}</dd></div><div><dt>输出词元</dt><dd>{{ executionLedger.usage.completion_tokens ?? '未知' }}</dd></div><div><dt>真实路线对</dt><dd>{{ executionLedger.usage.route_pairs ?? 0 }}</dd></div><div><dt>估算金额</dt><dd>{{ executionLedger.cost.estimated_total === null ? '价格未知' : `${executionLedger.cost.estimated_total.toFixed(4)} ${executionLedger.cost.currency}` }}</dd></div><div><dt>提供方结算</dt><dd>{{ executionLedger.cost.settlement_stale || executionLedger.cost.status === 'settlement_stale' ? '旧结算已过时，待重新核对' : executionLedger.cost.settled_total ?? '待账单核对' }}</dd></div></dl>
+            <p class="page-intro">{{ executionLedger.cost.disclosure }}</p><details><summary>调用预算和版本</summary><p v-for="(value,key) in executionLedger.budget" :key="key">{{ key }}：{{ value }}</p><p v-for="(value,key) in executionLedger.versions" :key="key">{{ key }}：{{ value }}</p></details>
+            <ExecutionSettlementReview v-if="auxiliary === 'details'" :key="executionLedger.id" :execution-id="executionLedger.id" @ledger="refreshExecutionLedger" />
+          </section>
         </section>
+        <ExecutionCheckpointReview v-if="auxiliary === 'details' && report.execution_ledger" :key="report.execution_ledger.id" :execution-id="report.execution_ledger.id" />
         <ReportExportMenu v-show="auxiliary === 'export'" :key="report.report_id" :report-id="report.report_id" />
       </div>
       <div v-else-if="!auxiliary" class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span><button type="button" @click="toggleAuxiliary('history')">查看历史报告</button></div>
@@ -95,8 +110,9 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { ArrowRight, ChatDotRound, CircleCheck, Clock, Download, InfoFilled, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { HistoryReportItem } from '../types/history'
 import type { RecommendationCandidate } from '../types/recommendations'
-import type { Report } from '../types/report'
+import type { ExecutionLedger, Report } from '../types/report'
 import type { SimulationLocation, SimulationResult } from '../types/simulation'
+import { FACILITY_LABELS } from '../constants/facilities'
 import DataQualityDetails from './DataQualityDetails.vue'
 import ScoreBreakdown from './ScoreBreakdown.vue'
 import ReportHistory from './ReportHistory.vue'
@@ -105,6 +121,10 @@ import RecommendationList from './RecommendationList.vue'
 import SimulationPanel from './SimulationPanel.vue'
 import ReportExportMenu from './ReportExportMenu.vue'
 import AiPlanningAssistant from './AiPlanningAssistant.vue'
+import AiCompletionWorkbench from './AiCompletionWorkbench.vue'
+import ExecutionCheckpointReview from './ExecutionCheckpointReview.vue'
+import ExecutionSettlementReview from './ExecutionSettlementReview.vue'
+import type { Combination, SamplingLayers } from '../types/completion'
 
 const props = defineProps<{
   report: Report | null
@@ -129,6 +149,7 @@ const props = defineProps<{
   simulationError: string
   mobileOpen: boolean
   planningGridId?: string | null
+  governanceRevision?: number
 }>()
 const emit = defineEmits<{
   'refresh-history': []
@@ -147,11 +168,14 @@ const emit = defineEmits<{
   'close-mobile': []
   'toggle-collapse': []
   'assistant-simulation': [result: SimulationResult]
+  'new-report': [report: Report]
+  sampling: [layers: SamplingLayers]
+  combination: [result: Combination]
 }>()
-type ReportTab = 'overview' | 'facilities' | 'recommendations'
+type ReportTab = 'overview' | 'facilities' | 'recommendations' | 'ai'
 type Auxiliary = 'history' | 'details' | 'export'
 type ImprovementTool = 'simulation' | 'assistant'
-const tabs: { id: ReportTab; label: string }[] = [{ id: 'overview', label: '体检概览' }, { id: 'facilities', label: '设施详情' }, { id: 'recommendations', label: '改善建议' }]
+const tabs: { id: ReportTab; label: string }[] = [{ id: 'overview', label: '体检概览' }, { id: 'facilities', label: '设施详情' }, { id: 'recommendations', label: '改善建议' }, { id: 'ai', label: 'AI核验' }]
 const activeTab = ref<ReportTab>('overview')
 const auxiliary = ref<Auxiliary | null>(null)
 const openTool = ref<ImprovementTool | null>(null)
@@ -161,6 +185,10 @@ const focusedRecommendationId = ref<string | null>(null)
 const scrollRef = ref<HTMLElement | null>(null)
 const simulationRef = ref<HTMLElement | null>(null)
 const multisourceRef = ref<HTMLElement | null>(null)
+const refreshedExecutionLedger = ref<ExecutionLedger | null>(null)
+const executionLedger = computed(() => refreshedExecutionLedger.value?.id === props.report?.execution_ledger?.id ? refreshedExecutionLedger.value : props.report?.execution_ledger)
+function refreshExecutionLedger(ledger: ExecutionLedger) { if (ledger.id === props.report?.execution_ledger?.id) refreshedExecutionLedger.value = ledger }
+watch(() => props.report, () => { refreshedExecutionLedger.value = null })
 const overallScore = computed(() => props.report?.summary.score ?? null)
 const scoreText = computed(() => overallScore.value === null ? '—' : overallScore.value)
 const scoreTone = computed(() => overallScore.value === null ? 'unavailable' : overallScore.value >= 80 ? 'good' : overallScore.value >= 60 ? 'fair' : 'risk')
@@ -187,6 +215,8 @@ const stageDurations = computed(() => Object.entries(props.report?.execution.sta
   .map(([code, duration_ms]) => ({ code, duration_ms, label: stageLabels[code] || code })))
 function formatDuration(value: number) { return value < 1_000 ? `${value} ms` : `${(value / 1_000).toFixed(2)} s` }
 function formatRate(value: number) { return `${Math.round(value * 100)}%` }
+const gapKindLabel = (kind: string) => ({ scarcity: '1公里设施稀缺', walking_timeout: '已核验步行超时', critical: '重点盲区' })[kind] || kind
+const connectivityLabel = (status: string) => ({ geometric_with_verified_barrier_constraints: '网格邻接已应用核验障碍限制，未核验通路仍待核验', geometric_only_unverified_walk_connectivity: '仅网格邻接，步行通路未核验' })[status] || status
 function toggleCollapseIfDesktop() {
   if (window.matchMedia('(max-width: 820px)').matches) return
   emit('toggle-collapse')
@@ -241,6 +271,13 @@ watch(() => [props.simulationLocation, props.simulationResult, props.simulationP
   if (props.simulationLocation || props.simulationResult || props.simulationPicking || props.simulationError) void showSimulation()
 })
 </script>
+
+<style scoped>
+.spatial-statistics-list { margin: 9px 0; font-size: 10px; line-height: 1.7; }
+.spatial-statistics-list > div { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 6px; padding: 7px 0; border-top: 1px solid #dce6e0; }
+.spatial-statistics-list dt { font-weight: 600; }.spatial-statistics-list dd { margin: 0; overflow-wrap: anywhere; }.spatial-statistics-list small { display: block; opacity: .65; font-size: 9px; }
+html[data-theme="dark"] .spatial-statistics-list > div { border-color: rgba(126,214,199,.18); }
+</style>
 
 <style scoped>
 /* 报告容器负责信息层级和滚动；图表与明细保留各自组件样式。 */
@@ -305,6 +342,7 @@ button:focus-visible { outline: 2px solid var(--report-accent); outline-offset: 
 .priority-row strong { display: block; color: var(--report-ink); font-size: 12px; line-height: 1.5; }
 .priority-row small { display: block; color: var(--report-muted); font-size: 11px; margin-top: 2px; }
 .priority-row > svg { width: 12px; color: var(--report-muted); flex: 0 0 auto; }
+.gap-candidate-list { font-size: 11px; }.gap-candidate-list summary { cursor: pointer; }.gap-candidate-list article { padding: 9px 0; border-top: 1px solid var(--report-line); line-height: 1.65; }.gap-candidate-list p { margin: 4px 0; }.gap-candidate-list small { display: block; color: var(--report-muted); }.gap-candidate-list button { margin-top: 6px; padding: 5px 7px; background: transparent; color: var(--report-ink); border: 1px solid var(--report-line); border-radius: 5px; font: inherit; }
 .priority-mark { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; color: #aa4d3a; background: #fbe8e2; font-size: 11px; }
 .priority-mark.medium { color: #896326; background: #f8edd5; }
 :global(html[data-theme="dark"] .priority-mark) { background: rgba(255,107,87,.14); color: #ff9d8d; }

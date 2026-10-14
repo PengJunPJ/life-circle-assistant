@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import copy
+import math
 import re
 import unicodedata
+from datetime import UTC, datetime
 
 from ..baidu import BaiduMapClient, BaiduMapError
 from .provider import (
@@ -11,6 +14,7 @@ from .provider import (
     FacilityResult,
     LocationResult,
     MapProviderError,
+    NativeIsochroneResult,
     ProviderDescriptor,
     WalkingResult,
 )
@@ -62,6 +66,58 @@ class BaiduMapProvider:
         self.client = client or BaiduMapClient()
         self.concurrency = concurrency
         self.facility_request_count = 0
+        self._facility_search_metadata: dict[tuple, dict] = {}
+        self._native_isochrone_verified_at: str | None = None
+        self._native_isochrone_error: str | None = None
+
+    def isochrone_capability(self) -> dict:
+        configured = bool(getattr(self.client, "native_isochrone_enabled", False))
+        credentials = bool(getattr(self.client, "real_available", False))
+        return {
+            "provider": "baidu",
+            "configured": configured,
+            "credentials_available": credentials,
+            "available": bool(
+                configured
+                and credentials
+                and self._native_isochrone_verified_at
+                and self._native_isochrone_error is None
+            ),
+            "account_verified": self._native_isochrone_verified_at is not None,
+            "verified_at": self._native_isochrone_verified_at,
+            "error_code": self._native_isochrone_error,
+            "strategies": ["foot_fastest", "foot_shortest"],
+            "coordinate_system": "BD-09",
+            "endpoint": "/logistics_truck/v1/isochrone",
+            "pricing_verified": False,
+            "disclosure": "配置或AK存在不代表账号有原生等时圈权限；仅成功请求可核验当前账号，价格与现场边界精度另行验证。",
+        }
+
+    async def native_isochrone(
+        self, center: tuple[float, float], duration_s: int, strategy: str = "foot_fastest"
+    ) -> NativeIsochroneResult:
+        from .isochrone import parse_native_isochrone
+
+        try:
+            payload = await self.client.native_isochrone(center, duration_s, strategy)
+            geometry = parse_native_isochrone(payload)
+        except BaiduMapError as exc:
+            self._native_isochrone_error = exc.code
+            raise self._provider_error(exc) from exc
+        except MapProviderError as exc:
+            self._native_isochrone_error = exc.code
+            raise
+        self._native_isochrone_verified_at = datetime.now(UTC).isoformat()
+        self._native_isochrone_error = None
+        return NativeIsochroneResult(
+            geometry=geometry,
+            center=center,
+            duration_s=duration_s,
+            strategy=strategy,
+            source="real_api",
+            method="baidu_native_isochrone",
+            provider_request_id=str(payload["request_id"]) if payload.get("request_id") else None,
+        )
 
     @property
     def supports_batch_walking(self) -> bool:
@@ -69,9 +125,8 @@ class BaiduMapProvider:
         # 单坐标对仍走 directionlite 以保留 steps 折线供步行路线预览。
         return True
 
-    # 百度批量算路单次请求的点对乘积上限：实测 10×10=100 可用、16×10=160 报
-    # “点对数量超出限制”，故按 100 对分块并留原点分块余量。
-    BATCH_PAIR_LIMIT = 100
+    # 官方步行/骑行矩阵限制为每次 50 路线对，不能把 HTTP 次数当路线对配额。
+    BATCH_PAIR_LIMIT = 50
     BATCH_ORIGIN_CHUNK = 10
 
     @property
@@ -182,6 +237,7 @@ class BaiduMapProvider:
         if not queries:
             raise MapProviderError(f"不支持的民生设施类别：{category}")
         normalized: list[FacilityResult] = []
+        searches: list[dict] = []
         for query in queries:
             try:
                 self.facility_request_count += 1
@@ -189,8 +245,35 @@ class BaiduMapProvider:
             except BaiduMapError as exc:
                 # 任一分词失败都会使该类别召回不完整；显式失败比静默返回部分结果更可审计。
                 raise self._provider_error(exc) from exc
+            metadata = getattr(results, "metadata", None)
+            if isinstance(metadata, dict):
+                searches.append(copy.deepcopy(metadata))
+                self.facility_request_count += max(0, int(metadata.get("pages_requested", 1)) - 1)
+            else:
+                searches.append(
+                    {
+                        "query": query,
+                        "pages_requested": 1,
+                        "query_exhausted": None,
+                        "truncated": None,
+                        "scope": "unreported",
+                        "is_full_inventory": False,
+                    }
+                )
             normalized.extend(self._normalize_place(item, category) for item in results if self._has_location(item))
+        self._facility_search_metadata[(category, center, radius_m)] = {
+            "category": category,
+            "radius_m": radius_m,
+            "queries": searches,
+            "query_scope_complete": all(item.get("query_exhausted") is True for item in searches),
+            "truncated": any(item.get("truncated") is True for item in searches),
+            "is_full_inventory": False,
+            "disclosure": "仅覆盖已配置关键词和检索半径内百度返回的结果，不代表完整设施名录。",
+        }
         return self._deduplicate_places(normalized)
+
+    def get_facility_search_metadata(self, category: str, center: tuple[float, float], radius_m: int) -> dict:
+        return copy.deepcopy(self._facility_search_metadata.get((category, center, radius_m), {}))
 
     async def walking_matrix(
         self,
@@ -252,14 +335,29 @@ class BaiduMapProvider:
             for origin_index, origin in enumerate(origin_chunk):
                 for dest_index, destination in enumerate(dest_chunk):
                     item = flat[origin_index * len(dest_chunk) + dest_index]
+                    distance, duration = item.get("distance_m"), item.get("duration_s")
+                    # 防御自定义客户端：零值/缺失/无穷数不能变成已确认路线。
+                    numeric = all(
+                        isinstance(value, (int, float))
+                        and not isinstance(value, bool)
+                        and math.isfinite(value)
+                        and value >= 0
+                        for value in (distance, duration)
+                    )
+                    available = numeric and (
+                        (distance > 0 and duration > 0) or (origin == destination and distance == duration == 0)
+                    )
+                    available = available and item.get("success", True) is True
                     matrix[origin_offset + origin_index][dest_offset + dest_index] = WalkingResult(
                         origin=origin,
                         destination=destination,
-                        success=True,
-                        distance_m=item["distance_m"],
-                        duration_s=item["duration_s"],
+                        success=available,
+                        distance_m=distance if available else None,
+                        duration_s=duration if available else None,
                         source="real_api",
                         method="baidu_walking_route_matrix",
+                        error_code=None if available else "route_unavailable",
+                        error_message=None if available else "矩阵路线无可核验距离或时间，标记为未知。",
                     )
             return
         # 分块批量失败：该块退化为逐对 directionlite，保证结果可审计而非整矩阵失败
@@ -279,12 +377,15 @@ class BaiduMapProvider:
         async with semaphore:
             try:
                 route = await self.client.walking_route(origin, destination)
+                distance, duration = BaiduMapClient._route_numbers(route.get("distance_m"), route.get("duration_s"))
+                if (distance == 0 or duration == 0) and (origin != destination or distance != duration):
+                    raise BaiduMapError("步行路线返回零值，无法证明两点可达", code="route_unavailable")
                 return WalkingResult(
                     origin=origin,
                     destination=destination,
                     success=True,
-                    distance_m=route["distance_m"],
-                    duration_s=route["duration_s"],
+                    distance_m=distance,
+                    duration_s=duration,
                     source="real_api",
                     method="baidu_walking_route",
                     steps=steps_to_polyline(route.get("steps") or []),
@@ -326,6 +427,16 @@ class BaiduMapProvider:
             lng=float(location["lng"]),
             lat=float(location["lat"]),
             address=item.get("address", ""),
+            evidence={
+                "provider": "baidu",
+                "provider_uid": item.get("uid"),
+                "coordinate_role": "poi_location",
+                "coordinate_system": "BD-09",
+                "original_location": copy.deepcopy(location),
+                "navigation_location": copy.deepcopy((item.get("detail_info") or {}).get("navi_location")),
+                "entrance_verified": False,
+                "disclosure": "导航坐标保留作证据，未经步行入口核验，不替换设施定位坐标。",
+            },
         )
 
     @staticmethod

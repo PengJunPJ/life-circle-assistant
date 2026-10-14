@@ -1,9 +1,10 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import ElMessage from 'element-plus/es/components/message/index'
 import { ALL_CATEGORIES, DEFAULT_CATEGORIES } from '../constants/facilities'
-import { createAnalysis, waitForAnalysis } from '../services/analysisApi'
+import { cancelAnalysisTask, createAnalysis, resumeAnalysisTask, retryAnalysisTask, waitForAnalysis } from '../services/analysisApi'
+import { AnalysisTaskTerminalError } from '../services/analysisTaskError'
 import type { AnalysisCenter } from '../types/location'
-import type { AnalysisMode, AnalysisMinutes, Report } from '../types/report'
+import type { AnalysisMode, AnalysisMinutes, AnalysisTask, Report } from '../types/report'
 
 export function useAnalysis(center: Ref<AnalysisCenter>) {
   // 页面默认采用正式分析密度；地图数据是否实时由后端 provider 决定。
@@ -19,6 +20,10 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
   const progressLabel = ref('')
   const report = ref<Report | null>(null)
   const error = ref('')
+  const currentTask = ref<AnalysisTask | null>(null)
+  const cancelling = ref(false)
+  let polling: AbortController | null = null
+  onScopeDispose(() => polling?.abort())
   const supplementCategories = computed(() => {
     const original = report.value
     if (!original || original.center.lng !== center.value.lng || original.center.lat !== center.value.lat
@@ -61,6 +66,7 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     if (loading.value) return false
     loading.value = true
     error.value = ''
+    currentTask.value = null
     progress.value = 18
     progressLabel.value = ''
     if (!retainReport) {
@@ -71,18 +77,30 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
       if (center.value.supportStatus !== 'supported') throw new Error('请先选择当前支持范围内的分析中心点')
       if (!parameters.categories.length) throw new Error('请至少选择一种民生设施类别')
       const task = await createAnalysis(parameters)
+      currentTask.value = task
+      polling = new AbortController()
       progress.value = 52
       const completedReport = await waitForAnalysis(task, (value, stageLabel) => {
         progress.value = value
         progressLabel.value = stageLabel
-      })
+      }, polling.signal)
+      currentTask.value = { ...task, status: 'completed', progress: 100, result: completedReport }
       applyReport(completedReport)
       progress.value = 100
       progressLabel.value = ''
       ElMessage.success(completedReport.source === 'baidu' ? '百度地图真实体检报告已生成' : '本地快照体检报告已生成')
       return true
     } catch (caught: any) {
+      if (caught instanceof DOMException && caught.name === 'AbortError') return false
+      if (caught instanceof AnalysisTaskTerminalError && caught.task.status === 'cancelled') {
+        currentTask.value = caught.task
+        progress.value = caught.task.progress
+        progressLabel.value = ''
+        return false
+      }
       const message = caught?.message || '服务暂不可用，请检查后端是否启动'
+      if (caught instanceof AnalysisTaskTerminalError) currentTask.value = caught.task
+      else if (currentTask.value && currentTask.value.status !== 'cancelled') currentTask.value = { ...currentTask.value, status: 'failed', error: message }
       ElMessage.error(message)
       // 除视觉 Toast 外保留可观察状态，供页面 live region 向辅助技术播报失败原因。
       error.value = message
@@ -90,6 +108,49 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     } finally {
       loading.value = false
     }
+  }
+
+  async function followTask(task: AnalysisTask) {
+    if (loading.value) return false
+    currentTask.value = task
+    loading.value = true
+    error.value = ''
+    progress.value = task.progress
+    progressLabel.value = task.stage_label || ''
+    polling = new AbortController()
+    try {
+      const result = await waitForAnalysis(task, (value, label) => { progress.value = value; progressLabel.value = label }, polling.signal)
+      currentTask.value = { ...task, status: 'completed', progress: 100, result }
+      applyReport(result)
+      progressLabel.value = ''
+      return true
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'AbortError') return false
+      if (cause instanceof AnalysisTaskTerminalError && cause.task.status === 'cancelled') {
+        currentTask.value = cause.task
+        progress.value = cause.task.progress
+        progressLabel.value = ''
+        return false
+      }
+      error.value = cause instanceof Error ? cause.message : '体检任务失败'
+      if (cause instanceof AnalysisTaskTerminalError) currentTask.value = cause.task
+      else if (currentTask.value?.status !== 'cancelled') currentTask.value = { ...task, status: 'failed', error: error.value }
+      return false
+    } finally { loading.value = false }
+  }
+
+  async function cancelCurrentTask() {
+    if (!currentTask.value || !loading.value || cancelling.value) return
+    cancelling.value = true
+    try { currentTask.value = await cancelAnalysisTask(currentTask.value.id) }
+    catch (cause) { error.value = cause instanceof Error ? cause.message : '任务取消失败' }
+    finally { cancelling.value = false }
+  }
+
+  async function retryCurrentTask() {
+    if (!currentTask.value || loading.value) return false
+    try { return await followTask(await (currentTask.value.status === 'failed' ? resumeAnalysisTask : retryAnalysisTask)(currentTask.value.id)) }
+    catch (cause) { error.value = cause instanceof Error ? cause.message : '任务重试失败'; return false }
   }
 
   function runAnalysis() {
@@ -161,5 +222,10 @@ export function useAnalysis(center: Ref<AnalysisCenter>) {
     setAnalysisCategories,
     toggleCategory,
     applyReport,
+    currentTask,
+    cancelling,
+    followTask,
+    cancelCurrentTask,
+    retryCurrentTask,
   }
 }

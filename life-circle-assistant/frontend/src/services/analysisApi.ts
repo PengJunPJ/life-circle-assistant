@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants/facilities'
+import { AnalysisTaskTerminalError } from './analysisTaskError'
 import type { AnalysisIntent, IntentDraft } from '../types/analysisIntent'
 import type { ReportComparison } from '../types/comparison'
 import type { ReportHistoryResponse } from '../types/history'
@@ -6,9 +7,10 @@ import type { PlanningParameters, PlanningResponse } from '../types/planning'
 import type { CenterSelectionMethod, CoordinateConversionResponse, CoordinateSystem, LocationApiResponse, LocationCandidate, WalkingRoute } from '../types/location'
 import type { AiInterpretation, AiInterpretationIntent, AnalysisMode, AnalysisMinutes, AnalysisTask, MapConfig, MapProbeResult, MapStatus, Report } from '../types/report'
 import type { SimulationResult, SimulationSelectionMethod } from '../types/simulation'
+import type { ReportExportFormat } from '../types/exports'
 import { getDownloadFilename, triggerBlobDownload } from '../utils/report'
 
-export type ReportExportFormat = 'json' | 'csv' | 'geojson' | 'pdf'
+export type { ReportExportFormat } from '../types/exports'
 
 export async function parseAnalysisIntent(message: string, previous?: IntentDraft) {
   return parseResponse<AnalysisIntent>(await fetch(`${API_BASE_URL}/api/analysis/intent`, {
@@ -97,6 +99,17 @@ export async function createAnalysis(params: {
 
 export async function getAnalysisTask(taskId: string) {
   return parseResponse<AnalysisTask>(await fetch(`${API_BASE_URL}/api/analyze/${taskId}`))
+}
+
+export async function cancelAnalysisTask(taskId: string) {
+  return parseResponse<AnalysisTask>(await fetch(`${API_BASE_URL}/api/analyze/${encodeURIComponent(taskId)}/cancel`, { method: 'POST' }))
+}
+
+export async function retryAnalysisTask(taskId: string) {
+  return parseResponse<AnalysisTask>(await fetch(`${API_BASE_URL}/api/analyze/${encodeURIComponent(taskId)}/retry`, { method: 'POST' }))
+}
+export async function resumeAnalysisTask(taskId: string) {
+  return parseResponse<AnalysisTask>(await fetch(`${API_BASE_URL}/api/analyze/${encodeURIComponent(taskId)}/resume`, { method: 'POST' }))
 }
 
 export async function fetchReportHistory(limit = 20, offset = 0, q?: string) {
@@ -194,20 +207,23 @@ export async function downloadReportExport(reportId: string, format: ReportExpor
   }
   const filename = getDownloadFilename(
     response.headers.get('Content-Disposition'),
-    `生活圈体检-${reportId.slice(0, 8)}.${format}`,
+    `生活圈体检-${reportId.slice(0, 8)}${format === 'geojson-wgs84' ? '-WGS84.geojson' : `.${format}`}`,
   )
   triggerBlobDownload(await response.blob(), filename)
   return filename
 }
 
-export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number, stageLabel: string) => void) {
+export async function waitForAnalysis(task: AnalysisTask, onProgress: (value: number, stageLabel: string) => void, signal?: AbortSignal) {
   let current = task
   // 后端采用后台任务模型，统一在数据访问模块轮询，页面层接收进度、阶段名和最终报告。
-  while (current.status !== 'completed' && current.status !== 'failed') {
+  while (current.status !== 'completed' && current.status !== 'failed' && current.status !== 'cancelled') {
+    if (signal?.aborted) throw new DOMException('页面已离开，停止等待任务', 'AbortError')
     await new Promise((resolve) => setTimeout(resolve, 180))
+    if (signal?.aborted) throw new DOMException('页面已离开，停止等待任务', 'AbortError')
     current = await getAnalysisTask(task.id)
     onProgress(current.progress, current.stage_label || '')
   }
-  if (current.status === 'failed') throw new Error(current.error || '百度地图分析失败')
-  return current.result as Report
+  if (current.status === 'failed' || current.status === 'cancelled') throw new AnalysisTaskTerminalError(current)
+  if (!current.result) throw new Error('任务已完成，但报告数据缺失')
+  return current.result
 }

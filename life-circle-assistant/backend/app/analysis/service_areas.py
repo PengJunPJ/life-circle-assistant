@@ -58,7 +58,7 @@ def classify_service_area_cell(evidence: CellEvidence, threshold_minutes: int) -
             status="calculation_incomplete",
         )
 
-    if route is None:
+    if route is None or not route.success or route.duration_s is None or not math.isfinite(route.duration_s):
         return CellClassification(
             kind="unknown",
             confidence="low",
@@ -68,6 +68,13 @@ def classify_service_area_cell(evidence: CellEvidence, threshold_minutes: int) -
 
     walk_minutes = (route.duration_s or 0) / 60
     exceeds_threshold = walk_minutes > threshold_minutes
+    if exceeds_threshold and evidence.failed_route_count:
+        return CellClassification(
+            kind="unknown",
+            confidence="low",
+            status="calculation_incomplete",
+            basis="已返回的路线超过阈值，但部分候选路线失败，不能确认最近同类设施均不可达。",
+        )
     confidence: Literal["high", "medium", "low"] = "medium" if evidence.failed_route_count else "high"
 
     if exceeds_threshold and lacks_nearby_facility:
@@ -188,7 +195,12 @@ async def build_category_service_areas(
                     successful.append((route, facility))
                 else:
                     failed_count += 1
-            successful.sort(key=lambda item: (item[0].duration_s or math.inf, item[0].distance_m or math.inf))
+            successful.sort(
+                key=lambda item: (
+                    item[0].duration_s if item[0].duration_s is not None else math.inf,
+                    item[0].distance_m if item[0].distance_m is not None else math.inf,
+                )
+            )
             nearest_route, nearest_facility = successful[0] if successful else (None, None)
             evidence = CellEvidence(
                 nearby_facility_count=nearby_count,
@@ -368,7 +380,17 @@ def _feature(
     route = evidence.nearest_route
     facility = evidence.nearest_facility
     walk_threshold_exceeded = None if route is None else (route.duration_s or 0) > threshold_minutes * 60
+    if not evidence.facility_discovery_succeeded or (walk_threshold_exceeded and evidence.failed_route_count):
+        walk_threshold_exceeded = None
     lacks_nearby_facility = evidence.nearby_facility_count == 0
+    underlying_source = (route.underlying_source or route.source) if route else None
+    reachability_status = (
+        "unknown"
+        if walk_threshold_exceeded is None
+        else "measured"
+        if underlying_source in {"real_api", "local_snapshot"}
+        else "estimated"
+    )
     labels = {
         "normal": "正常覆盖区",
         "sparse": "设施稀疏区",
@@ -399,6 +421,10 @@ def _feature(
             "nearby_radius_m": NEARBY_RADIUS_M,
             "nearby_facility_count": evidence.nearby_facility_count,
             "lacks_nearby_facility": lacks_nearby_facility,
+            "nearby_scarcity": lacks_nearby_facility if evidence.facility_discovery_succeeded else None,
+            "nearby_scarcity_status": "observed_search_results" if evidence.facility_discovery_succeeded else "unknown",
+            "walking_reachable": None if walk_threshold_exceeded is None else not walk_threshold_exceeded,
+            "walking_reachability_status": reachability_status,
             "candidate_prefilter_radius_m": CANDIDATE_PREFILTER_RADIUS_M,
             "candidate_facility_count": evidence.candidate_facility_count,
             "nearest_facility_id": facility["id"] if facility else None,
@@ -409,6 +435,8 @@ def _feature(
             "critical_conditions_met": walk_threshold_exceeded is True and lacks_nearby_facility,
             "classification_status": classification.status,
             "source": route.source if route else provider_source,
+            "underlying_source": route.underlying_source if route else None,
+            "facility_source": provider_source,
             "calculation_method": calculation_method,
             "basis": classification.basis,
             "confidence": classification.confidence,

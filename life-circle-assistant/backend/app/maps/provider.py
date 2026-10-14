@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 DataSourceKind = Literal["real_api", "cache", "local_snapshot", "interpolation", "degraded_estimate"]
 CoordinateSystem = Literal["wgs84", "gcj02", "bd09"]
@@ -57,6 +57,7 @@ class FacilityResult:
     lng: float
     lat: float
     address: str = ""
+    evidence: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,28 @@ class WalkingResult:
     cached_at: str | None = None
     expires_at: str | None = None
     steps: list | None = None
+
+
+@dataclass(frozen=True)
+class NativeIsochroneResult:
+    """原生响应几何保持孔洞与片区；可用性不等于边界现场精度。"""
+
+    geometry: dict[str, Any]
+    center: tuple[float, float]
+    duration_s: int
+    strategy: Literal["foot_fastest", "foot_shortest"]
+    source: DataSourceKind
+    method: str
+    coordinate_system: Literal["BD-09"] = "BD-09"
+    provider_request_id: str | None = None
+
+
+class NativeIsochroneProvider(Protocol):
+    def isochrone_capability(self) -> dict[str, Any]: ...
+
+    async def native_isochrone(
+        self, center: tuple[float, float], duration_s: int, strategy: str = "foot_fastest"
+    ) -> NativeIsochroneResult: ...
 
 
 class MapProvider(Protocol):

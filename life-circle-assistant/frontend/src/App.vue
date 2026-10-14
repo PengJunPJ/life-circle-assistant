@@ -12,7 +12,7 @@
     />
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ accessibilityStatus }}</p>
     <p v-if="analysisError" class="sr-only" role="alert">分析失败：{{ analysisError }}</p>
-    <section ref="workspaceRef" class="workspace" :class="{ 'left-collapsed': collapsedControls, 'right-collapsed': collapsedReport }">
+    <section ref="workspaceRef" class="workspace has-conversation" :style="{ '--conversation-height': `${conversationHeight}px` }" :class="{ 'left-collapsed': collapsedControls, 'right-collapsed': collapsedReport }">
       <AnalysisControls
         id="analysis-controls-panel"
         :class="{ 'mobile-open': activeMobilePanel === 'controls', collapsed: collapsedControls }"
@@ -37,6 +37,7 @@
         :analysis-categories="analysisCategories"
         :supplement-count="supplementCategories.length"
         :loading="loading"
+        :assistant-busy="conversationBusy"
         :map-status="mapStatus"
         :map-status-loading="mapStatusLoading"
         :map-probe-result="mapProbeResult"
@@ -70,12 +71,17 @@
         :show-normal="showNormal"
         :show-sparse="showSparse"
         :show-critical="showCritical"
+        :status-layers="statusLayers"
+        :sampling-layers="samplingLayers"
+        :combination="combinationResult"
         :loading="loading"
+        :interaction-blocked="conversationBusy"
         :progress="progress"
         :progress-label="progressLabel"
         :all-expanded="!collapsedControls && !collapsedReport"
         :all-collapsed="collapsedControls && collapsedReport"
         :focus-recommendation-id="selectedRecommendationId"
+        :focus-grid-id="planningGridId"
         :simulation="simulationResult"
         :simulation-picking="simulationPicking"
         :center-picking="centerPicking"
@@ -86,9 +92,10 @@
         @update:show-normal="showNormal = $event"
         @update:show-sparse="showSparse = $event"
         @update:show-critical="showCritical = $event"
+        @update:status-layers="applyStatusLayers"
         @prepare-supplement="prepareSupplement"
         @cancel-center-pick="cancelCenterPick"
-        @service-area-select="handleServiceAreaSelect"
+        @service-area-select="!conversationBusy && handleServiceAreaSelect($event)"
         @expand-all="expandAllPanels"
         @collapse-all="collapseAllPanels"
       />
@@ -100,7 +107,7 @@
         :selected-recommendation-id="selectedRecommendationId"
         :history-items="historyItems"
         :history-total="historyTotal"
-        :history-loading="historyLoading"
+        :history-loading="historyLoading || conversationBusy"
         :history-loading-more="historyLoadingMore"
         :history-has-more="historyHasMore"
         :history-query="historyQuery"
@@ -113,10 +120,11 @@
         :simulation-category="simulationCategory"
         :simulation-location="simulationLocation"
         :simulation-result="simulationResult"
-        :simulation-loading="simulationLoading"
+        :simulation-loading="simulationLoading || conversationBusy"
         :simulation-picking="simulationPicking"
         :simulation-error="simulationError"
         :planning-grid-id="planningGridId"
+        :governance-revision="governanceRevision"
         @locate-recommendation="selectedRecommendationId = $event"
         @refresh-history="loadHistory"
         @open-history="handleOpenHistory"
@@ -131,8 +139,37 @@
         @run-simulation="runSimulation"
         @clear-simulation="clearSimulation"
         @assistant-simulation="applyAssistantSimulation"
+        @new-report="applySelectedReport"
+        @sampling="showSamplingLayers"
+        @combination="combinationResult = $event"
         @toggle-collapse="collapsedReport = !collapsedReport"
         @close-mobile="closeMobilePanel('report')"
+      />
+      <ConversationWorkspace
+        :context="conversationContext"
+        :turns="conversationTurns"
+        :ready="conversationReady"
+        :busy="conversationBusy"
+        :restoring="conversationRestoring"
+        :error="conversationError"
+        :can-retry="Boolean(conversationRetryRequest)"
+        :pending="conversationPending"
+        :task="currentTask"
+        :analyzing="loading"
+        :progress="progress"
+        :progress-label="progressLabel || ''"
+        :cancelling="cancelling"
+        @send="sendConversation"
+        @confirm="confirmConversation"
+        @retry="retryConversation"
+        @reconnect="initializeConversation"
+        @cancel-task="cancelCurrentTask"
+        @retry-task="retryCurrentTask"
+        @open-report="handleOpenHistory"
+        @simulation="applyAssistantSimulation"
+        @sampling="showSamplingLayers"
+        @combination="combinationResult = $event"
+        @resize="conversationHeight = $event"
       />
       <button
         class="panel-rail left"
@@ -190,8 +227,8 @@
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fetchMapStatus, probeMapApi as requestMapApiProbe } from './services/analysisApi'
-import type { MapProbeResult, MapStatus } from './types/report'
+import { downloadReportExport, fetchMapStatus, getAnalysisTask, getHistoricalReport, probeMapApi as requestMapApiProbe } from './services/analysisApi'
+import type { AnalysisTask, MapProbeResult, MapStatus } from './types/report'
 import type { AnalysisIntent } from './types/analysisIntent'
 import { ALL_CATEGORIES } from './constants/facilities'
 import { useAnalysis } from './composables/useAnalysis'
@@ -199,11 +236,15 @@ import { useReportHistory } from './composables/useReportHistory'
 import { useAnalysisCenter } from './composables/useAnalysisCenter'
 import { useReportComparison } from './composables/useReportComparison'
 import { useSimulation } from './composables/useSimulation'
+import { useConversation } from './composables/useConversation'
+import type { ConversationTurn, WorkspaceState } from './types/workspace'
+import { DEFAULT_STATUS_LAYERS, type Combination, type SamplingLayers, type StatusLayers } from './types/completion'
 import { recommendationForServiceArea } from './utils/recommendationLinks'
 import AppHeader from './components/AppHeader.vue'
 import AnalysisControls from './components/AnalysisControls.vue'
 import MapStage from './components/MapStage.vue'
 import FirstUseGuide from './components/FirstUseGuide.vue'
+import ConversationWorkspace from './components/ConversationWorkspace.vue'
 // 报告、图表、历史和导出只在工作台完成分析后使用，拆成异步块避免阻塞地图首屏。
 const ReportPanel = defineAsyncComponent(() => import('./components/ReportPanel.vue'))
 const ReportComparisonPanel = defineAsyncComponent(() => import('./components/ReportComparisonPanel.vue'))
@@ -211,9 +252,14 @@ const ReportComparisonPanel = defineAsyncComponent(() => import('./components/Re
 const FIRST_USE_GUIDE_KEY = 'life-circle:first-use-guide:v1'
 const selectedRecommendationId = ref<string | null>(null)
 const planningGridId = ref<string | null>(null)
+const statusLayers = ref<StatusLayers>({ ...DEFAULT_STATUS_LAYERS })
+const samplingLayers = ref<SamplingLayers | null>(null)
+const combinationResult = ref<Combination | null>(null)
+const governanceRevision = ref(0)
 const activeMobilePanel = ref<'controls' | 'report' | null>(null)
 const collapsedControls = ref(false)
 const collapsedReport = ref(false)
+const conversationHeight = ref(130)
 const THEME_KEY = 'life-circle:theme:v1'
 const theme = ref<'dark' | 'light'>(window.localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark')
 const THEME_DURATION = 420
@@ -323,6 +369,11 @@ const {
   setVisibleCategories,
   setAnalysisCategories,
   applyReport,
+  currentTask = ref<AnalysisTask | null>(null),
+  cancelling = ref(false),
+  followTask,
+  cancelCurrentTask,
+  retryCurrentTask,
 } = useAnalysis(center)
 const {
   category: simulationCategory,
@@ -339,7 +390,15 @@ const {
   clear: clearSimulation,
   applyAssistantSimulation,
 } = useSimulation(report)
-watch(() => report.value?.report_id, () => { planningGridId.value = null })
+watch(() => report.value?.report_id, () => { planningGridId.value = null; samplingLayers.value = null; combinationResult.value = null })
+watch([showNormal, showSparse, showCritical], ([normal, sparse, critical]) => { statusLayers.value = { ...statusLayers.value, normal, sparse, critical } })
+function applyStatusLayers(layers: Partial<StatusLayers>) {
+  statusLayers.value = { ...statusLayers.value, ...layers }
+  if (layers.normal !== undefined) showNormal.value = layers.normal
+  if (layers.sparse !== undefined) showSparse.value = layers.sparse
+  if (layers.critical !== undefined) showCritical.value = layers.critical
+}
+function showSamplingLayers(layers: SamplingLayers) { samplingLayers.value = layers; applyStatusLayers({ sampling: true }) }
 const {
   items: historyItems,
   total: historyTotal,
@@ -365,6 +424,107 @@ const {
   compareSelection,
   closeComparison,
 } = useReportComparison()
+
+function getWorkspaceState(): WorkspaceState {
+  const boundReport = reportMatchesParameters.value ? report.value : null
+  const task = currentTask.value
+  const taskRequest = task?.request
+  const boundTask = Boolean(taskRequest && minutesValid.value && !locationPending.value && center.value.supportStatus === 'supported'
+    && taskRequest.lng === center.value.lng && taskRequest.lat === center.value.lat
+    && taskRequest.minutes === minutes.value && taskRequest.mode === mode.value
+    && taskRequest.categories.length === analysisCategories.value.length
+    && taskRequest.categories.every(category => analysisCategories.value.includes(category)))
+  return {
+    center: !locationPending.value && center.value.supportStatus === 'supported' ? {
+      lng: center.value.lng, lat: center.value.lat, address: center.value.address, selection_method: center.value.selectionMethod,
+    } : null,
+    minutes: minutes.value,
+    minutes_confirmed: minutesValid.value,
+    mode: mode.value,
+    categories: [...analysisCategories.value],
+    report_id: boundReport?.report_id || null,
+    grid_id: boundReport ? planningGridId.value : null,
+    visible_categories: visibleCategories.value.filter(category => analysisCategories.value.includes(category)),
+    analysis_task_id: boundTask && task ? task.id : null,
+    status_layers: { ...statusLayers.value, normal: showNormal.value, sparse: showSparse.value, critical: showCritical.value },
+    address_candidates: candidates.value.map(item => ({ lng: item.lng, lat: item.lat, address: item.address })),
+    history_report_ids: historyItems.value.map(item => item.report_id),
+  }
+}
+
+async function restoreWorkspaceState(state: WorkspaceState) {
+  if (state.report_id && state.report_id !== report.value?.report_id) applySelectedReport(await getHistoricalReport(state.report_id))
+  if (!state.report_id) report.value = null
+  if (state.center) restoreCenter({ ...state.center, source: report.value?.source || 'workspace', selectionMethod: state.center.selection_method })
+  else requireLocation()
+  minutes.value = state.minutes
+  minutesValid.value = state.minutes_confirmed !== false
+  mode.value = state.mode
+  setAnalysisCategories(state.categories)
+  setVisibleCategories(state.visible_categories)
+  applyStatusLayers({ ...DEFAULT_STATUS_LAYERS, ...state.status_layers })
+  if (state.address_candidates) candidates.value = state.address_candidates.map(item => ({ ...item, source: 'workspace', provider: 'workspace' }))
+  await nextTick()
+  focusConversationGrid(state.grid_id)
+  if (state.analysis_task_id && !loading.value) { const task = await getAnalysisTask(state.analysis_task_id); currentTask.value = task; if (['queued', 'running', 'completed'].includes(task.status)) void followTask(task) }
+}
+
+async function applyConversationTurn(turn: ConversationTurn) {
+  for (const action of turn.actions) {
+    if (action.type === 'apply_parameters') await fillIntentParameters(turn.intent || { draft: action.draft, parser: 'rules', model: null, missing_fields: [], message: '' }, !turn.actions.some(item => item.type === 'show_address_candidates'))
+    else if (action.type === 'show_report' || action.type === 'open_report') { applySelectedReport(await getHistoricalReport(action.report_id)); await nextTick() }
+    else if (action.type === 'focus_grid') focusConversationGrid(action.grid_id)
+    else if (action.type === 'set_layers') setVisibleCategories(action.categories)
+    else if (action.type === 'set_status_layers') applyStatusLayers(action.layers)
+    else if (action.type === 'show_address_candidates') { requireLocation(); candidates.value = action.items.map(item => ({ ...item, source: 'workspace', provider: 'workspace' })) }
+    else if (action.type === 'select_address_candidate') { restoreCenter({ ...action.candidate, source: 'workspace', selectionMethod: action.candidate.selection_method || 'address' }); candidates.value = [] }
+    else if (action.type === 'task_cancelled') currentTask.value = turn.task || await getAnalysisTask(action.task_id)
+    else if (action.type === 'show_history') { historyItems.value = action.items; historyTotal.value = action.items.length }
+    else if (action.type === 'download_report') await downloadReportExport(action.report_id, action.format)
+    else if (action.type === 'analysis_started' && !loading.value) void followTask(turn.task || await getAnalysisTask(action.task_id))
+  }
+  if (turn.optimization?.combination) combinationResult.value = turn.optimization.combination
+  if (turn.sampling_experiment?.layers) showSamplingLayers(turn.sampling_experiment.layers)
+  if (turn.governance_state || turn.semantic_review || turn.observation) governanceRevision.value += 1
+}
+
+function focusConversationGrid(gridId: string | null) {
+  const area = report.value?.service_areas.features.find(item => item.properties.grid_id === gridId)
+  if (area) {
+    setVisibleCategories([...visibleCategories.value, area.properties.category])
+    if (area.properties.kind === 'normal') showNormal.value = true
+    else if (area.properties.kind === 'sparse') showSparse.value = true
+    else if (area.properties.kind === 'critical') showCritical.value = true
+  }
+  handleServiceAreaSelect(area ? gridId : null)
+}
+
+const reportMatchesParameters = computed(() => {
+  const selected = report.value
+  return Boolean(selected && minutesValid.value && !locationPending.value && center.value.supportStatus === 'supported'
+    && selected.center.lng === center.value.lng && selected.center.lat === center.value.lat
+    && selected.parameters.minutes === minutes.value && selected.parameters.mode === mode.value
+    && selected.parameters.categories.length === analysisCategories.value.length
+    && selected.parameters.categories.every(category => analysisCategories.value.includes(category)))
+})
+const {
+  turns: conversationTurns,
+  ready: conversationReady,
+  busy: conversationBusy,
+  restoring: conversationRestoring,
+  error: conversationError,
+  retryRequest: conversationRetryRequest,
+  pending: conversationPending,
+  initialize: initializeConversation,
+  scheduleSync: scheduleConversationSync,
+  send: sendConversation,
+  confirm: confirmConversation,
+  retry: retryConversation,
+  dispose: disposeConversation,
+} = useConversation({ getState: getWorkspaceState, applyState: restoreWorkspaceState, applyTurn: applyConversationTurn })
+const conversationContext = computed(() => `${locationPending.value ? '位置待确认' : center.value.address} · ${minutesValid.value ? `${minutes.value}分钟` : '时间待确认'} · ${analysisCategories.value.length}类${planningGridId.value && reportMatchesParameters.value ? ` · ${planningGridId.value}` : ''}${reportMatchesParameters.value ? ' · 当前报告' : report.value ? ' · 参数已变更，待重新体检' : ''}`)
+watch(getWorkspaceState, scheduleConversationSync, { deep: true })
+watch(() => report.value?.report_id, id => { if (id) void loadHistory() })
 
 const accessibilityStatus = computed(() => {
   if (locationError.value) return `分析中心点需要处理：${locationError.value}`
@@ -428,7 +588,7 @@ function handleWorkspaceKeydown(event: KeyboardEvent) {
   }
 }
 
-async function fillIntentParameters(intent: AnalysisIntent) {
+async function fillIntentParameters(intent: AnalysisIntent, resolveAddress = true) {
   if (loading.value || resolving.value || searching.value) return
   minutesValid.value = intent.draft.minutes !== null
   if (intent.draft.minutes) minutes.value = intent.draft.minutes
@@ -441,11 +601,12 @@ async function fillIntentParameters(intent: AnalysisIntent) {
   }
   if (!intent.draft.address.trim()) { requireLocation(); return }
   updateAddressQuery(intent.draft.address)
-  await searchCandidates()
+  if (resolveAddress) await searchCandidates()
+  else requireLocation()
 }
 
 async function startAnalysis() {
-  if (loading.value || resolving.value || searching.value || centerPicking.value || inputBlocked.value || locationPending.value || !minutesValid.value || locationError.value || center.value.supportStatus !== 'supported') return
+  if (conversationBusy.value || loading.value || resolving.value || searching.value || centerPicking.value || inputBlocked.value || locationPending.value || !minutesValid.value || locationError.value || center.value.supportStatus !== 'supported') return
   selectedRecommendationId.value = null
   const completed = await runAnalysis()
   if (completed && report.value) {
@@ -455,7 +616,7 @@ async function startAnalysis() {
 }
 
 function prepareSupplement() {
-  if (!report.value || loading.value || resolving.value || searching.value || intentBusy.value) return
+  if (conversationBusy.value || !report.value || loading.value || resolving.value || searching.value || intentBusy.value) return
   const original = report.value
   restoreCenter({ ...center.value, ...original.center, source: original.source, selectionMethod: original.center.selection_method || original.parameters.center_selection_method || 'default' })
   minutes.value = original.parameters.minutes
@@ -467,7 +628,7 @@ function prepareSupplement() {
 }
 
 function beginCenterPick() {
-  if (loading.value || resolving.value || searching.value || intentBusy.value) return
+  if (conversationBusy.value || loading.value || resolving.value || searching.value || intentBusy.value) return
   clearSimulation()
   centerPicking.value = true
   if (activeMobilePanel.value) closeMobilePanel(activeMobilePanel.value)
@@ -484,7 +645,7 @@ function cancelCenterPick() {
 }
 
 async function handleCenterPick(lng: number, lat: number) {
-  if (loading.value || resolving.value || searching.value || intentBusy.value) return
+  if (conversationBusy.value || loading.value || resolving.value || searching.value || intentBusy.value) return
   const picking = centerPicking.value
   await selectMapPoint(lng, lat)
   centerPicking.value = false
@@ -492,11 +653,13 @@ async function handleCenterPick(lng: number, lat: number) {
 }
 
 async function handleOpenHistory(reportId: string) {
+  if (conversationBusy.value || loading.value) return
   const selected = await openHistory(reportId)
   if (selected) applySelectedReport(selected)
 }
 
 async function handleRerunHistory(reportId: string) {
+  if (conversationBusy.value || loading.value) return
   loading.value = true
   progress.value = 12
   try {
@@ -593,6 +756,7 @@ function handleServiceAreaSelect(serviceAreaId: string | null) {
 }
 
 onMounted(() => {
+  void initializeConversation()
   loadHistory()
   loadMapStatus()
   if (!window.localStorage.getItem(FIRST_USE_GUIDE_KEY)) {
@@ -600,5 +764,5 @@ onMounted(() => {
   }
   window.addEventListener('keydown', handleWorkspaceKeydown)
 })
-onBeforeUnmount(() => window.removeEventListener('keydown', handleWorkspaceKeydown))
+onBeforeUnmount(() => { window.removeEventListener('keydown', handleWorkspaceKeydown); disposeConversation() })
 </script>
