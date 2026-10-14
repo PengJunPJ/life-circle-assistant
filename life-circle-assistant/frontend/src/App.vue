@@ -62,7 +62,6 @@
         @fill-intent="fillIntentParameters"
         @refresh-map-status="refreshMapStatus"
         @probe-map-api="probeConfiguredMapApi"
-        @toggle-collapse="collapsedControls = !collapsedControls"
         @close-mobile="closeMobilePanel('controls')"
       />
       <MapStage
@@ -80,8 +79,6 @@
         :interaction-blocked="conversationBusy"
         :progress="progress"
         :progress-label="progressLabel"
-        :all-expanded="activeWorkbench === 'controls'"
-        :all-collapsed="activeWorkbench === null"
         :focus-recommendation-id="selectedRecommendationId"
         :focus-grid-id="planningGridId"
         :simulation="simulationResult"
@@ -98,8 +95,6 @@
         @prepare-supplement="prepareSupplement"
         @cancel-center-pick="cancelCenterPick"
         @service-area-select="!conversationBusy && handleServiceAreaSelect($event)"
-        @expand-all="expandAllPanels"
-        @collapse-all="collapseAllPanels"
       />
       <ReportPanel
         id="analysis-report-panel"
@@ -144,7 +139,6 @@
         @new-report="applySelectedReport"
         @sampling="showSamplingLayers"
         @combination="combinationResult = $event"
-        @toggle-collapse="toggleReportCollapse"
         @close-mobile="closeMobilePanel('report')"
       />
       <ConversationWorkspace
@@ -173,20 +167,6 @@
         @combination="combinationResult = $event"
         @resize="conversationHeight = $event"
       />
-      <button
-        class="panel-rail left"
-        :class="{ show: collapsedControls }"
-        type="button"
-        aria-label="展开分析参数面板"
-        @click="collapsedControls = false"
-      ><span class="rail-dot" aria-hidden="true"></span><b>分析参数</b></button>
-      <button
-        class="panel-rail right"
-        :class="{ show: collapsedReport }"
-        type="button"
-        aria-label="展开体检报告面板"
-        @click="collapsedReport = false"
-      ><span class="rail-dot" aria-hidden="true"></span><b>体检报告</b></button>
       <button
         v-if="activeMobilePanel"
         class="mobile-panel-backdrop"
@@ -573,22 +553,10 @@ function toggleWorkbench(panel: 'controls' | 'report') {
   activeWorkbench.value = activeWorkbench.value === panel ? null : panel
 }
 
-function toggleReportCollapse() {
-  if (activeWorkbench.value === 'report') activeWorkbench.value = null
-}
-
 function keepWorkspaceAtOrigin() {
   if (!workspaceRef.value) return
   workspaceRef.value.scrollTop = 0
   workspaceRef.value.scrollLeft = 0
-}
-
-function expandAllPanels() {
-  activeWorkbench.value = 'controls'
-}
-
-function collapseAllPanels() {
-  activeWorkbench.value = null
 }
 
 function handleWorkspaceKeydown(event: KeyboardEvent) {

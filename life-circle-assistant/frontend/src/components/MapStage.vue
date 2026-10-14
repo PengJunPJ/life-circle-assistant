@@ -11,10 +11,6 @@
       <div class="map-toolbar-actions">
         <span v-if="routePreview" class="route-chip" role="status">步行路线 · {{ routePreview.poi.name }} · {{ Math.round(routePreview.route.duration_s / 60) }} 分钟</span>
         <button v-if="routePreview" class="icon-btn" type="button" title="清除步行路线" aria-label="清除步行路线" @click="setRoutePreview(null)"><Close /></button>
-        <div class="panel-bulk-toggle" role="group" aria-label="工作台快捷切换">
-          <button type="button" :disabled="allExpanded" title="打开智能体检工作台" aria-label="打开智能体检工作台" @click="emit('expand-all')"><Expand /></button>
-          <button type="button" :disabled="allCollapsed" title="关闭当前工作台" aria-label="关闭当前工作台" @click="emit('collapse-all')"><Fold /></button>
-        </div>
         <button class="mobile-legend-toggle" type="button" aria-controls="mobile-map-legend" :aria-expanded="showMobileLegend" @click="showMobileLegend = !showMobileLegend">图例</button>
         <MapLayerControls :report="report" :visible-categories="visibleCategories" :loading="loading || interactionBlocked" :show-normal="showNormal" :show-sparse="showSparse" :show-critical="showCritical" :status-layers="statusLayers" @update:status-layers="emit('update:statusLayers', $event)" @update:visible-categories="emit('update:visibleCategories', $event)" @update:show-normal="emit('update:showNormal', $event)" @update:show-sparse="emit('update:showSparse', $event)" @update:show-critical="emit('update:showCritical', $event)" @prepare-supplement="emit('prepare-supplement')" />
       </div>
@@ -71,7 +67,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
-import { Close, Expand, Fold, Location } from '@element-plus/icons-vue'
+import { Close, Location } from '@element-plus/icons-vue'
 import ElMessage from 'element-plus/es/components/message/index'
 import { ALL_CATEGORIES, FACILITY_LABELS, categoryColor, categoryShort } from '../constants/facilities'
 import { useMapRenderer } from '../composables/useMapRenderer'
@@ -85,8 +81,8 @@ import type { Report } from '../types/report'
 import type { SimulationResult } from '../types/simulation'
 import type { Combination, SamplingLayers, StatusLayers } from '../types/completion'
 
-const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; statusLayers?: StatusLayers; samplingLayers?: SamplingLayers | null; combination?: Combination | null; loading: boolean; interactionBlocked?: boolean; progress: number; progressLabel?: string; allExpanded?: boolean; allCollapsed?: boolean; focusRecommendationId: string | null; focusGridId?: string | null; simulation: SimulationResult | null; simulationPicking: boolean; centerPicking?: boolean }>()
-const emit = defineEmits<{ 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'expand-all': []; 'collapse-all': []; 'update:visibleCategories': [categories: string[]]; 'update:showNormal': [value: boolean]; 'update:showSparse': [value: boolean]; 'update:showCritical': [value: boolean]; 'update:statusLayers': [layers: Partial<StatusLayers>]; 'prepare-supplement': []; 'cancel-center-pick': [] }>()
+const props = defineProps<{ report: Report | null; analysisCenter: AnalysisCenter; minutes: 10 | 15 | 20; visibleCategories: string[]; showNormal: boolean; showSparse: boolean; showCritical: boolean; statusLayers?: StatusLayers; samplingLayers?: SamplingLayers | null; combination?: Combination | null; loading: boolean; interactionBlocked?: boolean; progress: number; progressLabel?: string; focusRecommendationId: string | null; focusGridId?: string | null; simulation: SimulationResult | null; simulationPicking: boolean; centerPicking?: boolean }>()
+const emit = defineEmits<{ 'map-ready': [value: boolean]; 'select-center': [lng: number, lat: number]; 'select-simulation-location': [lng: number, lat: number]; 'service-area-select': [serviceAreaId: string | null]; 'update:visibleCategories': [categories: string[]]; 'update:showNormal': [value: boolean]; 'update:showSparse': [value: boolean]; 'update:showCritical': [value: boolean]; 'update:statusLayers': [layers: Partial<StatusLayers>]; 'prepare-supplement': []; 'cancel-center-pick': [] }>()
 const report = toRef(props, 'report')
 const analysisCenter = toRef(props, 'analysisCenter')
 const minutes = toRef(props, 'minutes')

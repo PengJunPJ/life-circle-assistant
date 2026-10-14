@@ -45,13 +45,15 @@ describe('响应式工作台布局契约', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
   })
 
-  it('桌面视口为全屏地图 + 悬浮可折叠参数/报告面板', () => {
+  it('桌面视口为全屏地图 + 顶部按钮控制的悬浮参数/报告面板', () => {
     expect(styles).toMatch(/\.workspace\s*\{[^}]*position:\s*relative;[^}]*overflow:\s*hidden;/s)
     expect(styles).toMatch(/\.map-stage\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;/s)
     expect(styles).toMatch(/\.control-panel\s*\{[^}]*position:\s*absolute;[^}]*width:\s*296px;/s)
     expect(styles).toMatch(/\.report-panel\s*\{[^}]*position:\s*absolute;[^}]*width:\s*322px;/s)
     expect(styles).toContain('.control-panel.collapsed { transform: translateX(calc(-100% - 24px)); }')
     expect(styles).toContain('.report-panel.collapsed { transform: translateX(calc(100% + 24px)); }')
+    expect(styles).not.toContain('.panel-rail')
+    expect(styles).not.toContain('.panel-bulk-toggle')
     expect(styles).toContain('.mobile-panel-heading, .mobile-workspace-actions, .mobile-panel-backdrop, .mobile-legend-toggle, .mobile-map-legend { display: none; }')
   })
 
@@ -107,11 +109,6 @@ describe('响应式工作台布局契约', () => {
       const wrapper = shallowMount(App, { global: { stubs: { ReportPanel: ReportPanelStub } } })
       await flushPromises()
       const report = wrapper.getComponent({ name: 'ReportPanel' })
-      if (!mobile) {
-        report.vm.$emit('toggle-collapse')
-        await nextTick()
-        expect(wrapper.get('.workspace').classes()).toContain('right-collapsed')
-      }
       const recommendation = fixture.recommendations[0]!
       const gridId = recommendation.target_region_ids[0]!
       const map = wrapper.getComponent(MapStage)
@@ -120,7 +117,6 @@ describe('响应式工作台布局契约', () => {
       expect(map.props('focusRecommendationId')).toBe(recommendation.id)
       expect(report.props('planningGridId')).toBe(gridId)
       expect(wrapper.find('.mobile-panel-backdrop').exists()).toBe(false)
-      if (!mobile) expect(wrapper.get('.workspace').classes()).toContain('right-collapsed')
       map.vm.$emit('service-area-select', null)
       await nextTick()
       expect(map.props('focusRecommendationId')).toBeNull()

@@ -2,7 +2,6 @@
   <aside class="control-panel" aria-label="智能体检工作台">
     <header class="controls-heading">
       <h1>智能体检工作台</h1>
-      <button class="panel-collapse-btn controls-collapse" type="button" aria-label="收起分析参数面板" @click="emit('toggle-collapse')"><ArrowLeft /></button>
       <button class="mobile-panel-close" type="button" aria-label="关闭分析参数面板并返回地图" @click="emit('close-mobile')">×</button>
     </header>
     <div class="controls-scroll">
@@ -68,7 +67,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ArrowLeft, Location, Refresh, Search } from '@element-plus/icons-vue'
+import { Location, Refresh, Search } from '@element-plus/icons-vue'
 import NaturalLanguageAnalysis from './NaturalLanguageAnalysis.vue'
 import { ALL_CATEGORIES, FACILITY_ICONS, FACILITY_LABELS, categoryColor } from '../constants/facilities'
 import type { AnalysisIntent, IntentDraft } from '../types/analysisIntent'
@@ -88,7 +87,7 @@ const emit = defineEmits<{
   'update:mode': [value: AnalysisMode]; 'update:minutes': [value: AnalysisMinutes]; 'update:analysisCategories': [value: string[]]
   'update:inputBlocked': [value: boolean]; 'update:intentBusy': [value: boolean]
   'search-address': []; 'select-candidate': [value: LocationCandidate]; 'apply-coordinates': []; 'pick-center': []
-  run: []; 'fill-intent': [intent: AnalysisIntent]; 'refresh-map-status': []; 'probe-map-api': []; 'close-mobile': []; 'toggle-collapse': []
+  run: []; 'fill-intent': [intent: AnalysisIntent]; 'refresh-map-status': []; 'probe-map-api': []; 'close-mobile': []
 }>()
 const entry = ref<'manual' | 'natural'>('manual')
 const intentBlocked = ref(false)

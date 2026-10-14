@@ -4,9 +4,8 @@
       <div><div class="eyebrow">社区体检报告</div><strong>{{ report ? '查看体检结果' : '等待分析结果' }}</strong></div>
       <button class="mobile-panel-close" type="button" aria-label="关闭体检报告面板并返回地图" @click="emit('close-mobile')">×</button>
     </div>
-    <div class="report-heading clickable" role="presentation" @click="toggleCollapseIfDesktop">
+    <div class="report-heading">
       <div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div>
-      <button class="panel-collapse-btn" type="button" aria-label="收起或展开体检报告面板" @click.stop="toggleCollapseIfDesktop"><ArrowRight /></button>
     </div>
     <nav class="report-actions" aria-label="报告工具">
       <button type="button" :aria-pressed="auxiliary === 'history'" @click="toggleAuxiliary('history')"><Clock />历史 <small>{{ historyTotal }}</small></button>
@@ -166,7 +165,6 @@ const emit = defineEmits<{
   'run-simulation': []
   'clear-simulation': []
   'close-mobile': []
-  'toggle-collapse': []
   'assistant-simulation': [result: SimulationResult]
   'new-report': [report: Report]
   sampling: [layers: SamplingLayers]
@@ -217,10 +215,6 @@ function formatDuration(value: number) { return value < 1_000 ? `${value} ms` : 
 function formatRate(value: number) { return `${Math.round(value * 100)}%` }
 const gapKindLabel = (kind: string) => ({ scarcity: '1公里设施稀缺', walking_timeout: '已核验步行超时', critical: '重点盲区' })[kind] || kind
 const connectivityLabel = (status: string) => ({ geometric_with_verified_barrier_constraints: '网格邻接已应用核验障碍限制，未核验通路仍待核验', geometric_only_unverified_walk_connectivity: '仅网格邻接，步行通路未核验' })[status] || status
-function toggleCollapseIfDesktop() {
-  if (window.matchMedia('(max-width: 820px)').matches) return
-  emit('toggle-collapse')
-}
 function resetScroll() { if (scrollRef.value) scrollRef.value.scrollTop = 0 }
 function selectTab(tab: ReportTab) { activeTab.value = tab; auxiliary.value = null; resetScroll() }
 function toggleAuxiliary(view: Auxiliary) { auxiliary.value = auxiliary.value === view ? null : view; resetScroll() }

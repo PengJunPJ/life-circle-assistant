@@ -90,7 +90,6 @@ describe('报告信息分层与联动', () => {
     expect(document.activeElement).toBe(details.element)
     expect(HTMLElement.prototype.scrollIntoView).toHaveBeenLastCalledWith({ block: 'start' })
     expect(wrapper.get('#report-page-overview').isVisible()).toBe(false)
-    expect(wrapper.emitted('toggle-collapse')).toBeUndefined()
     if (status === 'complete') {
       expect(details.get('.multisource-validation-metrics').text()).toBe('12匹配2待复核1冲突3未匹配')
     } else {
@@ -178,7 +177,6 @@ describe('报告信息分层与联动', () => {
     await wrapper.get('#report-tab-overview').trigger('keydown', { key: 'ArrowRight' })
     expect(wrapper.get('#report-tab-facilities').attributes('aria-selected')).toBe('true')
     await wrapper.get('.report-actions button:first-child').trigger('click')
-    expect(wrapper.emitted('toggle-collapse')).toBeUndefined()
     wrapper.unmount()
   })
 })
