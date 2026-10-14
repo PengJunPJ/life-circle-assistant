@@ -36,12 +36,11 @@
       <button type="submit" :disabled="!ready || busy || !message.trim()">{{ busy ? '处理中' : '发送' }}</button>
     </form>
   </section>
-  <button v-else ref="launcherElement" class="conversation-launcher" type="button" aria-label="显示AI规划助手" title="显示AI规划助手" @click="showAssistant"><Cpu aria-hidden="true" /></button>
+  <button v-else ref="launcherElement" class="conversation-launcher" type="button" aria-label="显示AI规划助手" title="显示AI规划助手" @click="showAssistant"><img class="conversation-launcher-icon" src="/ai-planning-assistant.png" alt="" aria-hidden="true" draggable="false" /></button>
 </template>
 
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Cpu } from '@element-plus/icons-vue'
 import type { ConversationTurn } from '../types/workspace'
 import type { AnalysisTask } from '../types/report'
 import type { SimulationResult } from '../types/simulation'
@@ -213,9 +212,12 @@ watch(() => props.turns.length, async () => {
 .conversation-composer { display: flex; align-items: stretch; gap: 8px; padding: 6px 10px 10px; }.conversation-composer textarea { min-width: 0; flex: 1; resize: vertical; max-height: 120px; min-height: 42px; padding: 8px; border: 1px solid #cbdcd3; border-radius: 6px; background: #fff; color: inherit; font: 11px/1.6 inherit; }.conversation-composer textarea:focus-visible { outline: 2px solid #2e8f80; outline-offset: 1px; }.conversation-composer > button { flex: 0 0 48px; border-radius: 6px; background: #183d45; color: #fff; font-size: 11px; }.conversation-workspace button:disabled { opacity: .5; cursor: default; }
 html[data-theme="dark"] .conversation-workspace { border-color: rgba(126,214,199,.3); border-top-color: #2ee6c5; background: rgba(24,40,56,.98); color: #cfe7e1; }html[data-theme="dark"] .conversation-ai-mark { background: #2ee6c5; color: #04211c; }html[data-theme="dark"] .conversation-heading small { color: #9db8b8; }html[data-theme="dark"] .conversation-state { background: rgba(46,230,197,.14); color: #7ff0da; }html[data-theme="dark"] .conversation-toggle { color: #9db8b8; }html[data-theme="dark"] .conversation-quick-actions button { border-color: rgba(126,214,199,.28); background: rgba(46,230,197,.08); color: #a4e6d6; }html[data-theme="dark"] .conversation-quick-actions button:hover:not(:disabled) { background: rgba(46,230,197,.16); }html[data-theme="dark"] .conversation-context, html[data-theme="dark"] .conversation-empty, html[data-theme="dark"] .conversation-user { color: #9db8b8; }html[data-theme="dark"] .conversation-answer { color: #e1f0eb; }html[data-theme="dark"] .conversation-turn { border-color: rgba(126,214,199,.18); }html[data-theme="dark"] .conversation-composer textarea { border-color: rgba(126,214,199,.24); background: #101d2a; }html[data-theme="dark"] .conversation-composer > button { background: #2ee6c5; color: #04211c; }html[data-theme="dark"] .conversation-confirmation { background: #3a3527; }html[data-theme="dark"] .conversation-error { color: #ffcf8a; }
 html[data-theme="dark"] .conversation-hide { color: #9db8b8; }html[data-theme="dark"] .conversation-hide:hover { background: rgba(46,230,197,.12); color: #e1f0eb; }
-.conversation-launcher { position: absolute; z-index: 7; right: 16px; bottom: 20px; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid #a9cfc0; border-radius: 50%; background: #183d45; color: #d8f5e8; box-shadow: 0 10px 24px rgba(24,52,49,.24); }
-.conversation-launcher:hover { background: #2f8f80; }
-.conversation-launcher svg { width: 23px; height: 23px; }
-html[data-theme="dark"] .conversation-launcher { border-color: rgba(126,214,199,.35); background: #2ee6c5; color: #04211c; box-shadow: 0 10px 28px rgba(0,0,0,.4); }html[data-theme="dark"] .conversation-launcher:hover { background: #7ff0da; }
-@media (max-width: 820px) { .conversation-workspace { left: 8px; right: 8px; bottom: 76px; width: auto; z-index: 3; }.conversation-launcher { right: 12px; bottom: 76px; z-index: 4; }.conversation-heading { padding-top: 8px; }.conversation-transcript { max-height: min(240px, 30dvh); }.conversation-composer textarea { font-size: 16px; line-height: 1.35; min-height: 45px; }.conversation-context { max-width: 100%; }.conversation-confirmation small { min-width: 150px; } }
+.conversation-launcher { --conversation-launcher-lift: 42px; position: absolute; z-index: 7; right: 16px; bottom: calc(20px + var(--conversation-launcher-lift)); width: 48px; height: 48px; display: grid; place-items: center; padding: 0; overflow: visible; border: 0; border-radius: 0; background: transparent; color: inherit; box-shadow: none; }
+.conversation-launcher:hover { background: transparent; }
+.conversation-launcher-icon { width: 42px; height: 42px; object-fit: contain; pointer-events: none; animation: assistant-breathe 3.4s ease-in-out infinite; }
+.conversation-launcher:hover .conversation-launcher-icon { filter: drop-shadow(0 3px 5px rgba(40, 178, 196, .22)); }
+html[data-theme="dark"] .conversation-launcher { background: transparent; color: inherit; box-shadow: none; }html[data-theme="dark"] .conversation-launcher:hover { background: transparent; }
+@keyframes assistant-breathe { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.035); } }
+@media (prefers-reduced-motion: reduce) { .conversation-launcher-icon { animation: none; } }
+@media (max-width: 820px) { .conversation-workspace { left: 8px; right: 8px; bottom: 76px; width: auto; z-index: 3; }.conversation-launcher { right: 12px; bottom: calc(76px + var(--conversation-launcher-lift)); z-index: 4; }.conversation-heading { padding-top: 8px; }.conversation-transcript { max-height: min(240px, 30dvh); }.conversation-composer textarea { font-size: 16px; line-height: 1.35; min-height: 45px; }.conversation-context { max-width: 100%; }.conversation-confirmation small { min-width: 150px; } }
 </style>

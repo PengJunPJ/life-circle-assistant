@@ -53,6 +53,8 @@ describe('地图上的对话入口', () => {
     await wrapper.get('.conversation-hide').trigger('click')
     expect(wrapper.find('.conversation-workspace').exists()).toBe(false)
     expect(wrapper.get('.conversation-launcher').attributes('aria-label')).toBe('显示AI规划助手')
+    expect(wrapper.get('.conversation-launcher-icon').attributes('src')).toBe('/ai-planning-assistant.png')
+    expect(wrapper.get('.conversation-launcher-icon').attributes('alt')).toBe('')
     expect(wrapper.emitted('resize')).toContainEqual([0])
     await wrapper.get('.conversation-launcher').trigger('click')
     expect(wrapper.find('.conversation-workspace').exists()).toBe(true)
