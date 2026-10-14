@@ -7,12 +7,14 @@
       :map-status-available="Boolean(mapStatus)"
       :real-api-configured="Boolean(mapStatus?.real_api_configured)"
       :real-api-verified="Boolean(mapProbeResult?.verified)"
+      :active-workbench="activeWorkbench"
       @update:theme="applyTheme"
       @open-guide="openFirstUseGuide"
+      @toggle-workbench="toggleWorkbench"
     />
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ accessibilityStatus }}</p>
     <p v-if="analysisError" class="sr-only" role="alert">分析失败：{{ analysisError }}</p>
-    <section ref="workspaceRef" class="workspace has-conversation" :style="{ '--conversation-height': `${conversationHeight}px` }" :class="{ 'left-collapsed': collapsedControls, 'right-collapsed': collapsedReport }">
+    <section ref="workspaceRef" class="workspace has-conversation" :style="{ '--conversation-height': `${conversationHeight}px` }" :class="{ 'left-collapsed': collapsedControls, 'right-collapsed': collapsedReport, 'report-active': activeWorkbench === 'report' }">
       <AnalysisControls
         id="analysis-controls-panel"
         :class="{ 'mobile-open': activeMobilePanel === 'controls', collapsed: collapsedControls }"
@@ -78,8 +80,8 @@
         :interaction-blocked="conversationBusy"
         :progress="progress"
         :progress-label="progressLabel"
-        :all-expanded="!collapsedControls && !collapsedReport"
-        :all-collapsed="collapsedControls && collapsedReport"
+        :all-expanded="activeWorkbench === 'controls'"
+        :all-collapsed="activeWorkbench === null"
         :focus-recommendation-id="selectedRecommendationId"
         :focus-grid-id="planningGridId"
         :simulation="simulationResult"
@@ -142,7 +144,7 @@
         @new-report="applySelectedReport"
         @sampling="showSamplingLayers"
         @combination="combinationResult = $event"
-        @toggle-collapse="collapsedReport = !collapsedReport"
+        @toggle-collapse="toggleReportCollapse"
         @close-mobile="closeMobilePanel('report')"
       />
       <ConversationWorkspace
@@ -256,9 +258,17 @@ const statusLayers = ref<StatusLayers>({ ...DEFAULT_STATUS_LAYERS })
 const samplingLayers = ref<SamplingLayers | null>(null)
 const combinationResult = ref<Combination | null>(null)
 const governanceRevision = ref(0)
+type ActiveWorkbench = 'controls' | 'report' | null
+const activeWorkbench = ref<ActiveWorkbench>('controls')
+const collapsedControls = computed({
+  get: () => activeWorkbench.value !== 'controls',
+  set: (collapsed: boolean) => { if (collapsed) { if (activeWorkbench.value === 'controls') activeWorkbench.value = null } else activeWorkbench.value = 'controls' },
+})
+const collapsedReport = computed({
+  get: () => activeWorkbench.value !== 'report',
+  set: (collapsed: boolean) => { if (collapsed) { if (activeWorkbench.value === 'report') activeWorkbench.value = null } else activeWorkbench.value = 'report' },
+})
 const activeMobilePanel = ref<'controls' | 'report' | null>(null)
-const collapsedControls = ref(false)
-const collapsedReport = ref(false)
 const conversationHeight = ref(130)
 const THEME_KEY = 'life-circle:theme:v1'
 const theme = ref<'dark' | 'light'>(window.localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark')
@@ -559,6 +569,14 @@ function closeMobilePanel(panel: 'controls' | 'report') {
   })
 }
 
+function toggleWorkbench(panel: 'controls' | 'report') {
+  activeWorkbench.value = activeWorkbench.value === panel ? null : panel
+}
+
+function toggleReportCollapse() {
+  if (activeWorkbench.value === 'report') activeWorkbench.value = null
+}
+
 function keepWorkspaceAtOrigin() {
   if (!workspaceRef.value) return
   workspaceRef.value.scrollTop = 0
@@ -566,13 +584,11 @@ function keepWorkspaceAtOrigin() {
 }
 
 function expandAllPanels() {
-  collapsedControls.value = false
-  collapsedReport.value = false
+  activeWorkbench.value = 'controls'
 }
 
 function collapseAllPanels() {
-  collapsedControls.value = true
-  collapsedReport.value = true
+  activeWorkbench.value = null
 }
 
 function handleWorkspaceKeydown(event: KeyboardEvent) {

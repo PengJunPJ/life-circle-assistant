@@ -11,9 +11,9 @@
       <div class="map-toolbar-actions">
         <span v-if="routePreview" class="route-chip" role="status">步行路线 · {{ routePreview.poi.name }} · {{ Math.round(routePreview.route.duration_s / 60) }} 分钟</span>
         <button v-if="routePreview" class="icon-btn" type="button" title="清除步行路线" aria-label="清除步行路线" @click="setRoutePreview(null)"><Close /></button>
-        <div class="panel-bulk-toggle" role="group" aria-label="两侧面板一键展开或收起">
-          <button type="button" :disabled="allExpanded" title="一键展开两侧面板" aria-label="一键展开两侧面板" @click="emit('expand-all')"><Expand /></button>
-          <button type="button" :disabled="allCollapsed" title="一键收起两侧面板" aria-label="一键收起两侧面板" @click="emit('collapse-all')"><Fold /></button>
+        <div class="panel-bulk-toggle" role="group" aria-label="工作台快捷切换">
+          <button type="button" :disabled="allExpanded" title="打开智能体检工作台" aria-label="打开智能体检工作台" @click="emit('expand-all')"><Expand /></button>
+          <button type="button" :disabled="allCollapsed" title="关闭当前工作台" aria-label="关闭当前工作台" @click="emit('collapse-all')"><Fold /></button>
         </div>
         <button class="mobile-legend-toggle" type="button" aria-controls="mobile-map-legend" :aria-expanded="showMobileLegend" @click="showMobileLegend = !showMobileLegend">图例</button>
         <MapLayerControls :report="report" :visible-categories="visibleCategories" :loading="loading || interactionBlocked" :show-normal="showNormal" :show-sparse="showSparse" :show-critical="showCritical" :status-layers="statusLayers" @update:status-layers="emit('update:statusLayers', $event)" @update:visible-categories="emit('update:visibleCategories', $event)" @update:show-normal="emit('update:showNormal', $event)" @update:show-sparse="emit('update:showSparse', $event)" @update:show-critical="emit('update:showCritical', $event)" @prepare-supplement="emit('prepare-supplement')" />

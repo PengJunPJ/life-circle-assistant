@@ -6,6 +6,15 @@ import type { ConversationTurn } from '../types/workspace'
 const props = { context: '测试中心 · 15分钟 · 1类', turns: [] as ConversationTurn[], ready: true, busy: false, restoring: false, error: '', canRetry: false, pending: null, task: null, analyzing: false, progress: 0, progressLabel: '', cancelling: false }
 
 describe('地图上的对话入口', () => {
+  it('快捷 AI 意图会复用对话发送链路并展开会话记录', async () => {
+    const wrapper = mount(ConversationWorkspace, { props })
+    const action = wrapper.findAll('.conversation-quick-actions button').find(button => button.text() === '找步行盲区')
+    expect(action).toBeDefined()
+    await action!.trigger('click')
+    expect(wrapper.emitted('send')).toEqual([['找出当前15分钟步行盲区']])
+    expect(wrapper.get('.conversation-heading button').attributes('aria-expanded')).toBe('true')
+  })
+
   it('直接输入可发送，中文输入法确认与Shift Enter均不会误发', async () => {
     const wrapper = mount(ConversationWorkspace, { props })
     const input = wrapper.get('textarea')

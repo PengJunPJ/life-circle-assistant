@@ -1,8 +1,11 @@
 <template>
   <section ref="workspaceElement" class="conversation-workspace" aria-label="对话工作台">
     <header class="conversation-heading">
-      <button type="button" :aria-expanded="expanded" aria-controls="conversation-transcript" @click="expanded = !expanded"><span aria-hidden="true">◈</span><strong>对话工作台</strong><small>{{ restoring ? '恢复中' : ready ? '已保存' : '未连接' }}</small><span aria-hidden="true">{{ expanded ? '⌄' : '⌃' }}</span></button>
+      <button type="button" :aria-expanded="expanded" aria-controls="conversation-transcript" @click="expanded = !expanded"><span class="conversation-ai-mark" aria-hidden="true">AI</span><span class="conversation-title"><strong>AI 规划助手</strong><small>自然语言操作地图与报告</small></span><em class="conversation-state">{{ restoring ? '恢复中' : ready ? '已连接' : '未连接' }}</em><span class="conversation-toggle" aria-hidden="true">{{ expanded ? '⌄' : '⌃' }}</span></button>
       <p class="conversation-context" :title="context">{{ context }}</p>
+      <div class="conversation-quick-actions" role="group" aria-label="AI快捷操作">
+        <button v-for="prompt in quickPrompts" :key="prompt.label" type="button" :disabled="!ready || busy" @click="sendQuickPrompt(prompt.message)">{{ prompt.label }}</button>
+      </div>
     </header>
     <div v-show="expanded" id="conversation-transcript" ref="transcript" class="conversation-transcript" role="log" aria-label="会话记录" aria-live="polite" :aria-busy="busy">
       <p v-if="!turns.length" class="conversation-empty">直接说出你想体检的位置，或询问当前地图和报告。</p>
@@ -52,6 +55,11 @@ const message = ref('')
 const expanded = ref(false)
 const workspaceElement = ref<HTMLElement | null>(null)
 const transcript = ref<HTMLElement | null>(null)
+const quickPrompts = [
+  { label: '开始体检', message: '开始体检当前社区' },
+  { label: '找步行盲区', message: '找出当前15分钟步行盲区' },
+  { label: '做组合选址', message: '根据当前盲区做组合设施选址' },
+]
 let resizeObserver: ResizeObserver | undefined
 onMounted(() => {
   if (typeof ResizeObserver === 'undefined' || !workspaceElement.value) return
@@ -68,6 +76,11 @@ function submit() {
   emit('send', message.value.trim())
   expanded.value = true
 }
+function sendQuickPrompt(prompt: string) {
+  if (!props.ready || props.busy) return
+  emit('send', prompt)
+  expanded.value = true
+}
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); submit() }
 }
@@ -79,11 +92,13 @@ watch(() => props.turns.length, async () => {
 </script>
 
 <style scoped>
-.conversation-workspace { position: absolute; z-index: 7; bottom: 20px; left: var(--hud-left); right: var(--hud-right); min-width: 0; max-width: 780px; margin-inline: auto; border: 1px solid #cbdcd3; border-radius: 10px; background: rgba(249,252,248,.98); box-shadow: 0 8px 24px rgba(24,52,49,.18); color: #24483f; }
-.conversation-heading { padding: 10px 12px 6px; }
+.conversation-workspace { position: absolute; z-index: 7; right: 16px; bottom: 20px; width: var(--conversation-width); min-width: 0; max-width: none; margin: 0; border: 1px solid #a9cfc0; border-top: 3px solid #2f8f80; border-radius: 10px; background: rgba(249,252,248,.98); box-shadow: 0 10px 28px rgba(24,52,49,.2); color: #24483f; }
+.conversation-heading { padding: 8px 12px 6px; }
 .conversation-heading > button { display: flex; align-items: center; gap: 7px; width: 100%; padding: 0; background: transparent; color: inherit; text-align: left; }
-.conversation-heading strong { font-size: 12px; }.conversation-heading small { margin-left: auto; font-size: 10px; opacity: .65; }
+.conversation-ai-mark { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 22px; border-radius: 5px; background: #183d45; color: #d8f5e8; font-size: 9px; font-weight: 800; letter-spacing: .05em; }
+.conversation-title { display: grid; gap: 2px; min-width: 0; }.conversation-heading strong { font-size: 12px; }.conversation-heading small { color: #668078; font-size: 9px; }.conversation-state { margin-left: auto; padding: 3px 7px; border-radius: 10px; background: #e4f2eb; color: #367b68; font-size: 9px; font-style: normal; white-space: nowrap; }.conversation-toggle { color: #5e7b72; font-size: 15px; line-height: 1; }
 .conversation-context { margin: 5px 0 0; font-size: 10px; color: #667c73; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.conversation-quick-actions { display: flex; gap: 6px; margin-top: 7px; overflow-x: auto; scrollbar-width: none; }.conversation-quick-actions::-webkit-scrollbar { display: none; }.conversation-quick-actions button { flex: 0 0 auto; min-height: 25px; padding: 3px 8px; border: 1px solid #c6ddd2; border-radius: 13px; background: #f1f8f4; color: #397568; font-size: 9px; white-space: nowrap; }.conversation-quick-actions button:hover:not(:disabled) { border-color: #69a995; background: #e3f2ea; }.conversation-quick-actions button:disabled { cursor: default; opacity: .52; }
 .conversation-transcript { max-height: min(320px, 35dvh); overflow-y: auto; overscroll-behavior: contain; padding: 0 12px; font-size: 11px; line-height: 1.7; scrollbar-width: thin; }
 .conversation-empty { color: #73877f; font-size: 11px; }.conversation-turn { padding: 9px 0; border-top: 1px solid #dce6e0; overflow-wrap: anywhere; }
 .conversation-turn p { margin: 3px 0 7px; white-space: pre-line; }.conversation-turn p > span { display: block; font-size: 9px; opacity: .6; }.conversation-user { color: #637f75; }.conversation-answer { color: #24483f; }
@@ -93,6 +108,6 @@ watch(() => props.turns.length, async () => {
 .conversation-inline-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }.conversation-error { margin: 5px 12px; color: #af5737; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }.conversation-error button { margin-left: 6px; }
 .conversation-task { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 4px 12px; font-size: 10px; }
 .conversation-composer { display: flex; align-items: stretch; gap: 8px; padding: 6px 10px 10px; }.conversation-composer textarea { min-width: 0; flex: 1; resize: vertical; max-height: 120px; min-height: 42px; padding: 8px; border: 1px solid #cbdcd3; border-radius: 6px; background: #fff; color: inherit; font: 11px/1.6 inherit; }.conversation-composer textarea:focus-visible { outline: 2px solid #2e8f80; outline-offset: 1px; }.conversation-composer > button { flex: 0 0 48px; border-radius: 6px; background: #183d45; color: #fff; font-size: 11px; }.conversation-workspace button:disabled { opacity: .5; cursor: default; }
-html[data-theme="dark"] .conversation-workspace { border-color: rgba(126,214,199,.24); background: rgba(24,40,56,.98); color: #cfe7e1; }html[data-theme="dark"] .conversation-context, html[data-theme="dark"] .conversation-empty, html[data-theme="dark"] .conversation-user { color: #9db8b8; }html[data-theme="dark"] .conversation-answer { color: #e1f0eb; }html[data-theme="dark"] .conversation-turn { border-color: rgba(126,214,199,.18); }html[data-theme="dark"] .conversation-composer textarea { border-color: rgba(126,214,199,.24); background: #101d2a; }html[data-theme="dark"] .conversation-composer > button { background: #2ee6c5; color: #04211c; }html[data-theme="dark"] .conversation-confirmation { background: #3a3527; }html[data-theme="dark"] .conversation-error { color: #ffcf8a; }
-@media (max-width: 820px) { .conversation-workspace { left: 8px; right: 8px; bottom: 76px; z-index: 3; }.conversation-heading { padding-top: 8px; }.conversation-transcript { max-height: min(240px, 30dvh); }.conversation-composer textarea { font-size: 16px; line-height: 1.35; min-height: 45px; }.conversation-context { max-width: 100%; }.conversation-confirmation small { min-width: 150px; } }
+html[data-theme="dark"] .conversation-workspace { border-color: rgba(126,214,199,.3); border-top-color: #2ee6c5; background: rgba(24,40,56,.98); color: #cfe7e1; }html[data-theme="dark"] .conversation-ai-mark { background: #2ee6c5; color: #04211c; }html[data-theme="dark"] .conversation-heading small { color: #9db8b8; }html[data-theme="dark"] .conversation-state { background: rgba(46,230,197,.14); color: #7ff0da; }html[data-theme="dark"] .conversation-toggle { color: #9db8b8; }html[data-theme="dark"] .conversation-quick-actions button { border-color: rgba(126,214,199,.28); background: rgba(46,230,197,.08); color: #a4e6d6; }html[data-theme="dark"] .conversation-quick-actions button:hover:not(:disabled) { background: rgba(46,230,197,.16); }html[data-theme="dark"] .conversation-context, html[data-theme="dark"] .conversation-empty, html[data-theme="dark"] .conversation-user { color: #9db8b8; }html[data-theme="dark"] .conversation-answer { color: #e1f0eb; }html[data-theme="dark"] .conversation-turn { border-color: rgba(126,214,199,.18); }html[data-theme="dark"] .conversation-composer textarea { border-color: rgba(126,214,199,.24); background: #101d2a; }html[data-theme="dark"] .conversation-composer > button { background: #2ee6c5; color: #04211c; }html[data-theme="dark"] .conversation-confirmation { background: #3a3527; }html[data-theme="dark"] .conversation-error { color: #ffcf8a; }
+@media (max-width: 820px) { .conversation-workspace { left: 8px; right: 8px; bottom: 76px; width: auto; z-index: 3; }.conversation-heading { padding-top: 8px; }.conversation-transcript { max-height: min(240px, 30dvh); }.conversation-composer textarea { font-size: 16px; line-height: 1.35; min-height: 45px; }.conversation-context { max-width: 100%; }.conversation-confirmation small { min-width: 150px; } }
 </style>

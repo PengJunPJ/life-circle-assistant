@@ -27,6 +27,19 @@ describe('公共参数与显式启动', () => {
     window.localStorage.setItem('life-circle:first-use-guide:v1', 'completed')
   })
   afterEach(() => { vi.unstubAllGlobals() })
+  it('顶部工作台默认打开智能体检，点击当前按钮可关闭并可切换报告', async () => {
+    const wrapper = shallowMount(App)
+    const header = wrapper.getComponent(AppHeader)
+    expect(header.props('activeWorkbench')).toBe('controls')
+    header.vm.$emit('toggle-workbench', 'report')
+    await nextTick()
+    expect(header.props('activeWorkbench')).toBe('report')
+    header.vm.$emit('toggle-workbench', 'report')
+    await nextTick()
+    expect(header.props('activeWorkbench')).toBe(null)
+    wrapper.unmount()
+  })
+
   it('地图就绪与一句话填参均不启动，底部点击后使用修改过的公共参数', async () => {
     const wrapper = shallowMount(App)
     wrapper.getComponent(MapStage).vm.$emit('map-ready', true)
