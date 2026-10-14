@@ -14,7 +14,7 @@ beforeAll(() => {
   HTMLElement.prototype.scrollIntoView = vi.fn()
   window.matchMedia = vi.fn().mockReturnValue({ matches: false })
 })
-function mountPanel(report = structuredClone(fixture)) {
+function mountPanel(report: Report | null = structuredClone(fixture)) {
   return mount(ReportPanel, {
     props: { report, selectedRecommendationId: null, historyItems: [], historyTotal: 3, historyLoading: false, historyLoadingMore: false, historyHasMore: false, historyQuery: '', historyError: '', openingReportId: '', rerunningReportId: '', selectedReportIds: [], comparisonLoading: false, comparisonError: '', simulationCategory: 'school', simulationLocation: null, simulationResult: null, simulationLoading: false, simulationPicking: false, simulationError: '', mobileOpen: false },
     global: { stubs: { ReportCharts: true, AiPlanningAssistant: true, ReportExportMenu: true } },
@@ -22,6 +22,19 @@ function mountPanel(report = structuredClone(fixture)) {
   })
 }
 describe('报告信息分层与联动', () => {
+  it('无报告时历史入口保持可用，说明和导出明确禁用，空状态仍可回到历史', async () => {
+    const wrapper = mountPanel(null)
+    const actions = wrapper.findAll('.report-actions button')
+    expect(actions).toHaveLength(3)
+    expect(actions[0]!.attributes('disabled')).toBeUndefined()
+    expect(actions[1]!.attributes('disabled')).toBeDefined()
+    expect(actions[2]!.attributes('disabled')).toBeDefined()
+    expect(wrapper.get('.empty-report strong').text()).toBe('等待体检结果')
+    await wrapper.get('.empty-report button').trigger('click')
+    expect(wrapper.findComponent(ReportHistory).isVisible()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('人工结算刷新账本摘要，旧金额过时明确披露，切换报告不会串账', async () => {
     const report = structuredClone(fixture)
     report.execution_ledger = { id: 'ledger-1', status: 'completed', budget: {}, usage: { route_pairs: 10 }, versions: {}, cost: { currency: 'CNY', estimated_total: 2, settled_total: null, status: 'estimate_only' } }
