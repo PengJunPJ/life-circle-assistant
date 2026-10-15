@@ -89,14 +89,30 @@
             <dl class="execution-metrics"><div><dt>总耗时</dt><dd>{{ formatDuration(report.execution.total_duration_ms) }}</dd></div><div><dt>地图 API 调用</dt><dd>{{ report.execution.api_calls }}</dd></div><div><dt>缓存命中</dt><dd>{{ report.execution.cache.hits }}（{{ formatRate(report.execution.cache.hit_rate) }}）</dd></div><div><dt>缓存未命中</dt><dd>{{ report.execution.cache.misses }}</dd></div></dl>
             <div class="stage-duration-list" aria-label="主要阶段耗时"><span v-for="stage in stageDurations" :key="stage.code"><b>{{ stage.label }}</b><em>{{ formatDuration(stage.duration_ms) }}</em></span></div>
           </section>
-          <section v-if="executionLedger" class="report-section" aria-label="统一预算与版本账本">
-            <div class="section-title"><span>预算与版本账本</span></div><p class="page-intro">执行编号 {{ executionLedger.id }}</p>
-            <dl class="execution-metrics"><div><dt>输入词元</dt><dd>{{ executionLedger.usage.prompt_tokens ?? '未知' }}</dd></div><div><dt>输出词元</dt><dd>{{ executionLedger.usage.completion_tokens ?? '未知' }}</dd></div><div><dt>真实路线对</dt><dd>{{ executionLedger.usage.route_pairs ?? 0 }}</dd></div><div><dt>估算金额</dt><dd>{{ executionLedger.cost.estimated_total === null ? '价格未知' : `${executionLedger.cost.estimated_total.toFixed(4)} ${executionLedger.cost.currency}` }}</dd></div><div><dt>提供方结算</dt><dd>{{ executionLedger.cost.settlement_stale || executionLedger.cost.status === 'settlement_stale' ? '旧结算已过时，待重新核对' : executionLedger.cost.settled_total ?? '待账单核对' }}</dd></div></dl>
-            <p class="page-intro">{{ executionLedger.cost.disclosure }}</p><details><summary>调用预算和版本</summary><p v-for="(value,key) in executionLedger.budget" :key="key">{{ key }}：{{ value }}</p><p v-for="(value,key) in executionLedger.versions" :key="key">{{ key }}：{{ value }}</p></details>
-            <ExecutionSettlementReview v-if="auxiliary === 'details'" :key="executionLedger.id" :execution-id="executionLedger.id" @ledger="refreshExecutionLedger" />
+          <section v-if="executionLedger" class="report-section execution-ledger" aria-label="统一预算与版本账本">
+            <div class="section-title"><span>预算与版本账本</span></div>
+            <dl class="ledger-identifier"><dt>执行编号</dt><dd>{{ executionLedger.id }}</dd></dl>
+            <dl class="execution-metrics">
+              <div><dt>输入词元</dt><dd>{{ executionLedger.usage.prompt_tokens ?? '未知' }}</dd></div>
+              <div><dt>输出词元</dt><dd>{{ executionLedger.usage.completion_tokens ?? '未知' }}</dd></div>
+              <div><dt>真实路线对</dt><dd>{{ executionLedger.usage.route_pairs ?? 0 }}</dd></div>
+              <div><dt>估算金额</dt><dd>{{ executionLedger.cost.estimated_total === null ? '价格未知' : `${executionLedger.cost.estimated_total.toFixed(4)} ${executionLedger.cost.currency}` }}</dd></div>
+              <div class="ledger-settlement"><dt>提供方结算</dt><dd>{{ executionLedger.cost.settlement_stale || executionLedger.cost.status === 'settlement_stale' ? '旧结算已过时，待重新核对' : executionLedger.cost.settled_total ?? '待账单核对' }}</dd></div>
+            </dl>
+            <p v-if="executionLedger.cost.disclosure" class="page-intro">{{ executionLedger.cost.disclosure }}</p>
+            <div class="ledger-actions">
+              <details class="ledger-disclosure">
+                <summary>调用预算和版本</summary>
+                <dl class="ledger-values">
+                  <div v-for="(value, key) in executionLedger.budget" :key="`budget-${key}`"><dt>{{ key }}</dt><dd>{{ value }}</dd></div>
+                  <div v-for="(value, key) in executionLedger.versions" :key="`version-${key}`"><dt>{{ key }}</dt><dd>{{ value }}</dd></div>
+                </dl>
+              </details>
+              <ExecutionSettlementReview v-if="auxiliary === 'details'" :key="executionLedger.id" class="ledger-disclosure" :execution-id="executionLedger.id" @ledger="refreshExecutionLedger" />
+              <ExecutionCheckpointReview v-if="auxiliary === 'details'" :key="executionLedger.id" class="ledger-disclosure" :execution-id="executionLedger.id" />
+            </div>
           </section>
         </section>
-        <ExecutionCheckpointReview v-if="auxiliary === 'details' && report.execution_ledger" :key="report.execution_ledger.id" :execution-id="report.execution_ledger.id" />
         <ReportExportMenu v-show="auxiliary === 'export'" :key="report.report_id" :report-id="report.report_id" />
       </div>
       <div v-else-if="!auxiliary" class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span><button type="button" @click="toggleAuxiliary('history')">查看历史报告</button></div>
@@ -350,6 +366,23 @@ button:focus-visible { outline: 2px solid var(--report-accent); outline-offset: 
 .execution-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
 .execution-metrics dt { color: var(--report-muted); font-size: 11px; }
 .execution-metrics dd { margin: 4px 0 0; color: var(--report-ink); font-size: 13px; }
+.ledger-identifier { margin: 10px 0 12px; color: var(--report-muted); font-size: 11px; line-height: 1.6; }
+.ledger-identifier dd { margin: 3px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.execution-ledger .execution-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.execution-ledger .execution-metrics > div { min-width: 0; }
+.execution-ledger .execution-metrics dd { overflow-wrap: anywhere; }
+.ledger-settlement { grid-column: 1 / -1; }
+.ledger-actions { margin-top: 12px; }
+.ledger-actions > .ledger-disclosure { margin: 0; border-top: 1px solid var(--report-line); color: var(--report-ink); font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+.ledger-actions :deep(.ledger-disclosure > summary) { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 10px 0; color: var(--report-ink); font-size: 12px; font-weight: 600; line-height: 1.6; cursor: pointer; list-style: none; }
+.ledger-actions :deep(.ledger-disclosure > summary::-webkit-details-marker) { display: none; }
+.ledger-actions :deep(.ledger-disclosure > summary::before) { content: ''; flex: 0 0 auto; width: 0; height: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 5px solid var(--report-muted); }
+.ledger-actions :deep(.ledger-disclosure[open] > summary::before) { transform: rotate(90deg); }
+.ledger-actions :deep(.ledger-disclosure > summary:focus-visible) { outline: 2px solid var(--report-accent); outline-offset: -2px; border-radius: 3px; }
+.ledger-values { margin: 0 0 12px; color: var(--report-muted); }
+.ledger-values > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 5px 0; }
+.ledger-values dt, .ledger-values dd { min-width: 0; overflow-wrap: anywhere; }
+.ledger-values dd { margin: 0; color: var(--report-ink); text-align: right; }
 .stage-duration-list { display: grid; gap: 8px; }
 .stage-duration-list span { display: flex; justify-content: space-between; gap: 8px; color: var(--report-muted); font-size: 11px; }
 .stage-duration-list em { font-style: normal; color: var(--report-ink); }
