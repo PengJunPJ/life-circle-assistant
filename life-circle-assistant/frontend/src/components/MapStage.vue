@@ -62,7 +62,7 @@
       @retain="retainHover"
       @release="clearHover"
     />
-    <div class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
+    <div v-if="!realMapReady" class="map-scale"><span>0</span><span class="scale-line"></span><span>500m</span></div>
     <div v-if="loading" class="map-loading" role="status" aria-live="polite" aria-atomic="true"><div class="loader-ring" aria-hidden="true"></div><strong>正在生成生活圈体检</strong><span>{{ progressLabel || '正在计算真实步行可达性' }}… {{ progress }}% · 已耗时 {{ elapsedLabel }}</span></div>
   </section>
 </template>

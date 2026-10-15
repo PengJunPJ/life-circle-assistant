@@ -16,6 +16,9 @@ import { DEFAULT_STATUS_LAYERS, type Combination, type SamplingLayers, type Stat
 export type MapHoverTarget = { poi: Poi; x: number; y: number }
 export type MapRoutePreview = { poi: Poi; route: WalkingRoute }
 
+// 顶部工具栏和设施图例共用右上角，导航控件需要落在图例下方，避免遮挡图例内容。
+const MAP_NAVIGATION_CONTROL_OFFSET = { width: 10, height: 110 }
+
 function drawRouteEndpointLabel(context: CanvasRenderingContext2D, x: number, y: number, text: string) {
   context.font = '700 10px sans-serif'
   const width = context.measureText(text).width + 14
@@ -456,7 +459,10 @@ export function useMapRenderer({ report, analysisCenter, minutes, visibleCategor
     if (!baiduMap) {
       baiduMap = new BMap.Map(mapContainer.value)
       baiduMap.enableScrollWheelZoom(true)
-      baiduMap.addControl(new BMap.NavigationControl({ anchor: (window as any).BMAP_ANCHOR_TOP_RIGHT }))
+      baiduMap.addControl(new BMap.NavigationControl({
+        anchor: (window as any).BMAP_ANCHOR_TOP_RIGHT,
+        offset: new BMap.Size(MAP_NAVIGATION_CONTROL_OFFSET.width, MAP_NAVIGATION_CONTROL_OFFSET.height),
+      }))
       baiduMap.addControl(new BMap.ScaleControl({ anchor: (window as any).BMAP_ANCHOR_BOTTOM_LEFT }))
     }
     if (!baiduClickBound) {

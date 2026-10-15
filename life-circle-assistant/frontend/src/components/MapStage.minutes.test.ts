@@ -21,11 +21,13 @@ const previousReport = {
 describe('地图起点步行时间同步', () => {
   const canvasLabels: string[] = []
   const baiduLabels: string[] = []
+  let navigationOffset: { width: number; height: number } | null = null
   let wrapper: VueWrapper | undefined
 
   beforeEach(() => {
     canvasLabels.length = 0
     baiduLabels.length = 0
+    navigationOffset = null
     const context = {
       setTransform: vi.fn(), fillRect: vi.fn(), beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
       closePath: vi.fn(), fill: vi.fn(), stroke: vi.fn(), arc: vi.fn(), setLineDash: vi.fn(),
@@ -41,6 +43,12 @@ describe('地图起点步行时间同步', () => {
       constructor(readonly text: string) {}
       setStyle() {}
     }
+    class Size {
+      constructor(readonly width: number, readonly height: number) {}
+    }
+    class NavigationControl {
+      constructor(options: { offset: { width: number; height: number } }) { navigationOffset = options.offset }
+    }
     class BaiduMap {
       enableScrollWheelZoom() {}
       addControl() {}
@@ -52,8 +60,8 @@ describe('地图起点步行时间同步', () => {
       }
     }
     vi.stubGlobal('BMap', {
-      Map: BaiduMap, Label, Point: Shape, Size: Shape, Circle: Shape, Polygon: Shape,
-      NavigationControl: Shape, ScaleControl: Shape,
+      Map: BaiduMap, Label, Point: Shape, Size, Circle: Shape, Polygon: Shape,
+      NavigationControl, ScaleControl: Shape,
     })
   })
 
@@ -83,6 +91,8 @@ describe('地图起点步行时间同步', () => {
         })
         await flushPromises()
         expect(wrapper.get('.map-container').classes().includes('hidden')).toBe(mode === 'Canvas')
+        expect(wrapper.find('.map-scale').exists()).toBe(mode === 'Canvas')
+        if (mode === '百度地图') expect(navigationOffset).toEqual({ width: 10, height: 110 })
 
         const originLabel = () => {
           const labels = mode === 'Canvas' ? canvasLabels : baiduLabels

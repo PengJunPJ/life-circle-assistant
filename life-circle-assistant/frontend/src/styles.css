@@ -53,6 +53,137 @@ button { border: 0; cursor: pointer; }
 @media (max-width: 1200px) { body { min-width: 0; }.workspace { --hud-left: 300px; --hud-right: 328px; --report-panel-width: 296px; }.control-panel { width: 268px; }.report-panel { width: 296px; }.control-panel, .report-panel { padding-left: 14px; padding-right: 14px; } }
 .map-container { width: 100%; height: 100%; display: block; }
 .map-container.hidden, .map-canvas.hidden { display: none; }
+/* 保留原生控件的点击区域，滑杆尺寸仍由地图 SDK 管理。 */
+.map-container {
+  --map-control-right: var(--hud-right);
+  --map-control-background: rgba(249,252,248,.96);
+  --map-control-border: #d4e0da;
+  --map-control-text: #55716d;
+  --map-control-accent: #2f8f80;
+  --map-control-hover: #e8f0eb;
+  --map-control-track: #d2dfd8;
+  --map-control-shadow: 0 4px 14px rgba(36,70,66,.14);
+}
+/* 原生容器右侧有 22px 留白，补偿后让背景右边缘与图例对齐。 */
+.map-container .BMap_stdMpCtrl { right: calc(var(--map-control-right) - 22px) !important; color: var(--map-control-text); }
+.map-container .BMap_stdMpCtrl::before {
+  content: '';
+  position: absolute;
+  inset: -4px auto -4px 4px;
+  box-sizing: border-box;
+  width: 36px;
+  border: 1px solid var(--map-control-border);
+  border-radius: 10px;
+  background: var(--map-control-background);
+  box-shadow: var(--map-control-shadow);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+.map-container .BMap_stdMpPan { background: none !important; }
+.map-container .BMap_stdMpPan::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 1px;
+  height: 1px;
+  background: var(--map-control-border);
+  pointer-events: none;
+}
+.map-container .BMap_stdMpPan::after {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 18px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--map-control-accent);
+  pointer-events: none;
+}
+.map-container .BMap_stdMpCtrl .BMap_smcbg { display: none; }
+.map-container .BMap_stdMpCtrl .BMap_button {
+  border-radius: 4px;
+  background: transparent !important;
+  color: var(--map-control-text);
+  transition: background-color .16s ease, color .16s ease;
+}
+.map-container .BMap_stdMpCtrl .BMap_button:hover,
+.map-container .BMap_stdMpCtrl .BMap_button:focus-visible { background: var(--map-control-hover) !important; color: var(--map-control-accent); }
+.map-container .BMap_stdMpCtrl .BMap_button:active { color: var(--map-control-accent); }
+.map-container .BMap_stdMpCtrl .BMap_button:focus-visible { outline: 2px solid var(--map-control-accent); outline-offset: 1px; }
+.map-container .BMap_stdMpPan .BMap_button::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  pointer-events: none;
+}
+.map-container .BMap_panN::before { transform: translate(-50%, -30%) rotate(-45deg); }
+.map-container .BMap_panE::before { transform: translate(-70%, -50%) rotate(45deg); }
+.map-container .BMap_panS::before { transform: translate(-50%, -70%) rotate(135deg); }
+.map-container .BMap_panW::before { transform: translate(-30%, -50%) rotate(225deg); }
+.map-container .BMap_stdMpZoomIn::before,
+.map-container .BMap_stdMpZoomOut::before,
+.map-container .BMap_stdMpZoomIn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.map-container .BMap_stdMpZoomIn::after { width: 1.5px; height: 10px; }
+.map-container .BMap_stdMpSliderBgTop {
+  background: linear-gradient(to right, transparent 3px, var(--map-control-track) 3px, var(--map-control-track) 6px, transparent 6px) !important;
+}
+.map-container .BMap_stdMpSliderBgBot {
+  background: linear-gradient(to right, transparent 2px, var(--map-control-accent) 2px, var(--map-control-accent) 5px, transparent 5px) !important;
+}
+.map-container .BMap_stdMpSliderBar {
+  border: 1px solid var(--map-control-accent);
+  border-radius: 4px;
+  background: var(--map-control-background) !important;
+  box-shadow: 0 1px 4px rgba(36,70,66,.18);
+}
+.map-container .BMap_stdMpSliderBar::after { content: ''; position: absolute; inset: 3px 4px; border-top: 1px solid var(--map-control-accent); pointer-events: none; }
+.map-container .BMap_zlHolder > div {
+  left: -34px !important;
+  width: 32px !important;
+  border: 1px solid var(--map-control-border);
+  border-radius: 4px;
+  background: var(--map-control-background) !important;
+  color: var(--map-control-text);
+  box-shadow: var(--map-control-shadow);
+  font: 500 9px/19px "PingFang SC", "Microsoft YaHei", sans-serif;
+  text-align: center;
+}
+.map-container .BMap_zlHolder > div:hover { color: var(--map-control-accent); }
+.map-container .BMap_zlSt::after { content: '街道'; }
+.map-container .BMap_zlCity::after { content: '城市'; }
+.map-container .BMap_zlProv::after { content: '省域'; }
+.map-container .BMap_zlCountry::after { content: '全国'; }
+/* 比例尺的宽度随缩放变化，不覆盖 SDK 的动态宽度或刻度位置。 */
+.map-container .BMap_scaleCtrl { left: var(--hud-left) !important; bottom: 24px !important; isolation: isolate; }
+.map-container .BMap_scaleCtrl::before { content: ''; position: absolute; z-index: -1; inset: -5px -8px; border: 1px solid var(--map-control-border); border-radius: 5px; background: var(--map-control-background); box-shadow: var(--map-control-shadow); pointer-events: none; }
+.map-container .BMap_scaleTxt { color: var(--map-control-text) !important; font: 600 10px/18px Inter, "PingFang SC", sans-serif; text-shadow: none; }
+.map-container .BMap_scaleBar { background: var(--map-control-text) !important; }
+.map-container .BMap_scaleHBar { top: 21px !important; height: 2px !important; }
+.map-container .BMap_scaleLBar, .map-container .BMap_scaleRBar { width: 2px !important; }
+.map-container .BMap_scaleBar img { display: none; }
+@media (max-width: 820px) {
+  .map-container { --map-control-right: 8px; }
+  .map-container .BMap_scaleCtrl { left: 18px !important; bottom: calc(98px + env(safe-area-inset-bottom)) !important; }
+  .has-conversation .map-container .BMap_scaleCtrl { bottom: calc(var(--conversation-height, 0px) + 92px + env(safe-area-inset-bottom)) !important; }
+}
 .api-indicator.real { background: #3b9a7d; }
 .service-area-evidence { position: absolute; left: 0; top: calc(100% + 8px); width: min(350px, calc(100vw - var(--hud-left) - 24px)); max-height: min(420px, calc(100dvh - 270px)); overflow: auto; padding: 14px 16px; border: 1px solid #d5dfda; border-left: 4px solid #2f8f80; border-radius: 5px; background: rgba(250,252,249,.97); box-shadow: 0 8px 24px rgba(30,61,57,.16); color: #294a48; }
 .evidence-close { position: absolute; top: 7px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: transparent; color: #718581; font-size: 18px; }
@@ -652,6 +783,15 @@ html[data-theme="dark"] .mode-note { color: #6f8b90; }
 html[data-theme="dark"] .map-stage { background: #182634; --map-hud-background: rgba(24,40,56,.9); --map-hud-border: rgba(126,214,199,.16); }
 /* 深色主题下地图保留浅色底图并轻微压暗防眩光，确保比深色背景更浅且路网/区域颜色真实 */
 html[data-theme="dark"] .map-container { filter: brightness(.9) contrast(.96) saturate(.85); }
+html[data-theme="dark"] .map-container {
+  --map-control-background: var(--map-hud-background);
+  --map-control-border: var(--map-hud-border);
+  --map-control-text: #9db8b8;
+  --map-control-accent: #2ee6c5;
+  --map-control-hover: rgba(46,230,197,.12);
+  --map-control-track: rgba(126,214,199,.2);
+  --map-control-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
 html[data-theme="dark"] .map-toolbar,
 html[data-theme="dark"] .facility-legend,
 html[data-theme="dark"] .service-area-trigger { background: var(--map-hud-background); border-color: var(--map-hud-border); box-shadow: 0 4px 16px rgba(0,0,0,.4); backdrop-filter: blur(14px); }

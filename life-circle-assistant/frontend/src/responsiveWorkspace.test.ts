@@ -75,6 +75,26 @@ describe('响应式工作台布局契约', () => {
     expect(styles).toContain('.mobile-panel-heading, .mobile-workspace-actions, .mobile-panel-backdrop, .mobile-legend-toggle, .mobile-map-legend { display: none; }')
   })
 
+  it('原生地图控件复用主题配色，保留滑杆动态尺寸和独立比例尺', () => {
+    expect(styles).toMatch(/\.map-container\s*\{[^}]*--map-control-background:\s*rgba\(249,252,248,\.96\);[^}]*--map-control-accent:\s*#2f8f80;/s)
+    expect(styles).toMatch(/html\[data-theme="dark"\] \.map-container\s*\{[^}]*--map-control-background:\s*var\(--map-hud-background\);[^}]*--map-control-border:\s*var\(--map-hud-border\);[^}]*--map-control-accent:\s*#2ee6c5;/s)
+    expect(styles).toContain('.map-container .BMap_stdMpCtrl .BMap_button:hover,')
+    expect(styles).toContain('.map-container .BMap_stdMpCtrl .BMap_button:focus-visible')
+    expect(styles).toMatch(/\.map-container \.BMap_stdMpCtrl::before\s*\{[^}]*pointer-events:\s*none;/s)
+    for (const selector of ['BMap_stdMpSliderBgTop', 'BMap_stdMpSliderBgBot', 'BMap_stdMpSliderBar']) {
+      const rule = styles.match(new RegExp(`\\.map-container \\.${selector}\\s*\\{([^}]*)\\}`))?.[1]
+      expect(rule).toBeDefined()
+      expect(rule).toContain('var(--map-control-')
+      expect(rule).not.toMatch(/(?:^|;)\s*(?:height|width|top|left):/)
+    }
+    expect(styles).toContain('.map-container .BMap_scaleCtrl { left: var(--hud-left) !important;')
+    expect(styles).toContain('.map-container .BMap_scaleTxt { color: var(--map-control-text) !important;')
+    expect(styles).toContain('.map-container .BMap_scaleBar { background: var(--map-control-text) !important; }')
+    expect(styles).toContain('.has-conversation .map-container .BMap_scaleCtrl { bottom: calc(var(--conversation-height, 0px) + 92px + env(safe-area-inset-bottom)) !important; }')
+    expect(styles).not.toMatch(/\.map-container \.BMap_cpyCtrl\s*\{/)
+    expect(mapStage).toContain('<div v-if="!realMapReady" class="map-scale">')
+  })
+
   it('移动视口消除页面横向溢出并以地图作为主区域', () => {
     expect(styles).toContain('@media (max-width: 820px)')
     expect(styles).toMatch(/html, body, #app\s*\{[^}]*width:\s*100%;[^}]*overflow:\s*hidden;/s)
