@@ -1,0 +1,61 @@
+{
+  "file": "life-circle-assistant/docs/output/作品介绍文档.pdf",
+  "pages": 10,
+  "bytes": 3354282,
+  "bookmarks": 10,
+  "page_characters": [
+    306,
+    787,
+    577,
+    805,
+    785,
+    654,
+    609,
+    876,
+    816,
+    1545
+  ],
+  "chinese_fonts": {
+    "/AAAAAA+STHeitiSC-Medium-1": {
+      "embedded": true,
+      "unicode": true
+    },
+    "/AAAAAB+STHeitiSC-Medium-1": {
+      "embedded": true,
+      "unicode": true
+    },
+    "/AAAAAA+STSongti-SC-Regular-6": {
+      "embedded": true,
+      "unicode": true
+    },
+    "/AAAAAB+STSongti-SC-Regular-6": {
+      "embedded": true,
+      "unicode": true
+    },
+    "/AAAAAC+STSongti-SC-Regular-6": {
+      "embedded": true,
+      "unicode": true
+    },
+    "/AAAAAD+STSongti-SC-Regular-6": {
+      "embedded": true,
+      "unicode": true
+    }
+  },
+  "page_size": "A4",
+  "replacement_characters": 0,
+  "historical_validation_cutoff": "2026-10-14",
+  "document_date": "2026-10-15",
+  "screenshot_capture_date": "2026-10-15",
+  "product_tests_rerun": false,
+  "capture_evidence": "life-circle-assistant/docs/contest/submission/screenshots-20261015/capture-evidence.json",
+  "paragraphs_and_cells_checked": 110,
+  "words_within_page": 492,
+  "embedded_current_screenshots": {
+    "1": "01-real-map-report.png",
+    "3": "01-real-map-report.png",
+    "6": "02-real-ai-summary.png",
+    "7": "04-real-simulation.png"
+  },
+  "all_pages_rendered": true,
+  "preview": ".scratch/work-introduction/preview/current-real"
+}
