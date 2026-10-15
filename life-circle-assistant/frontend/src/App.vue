@@ -122,6 +122,7 @@
         :simulation-error="simulationError"
         :planning-grid-id="planningGridId"
         :governance-revision="governanceRevision"
+        :guide-page="guideOpen ? guideStep?.reportPage : null"
         @locate-recommendation="selectedRecommendationId = $event"
         @refresh-history="loadHistory"
         @open-history="handleOpenHistory"
@@ -198,8 +199,10 @@
     />
     <FirstUseGuide
       :open="guideOpen"
+      :has-report="Boolean(report)"
       :map-status="mapStatus"
       :map-status-loading="mapStatusLoading"
+      :map-probe-result="mapProbeResult"
       :real-map-ready="realMapReady"
       @step-change="handleGuideStepChange"
       @close="closeFirstUseGuide"
@@ -211,6 +214,7 @@
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { downloadReportExport, fetchMapStatus, getAnalysisTask, getHistoricalReport, probeMapApi as requestMapApiProbe } from './services/analysisApi'
 import type { AnalysisTask, MapProbeResult, MapStatus } from './types/report'
+import type { GuideStep } from './types/guide'
 import type { AnalysisIntent } from './types/analysisIntent'
 import { ALL_CATEGORIES } from './constants/facilities'
 import { useAnalysis } from './composables/useAnalysis'
@@ -314,6 +318,8 @@ const mapProbeResult = ref<MapProbeResult | null>(null)
 const mapProbeLoading = ref(false)
 const realMapReady = ref(false)
 const guideOpen = ref(false)
+const guideStep = ref<GuideStep | null>(null)
+let guidePreviousPanels: { workbench: ActiveWorkbench; mobile: typeof activeMobilePanel.value } | null = null
 const controlsTrigger = ref<HTMLButtonElement | null>(null)
 const reportTrigger = ref<HTMLButtonElement | null>(null)
 const workspaceRef = ref<HTMLElement | null>(null)
@@ -560,6 +566,7 @@ function keepWorkspaceAtOrigin() {
 }
 
 function handleWorkspaceKeydown(event: KeyboardEvent) {
+  if (guideOpen.value) return
   if (event.key === 'Escape' && centerPicking.value) {
     event.preventDefault()
     cancelCenterPick()
@@ -701,19 +708,31 @@ async function probeConfiguredMapApi() {
 }
 
 function openFirstUseGuide() {
+  if (guideOpen.value) return
+  guidePreviousPanels = { workbench: activeWorkbench.value, mobile: activeMobilePanel.value }
   guideOpen.value = true
-  handleGuideStepChange(0)
+  handleGuideStepChange({ id: 'source', surface: 'controls' })
 }
 
-function handleGuideStepChange(index: number) {
-  activeMobilePanel.value = index === 4 ? 'report' : 'controls'
+function handleGuideStepChange(step: GuideStep) {
+  guideStep.value = step
+  const panel = step.surface === 'controls' || step.surface === 'report' ? step.surface : null
+  activeWorkbench.value = panel
+  activeMobilePanel.value = panel
   nextTick(keepWorkspaceAtOrigin)
 }
 
 function closeFirstUseGuide(completed: boolean) {
+  if (!guideOpen.value) return
   guideOpen.value = false
+  guideStep.value = null
   window.localStorage.setItem(FIRST_USE_GUIDE_KEY, completed ? 'completed' : 'dismissed')
-  activeMobilePanel.value = 'controls'
+  if (guidePreviousPanels) {
+    activeWorkbench.value = guidePreviousPanels.workbench
+    activeMobilePanel.value = guidePreviousPanels.mobile
+    guidePreviousPanels = null
+  }
+  nextTick(keepWorkspaceAtOrigin)
 }
 
 function applySelectedReport(selected: NonNullable<typeof report.value>) {

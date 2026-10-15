@@ -22,6 +22,24 @@ function mountPanel(report: Report | null = structuredClone(fixture)) {
   })
 }
 describe('报告信息分层与联动', () => {
+  it('导览切换报告子页并在退出时恢复原来的工具页和滚动位置', async () => {
+    const wrapper = mountPanel()
+    await wrapper.get('.report-actions button:first-child').trigger('click')
+    const scroll = wrapper.get('.report-scroll').element
+    scroll.scrollTop = 90
+    await wrapper.setProps({ guidePage: 'facilities' })
+    expect(wrapper.get('#report-page-facilities').isVisible()).toBe(true)
+    await wrapper.setProps({ guidePage: 'recommendations' })
+    expect(wrapper.get('#report-page-recommendations').isVisible()).toBe(true)
+    await wrapper.setProps({ guidePage: 'export' })
+    expect(wrapper.get('.auxiliary-heading').text()).toContain('导出报告')
+    await wrapper.setProps({ guidePage: null })
+    await flushPromises()
+    expect(wrapper.findComponent(ReportHistory).isVisible()).toBe(true)
+    expect(scroll.scrollTop).toBe(90)
+    expect(wrapper.emitted('rerun-history')).toBeUndefined()
+    wrapper.unmount()
+  })
   it('无报告时历史入口保持可用，说明和导出明确禁用，空状态仍可回到历史', async () => {
     const wrapper = mountPanel(null)
     const actions = wrapper.findAll('.report-actions button')

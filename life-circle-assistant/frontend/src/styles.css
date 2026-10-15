@@ -614,13 +614,16 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
   .export-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-/* 工作台切换保持内容位置稳定，仅做轻量显隐。 */
-.control-panel,
-.report-panel { transition: opacity .12s ease, visibility .12s ease; }
-.control-panel.collapsed,
-.report-panel.collapsed { transform: none; opacity: 0; visibility: hidden; pointer-events: none; }
-.control-panel:not(.collapsed),
-.report-panel:not(.collapsed) { opacity: 1; visibility: visible; pointer-events: auto; }
+/* 工作台切换保持内容位置稳定，仅做轻量显隐。
+   仅桌面断点生效：移动端显隐由 mobile-open 抽屉状态决定。 */
+@media (min-width: 821px) {
+  .control-panel,
+  .report-panel { transition: opacity .12s ease, visibility .12s ease; }
+  .control-panel.collapsed,
+  .report-panel.collapsed { transform: none; opacity: 0; visibility: hidden; pointer-events: none; }
+  .control-panel:not(.collapsed),
+  .report-panel:not(.collapsed) { opacity: 1; visibility: visible; pointer-events: auto; }
+}
 
 /* 分析中心、区域判定与设施图例共享右上角布局，避免互相遮挡。 */
 .map-top-right { position: absolute; z-index: 3; top: 66px; left: var(--hud-left); right: var(--hud-right); display: flex; align-items: flex-start; justify-content: flex-end; gap: 8px; min-width: 0; pointer-events: none; }

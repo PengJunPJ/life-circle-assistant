@@ -1,6 +1,6 @@
 <template>
   <section v-if="assistantVisible" ref="workspaceElement" class="conversation-workspace" :class="{ dragging }" :style="{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }" aria-label="对话工作台">
-    <header class="conversation-heading">
+    <header class="conversation-heading" data-guide="conversation">
       <div class="conversation-heading-row" @pointerdown="startDrag">
         <button type="button" :aria-expanded="expanded" aria-controls="conversation-transcript" @click="toggleExpanded"><span class="conversation-ai-mark" aria-hidden="true">AI</span><span class="conversation-title"><strong>AI 规划助手</strong><small>自然语言操作地图与报告</small></span><em class="conversation-state">{{ restoring ? '恢复中' : ready ? '已连接' : '未连接' }}</em><span class="conversation-toggle" aria-hidden="true">{{ expanded ? '⌄' : '⌃' }}</span></button>
         <button class="conversation-hide" type="button" aria-label="隐藏AI规划助手" title="隐藏AI规划助手" @pointerdown.stop @click.stop="hideAssistant">×</button>
@@ -36,7 +36,7 @@
       <button type="submit" :disabled="!ready || busy || !message.trim()">{{ busy ? '处理中' : '发送' }}</button>
     </form>
   </section>
-  <button v-else ref="launcherElement" class="conversation-launcher" type="button" aria-label="显示AI规划助手" title="显示AI规划助手" @click="showAssistant"><img class="conversation-launcher-icon" src="/ai-planning-assistant.png" alt="" aria-hidden="true" draggable="false" /></button>
+  <button v-else ref="launcherElement" class="conversation-launcher" data-guide="conversation-launcher" type="button" aria-label="显示AI规划助手" title="显示AI规划助手" @click="showAssistant"><img class="conversation-launcher-icon" src="/ai-planning-assistant.png" alt="" aria-hidden="true" draggable="false" /></button>
 </template>
 
 <script setup lang="ts">

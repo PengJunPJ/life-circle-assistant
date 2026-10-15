@@ -16,11 +16,11 @@
       <p v-if="!mapStatusLoading && !mapStatus" class="control-warning" role="alert">无法读取数据状态，请检查后端服务。</p>
       <p v-else-if="mapStatus && !mapStatus.real_api_configured" class="control-warning">本地快照仅支持沙涌长盛花园样例周边，数据非实时。</p>
       <p v-else-if="mapProbeResult && !mapProbeResult.verified" class="control-warning" role="alert">地图接口探测失败，请展开详情检查。</p>
-      <div class="entry-tabs" role="tablist" aria-label="体检参数填写方式" @keydown="handleTabKeydown">
+      <div class="entry-tabs" data-guide="analysis-center" role="tablist" aria-label="体检参数填写方式" @keydown="handleTabKeydown">
         <button id="manual-entry-tab" type="button" role="tab" :aria-selected="entry === 'manual'" :tabindex="entry === 'manual' ? 0 : -1" aria-controls="manual-entry-panel" :disabled="busy" @click="entry = 'manual'">自主设置</button>
         <button id="natural-entry-tab" type="button" role="tab" :aria-selected="entry === 'natural'" :tabindex="entry === 'natural' ? 0 : -1" aria-controls="natural-entry-panel" :disabled="busy" @click="entry = 'natural'">一句话填写</button>
       </div>
-      <div v-show="entry === 'manual'" id="manual-entry-panel" class="entry-panel" role="tabpanel" aria-labelledby="manual-entry-tab" data-guide="analysis-center">
+      <div v-show="entry === 'manual'" id="manual-entry-panel" class="entry-panel" role="tabpanel" aria-labelledby="manual-entry-tab">
         <label for="shared-address">搜索地址</label>
         <div class="address-entry-row">
           <div class="search-box"><Search /><input id="shared-address" :value="addressQuery" :disabled="busy" placeholder="输入社区或地址" @input="emit('update:addressQuery', ($event.target as HTMLInputElement).value)" @keydown.enter.prevent="!busy && emit('search-address')" /><button class="search-submit" type="button" :disabled="busy" aria-label="搜索地址候选" @click="emit('search-address')">{{ searching ? '…' : '搜索' }}</button></div>
@@ -41,7 +41,7 @@
         <div class="walking-time-switch" role="radiogroup" aria-labelledby="walking-time-label"><label v-for="option in walkingTimeOptions" :key="option" class="walking-time-option"><input type="radio" name="walking-time" :value="option" :disabled="busy" :checked="minutesValid && minutes === option" @change="emit('update:minutes', option)" /><span class="walking-time-face"><strong>{{ option }}</strong><small>分钟</small></span></label></div>
         <p v-if="!minutesValid" class="location-error" role="alert">支持 10、15、20 分钟，请选择步行时间。</p>
       </section>
-      <section class="panel-section layer-panel analysis-facilities">
+      <section class="panel-section layer-panel analysis-facilities" data-guide="analysis-facilities">
         <div class="layer-section-title"><div><label>体检设施</label><small>决定下一次体检范围</small></div><span class="layer-count" role="status">{{ analysisCategories.length }}/7 类</span></div>
         <div class="facility-selection-actions" role="group" aria-label="体检设施快捷选择"><button type="button" :disabled="busy || analysisCategories.length === ALL_CATEGORIES.length" @click="emit('update:analysisCategories', [...ALL_CATEGORIES])">全选</button><button type="button" :disabled="busy || !analysisCategories.length" @click="emit('update:analysisCategories', [])">全部取消</button></div>
         <div class="facility-list layer-facility-list"><button v-for="category in ALL_CATEGORIES" :key="category" type="button" :style="{ '--facility-color': categoryColor(category) }" :class="['facility-toggle', { selected: analysisCategories.includes(category) }]" :disabled="busy" :aria-pressed="analysisCategories.includes(category)" :aria-label="`${FACILITY_LABELS[category]}${report && !report.parameters.categories.includes(category) ? '，当前报告未体检' : ''}`" @click="toggleAnalysisCategory(category)"><span class="facility-icon" :style="{ background: categoryColor(category) }" aria-hidden="true">{{ FACILITY_ICONS[category] }}</span><span class="facility-copy"><span class="facility-name">{{ FACILITY_LABELS[category] }}</span><small v-if="report && !report.parameters.categories.includes(category)" class="facility-unavailable">未体检</small></span><span class="check" aria-hidden="true">{{ analysisCategories.includes(category) ? '✓' : '' }}</span></button></div>

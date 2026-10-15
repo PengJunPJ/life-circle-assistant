@@ -1,6 +1,6 @@
 <template>
   <div ref="root" class="map-layer-controls" @keydown.esc.stop.prevent="close(true)">
-    <button ref="trigger" class="map-layer-trigger" type="button" aria-controls="map-layer-menu" :aria-expanded="open" @click="open = !open"><Operation />图层</button>
+    <button ref="trigger" class="map-layer-trigger" data-guide="map-layers" type="button" aria-controls="map-layer-menu" :aria-expanded="open" @click="open = !open"><Operation />图层</button>
     <section v-if="open" id="map-layer-menu" class="map-layer-menu layer-panel" aria-label="地图显示设置">
       <div class="layer-section-title"><div><label>地图设施展示</label><small>{{ report ? `已体检 ${available.length} 类；仅改变地图显示` : '生成报告后可设置设施展示' }}</small></div><button class="layer-menu-close" type="button" aria-label="关闭地图显示设置" @click="close(true)">×</button></div>
       <div class="facility-selection-actions" role="group" aria-label="地图设施快捷选择"><button type="button" :disabled="loading || !available.length || displayedCount === available.length" @click="emit('update:visibleCategories', [...available])">全选展示</button><button type="button" :disabled="loading || !displayedCount" @click="emit('update:visibleCategories', [])">全部隐藏</button></div>

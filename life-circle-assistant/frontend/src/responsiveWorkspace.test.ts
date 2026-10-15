@@ -67,8 +67,8 @@ describe('响应式工作台布局契约', () => {
     expect(styles).not.toContain('.workspace.report-active .map-stage')
     expect(styles).toMatch(/\.control-panel\s*\{[^}]*position:\s*absolute;[^}]*width:\s*296px;/s)
     expect(styles).toMatch(/\.report-panel\s*\{[^}]*position:\s*absolute;[^}]*left:\s*16px;[^}]*right:\s*auto;[^}]*width:\s*322px;/s)
-    expect(styles).toContain('.control-panel,\n.report-panel { transition: opacity .12s ease, visibility .12s ease; }')
-    expect(styles).toContain('.control-panel.collapsed,\n.report-panel.collapsed { transform: none; opacity: 0; visibility: hidden; pointer-events: none; }')
+    expect(styles).toContain('  .control-panel,\n  .report-panel { transition: opacity .12s ease, visibility .12s ease; }')
+    expect(styles).toContain('  .control-panel.collapsed,\n  .report-panel.collapsed { transform: none; opacity: 0; visibility: hidden; pointer-events: none; }')
     expect(styles).not.toContain('.workspace.report-active .report-panel')
     expect(styles).not.toContain('.panel-rail')
     expect(styles).not.toContain('.panel-bulk-toggle')
@@ -106,6 +106,8 @@ describe('响应式工作台布局契约', () => {
   it('移动参数抽屉和独立报告面板默认收起且可显式展开', () => {
     expect(styles).toMatch(/\.control-panel, \.report-panel\s*\{[^}]*transform:\s*translateY\(calc\(100% \+ 92px\)\);[^}]*visibility:\s*hidden;/s)
     expect(styles).toMatch(/\.control-panel\.mobile-open, \.report-panel\.mobile-open\s*\{[^}]*transform:\s*translateY\(0\);[^}]*visibility:\s*visible;/s)
+    // 桌面折叠规则必须限定在宽视口，否则会覆盖移动抽屉的收起状态。
+    expect(styles).toMatch(/@media \(min-width: 821px\)\s*\{[\s\S]*?\.control-panel:not\(\.collapsed\),\s*\n\s*\.report-panel:not\(\.collapsed\) \{ opacity: 1; visibility: visible; pointer-events: auto; \}/)
   })
 
   it('在 jsdom 中渲染移动面板状态并支持 Escape 收起', async () => {

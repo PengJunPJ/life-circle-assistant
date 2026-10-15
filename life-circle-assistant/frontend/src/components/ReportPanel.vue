@@ -140,6 +140,7 @@ import AiCompletionWorkbench from './AiCompletionWorkbench.vue'
 import ExecutionCheckpointReview from './ExecutionCheckpointReview.vue'
 import ExecutionSettlementReview from './ExecutionSettlementReview.vue'
 import type { Combination, SamplingLayers } from '../types/completion'
+import type { ReportGuidePage } from '../types/guide'
 
 const props = defineProps<{
   report: Report | null
@@ -165,6 +166,7 @@ const props = defineProps<{
   mobileOpen: boolean
   planningGridId?: string | null
   governanceRevision?: number
+  guidePage?: ReportGuidePage | null
 }>()
 const emit = defineEmits<{
   'refresh-history': []
@@ -199,6 +201,22 @@ const focusedRecommendationId = ref<string | null>(null)
 const scrollRef = ref<HTMLElement | null>(null)
 const simulationRef = ref<HTMLElement | null>(null)
 const multisourceRef = ref<HTMLElement | null>(null)
+let beforeGuide: { tab: ReportTab; auxiliary: Auxiliary | null; scrollTop: number } | null = null
+watch(() => props.guidePage, (page) => {
+  if (page) {
+    beforeGuide ??= { tab: activeTab.value, auxiliary: auxiliary.value, scrollTop: scrollRef.value?.scrollTop ?? 0 }
+    if (page === 'history' || page === 'details' || page === 'export') {
+      auxiliary.value = page
+      resetScroll()
+    } else selectTab(page)
+  } else if (beforeGuide) {
+    const saved = beforeGuide
+    beforeGuide = null
+    activeTab.value = saved.tab
+    auxiliary.value = saved.auxiliary
+    void nextTick(() => { if (scrollRef.value) scrollRef.value.scrollTop = saved.scrollTop })
+  }
+}, { immediate: true })
 const refreshedExecutionLedger = ref<ExecutionLedger | null>(null)
 const executionLedger = computed(() => refreshedExecutionLedger.value?.id === props.report?.execution_ledger?.id ? refreshedExecutionLedger.value : props.report?.execution_ledger)
 function refreshExecutionLedger(ledger: ExecutionLedger) { if (ledger.id === props.report?.execution_ledger?.id) refreshedExecutionLedger.value = ledger }
