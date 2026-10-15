@@ -7,7 +7,7 @@
 ## 阅读与核验顺序
 
 1. **定位与价值**：[../../README.md](../../README.md)（项目定位、快速运行、模式说明）与 [../releases/v2.3.0.md](../releases/v2.3.0.md)（本版本范围与验证记录）。
-2. **一键复现**：按 README 的 `cp .env.example .env && docker compose up --build` 启动；无凭证即进入离线快照演示，凭证齐备切真实模式。缓存种子使干净环境首跑约 19 秒，见 [../performance/v2-baseline.md](../performance/v2-baseline.md)。
+2. **一键复现**：在仓库根目录执行 `bash demo.sh`，自动构建、生成离线示例报告并验证链路；`bash demo.sh test` 可再次验证。现场无网络时使用离线镜像包，详见[评审一键演示指南](quick-start.md)。真实模式按仓库 README 单独配置。
 3. **现场演示**：按 [demo-script.md](demo-script.md) 逐步操作，每步给出预期观察与证据指针；离线与真实两条路径分开。
 4. **算法与 API 策略**：先读一页纸 [algorithm-overview.md](algorithm-overview.md)，再按需深入 [../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md)、[../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md)、[多源 POI 对齐策略](../architecture/multi-source-poi-reconciliation.md) 与 [../../../docs/adr/](../../../docs/adr/) 决策记录。
 5. **真实社区证据**：[沙涌长盛花园真实报告](../validation/reports/shachong-changsheng-20261004.json)、[64 条核查基准](../validation/benchmarks/shachong-changsheng-20261004.json)、[评估结果](../validation/results/shachong-changsheng-20261004.md) 与[评估口径](../validation/v2.1-benchmark-evaluation.md)。沙涌 64/64 核查已完成，但属于百度同源一致性证据；跨来源准确率和多社区泛化仍未验证。

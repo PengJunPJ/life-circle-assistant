@@ -32,6 +32,14 @@ cd life-circle-assistant
 
 ## 二、方式 A：Docker 启动（推荐）
 
+评审快速演示可在仓库根目录或应用目录直接执行：
+
+```bash
+bash demo.sh
+```
+
+该入口使用独立离线配置，自动构建、等待健康、准备七类设施示例报告并验证导出与前端代理；宿主机只需 Bash 与 Docker Compose。`bash demo.sh test` 可再次验证，`bash demo.sh stop` 停止并保留数据。离线镜像打包与导入、端口调整见[评审一键演示指南](life-circle-assistant/docs/contest/quick-start.md)。下文为手动部署步骤。
+
 以下命令均在包含 `docker-compose.yml` 的**应用目录**执行。
 
 ### 1. 检查 Docker

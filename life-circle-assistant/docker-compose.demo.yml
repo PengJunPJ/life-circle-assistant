@@ -1,0 +1,45 @@
+# 独立演示栈：不读取开发用 .env，不接收地图、模型等外部服务凭证。
+services:
+  api:
+    image: life-circle-demo-api:local
+    pull_policy: never
+    build: ./backend
+    environment:
+      BAIDU_MAP_MODE: mock
+      AMAP_VALIDATION_ENABLED: "false"
+      LLM_ENABLED: "false"
+      SEMANTIC_EMBEDDING_ENABLED: "false"
+      OBSERVATION_OCR_ENABLED: "false"
+      BAIDU_NATIVE_ISOCHRONE_ENABLED: "false"
+      LIFE_CIRCLE_DATABASE_PATH: /app/data/runtime/life-circle.db
+      LIFE_CIRCLE_SEED_WALKING_CACHE: "1"
+    volumes:
+      - demo-data:/app/data/runtime
+    ports:
+      - "127.0.0.1:${DEMO_API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+      start_period: 5s
+  web:
+    image: life-circle-demo-web:local
+    pull_policy: never
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ""
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${DEMO_WEB_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--output-document=-", "http://127.0.0.1:80"]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+      start_period: 5s
+volumes:
+  demo-data:

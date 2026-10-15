@@ -66,6 +66,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./scripts/container-smoke.sh
+      - name: 验证评审一键启动与重复启动
+        run: |
+          bash demo.sh
+          bash demo.sh
+          bash demo.sh test
+      - name: 停止评审演示并保留数据
+        if: always()
+        run: bash demo.sh stop
 
   quality-gate:
     name: 质量门禁汇总

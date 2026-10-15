@@ -29,6 +29,7 @@ Temporary Items
 .env.local
 .env
 *.env
+!life-circle-assistant/demo.env
 
 # IDE
 .idea/
