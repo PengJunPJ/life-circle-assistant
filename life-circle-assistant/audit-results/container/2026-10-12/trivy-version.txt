@@ -1,6 +1,0 @@
-Version: 0.75.0
-Vulnerability DB:
-  Version: 2
-  UpdatedAt: 2026-10-12 01:14:57.362085088 +0000 UTC
-  NextUpdate: 2026-10-13 01:14:57.362084798 +0000 UTC
-  DownloadedAt: 2026-10-12 02:47:30.125351 +0000 UTC

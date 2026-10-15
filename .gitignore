@@ -29,3 +29,16 @@ Temporary Items
 .env.local
 .env
 *.env
+
+# IDE
+.idea/
+
+# 生成产物/报告，由脚本或 CI 重新生成，不入库
+life-circle-assistant/audit-results/
+life-circle-assistant/docs/output/
+life-circle-assistant/docs/validation/reports/
+life-circle-assistant/docs/governance/sbom/*.cdx.json
+
+# 大体积演示录屏，走外部托管而非 Git
+life-circle-assistant/docs/contest/submission/*.webm
+life-circle-assistant/docs/contest/submission/page@*
