@@ -1,111 +1,146 @@
 <template>
   <aside class="report-panel" aria-labelledby="report-panel-title">
     <div class="mobile-panel-heading">
-      <div><div class="eyebrow">社区体检报告</div><strong>{{ report ? '查看完整报告' : '等待分析结果' }}</strong></div>
+      <div><div class="eyebrow">社区体检报告</div><strong>{{ report ? '查看体检结果' : '等待分析结果' }}</strong></div>
       <button class="mobile-panel-close" type="button" aria-label="关闭体检报告面板并返回地图" @click="emit('close-mobile')">×</button>
     </div>
-    <div class="report-heading clickable" role="presentation" @click="toggleCollapseIfDesktop"><div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div><button class="panel-collapse-btn" type="button" aria-label="收起或展开体检报告面板" @click.stop="toggleCollapseIfDesktop"><ArrowRight /></button></div>
-    <ReportHistory
-      :items="historyItems"
-      :total="historyTotal"
-      :loading="historyLoading"
-      :loading-more="historyLoadingMore"
-      :has-more="historyHasMore"
-      :query="historyQuery"
-      :error="historyError"
-      :opening-report-id="openingReportId"
-      :rerunning-report-id="rerunningReportId"
-      :selected-report-ids="selectedReportIds"
-      :comparison-loading="comparisonLoading"
-      :comparison-error="comparisonError"
-      @refresh="emit('refresh-history')"
-      @open="emit('open-history', $event)"
-      @rerun="emit('rerun-history', $event)"
-      @toggle-comparison="emit('toggle-comparison', $event)"
-      @compare="emit('compare-history')"
-      @search="emit('search-history', $event)"
-      @load-more="emit('load-more-history')"
-    />
-    <div v-if="report" class="report-content">
-      <div class="quality-banner" role="status">
-        <CircleCheck />
-        <span>{{ report.quality.mode }} · {{ report.completeness === 'partial' ? '部分结果' : '结果已完成' }}</span>
-        <button
-          title="查看数据说明"
-          aria-controls="quality-details"
-          :aria-expanded="showQualityDetails"
-          @click="showQualityDetails = !showQualityDetails"
-        >i</button>
-      </div>
-      <div v-if="showQualityDetails" id="quality-details">
-        <DataQualityDetails :quality="report.data_quality" />
-      </div>
-      <section v-if="report.multisource_validation" class="report-section multisource-validation" aria-labelledby="multisource-validation-title">
-        <div class="section-title"><span id="multisource-validation-title">高德辅助验证</span><small>不改变百度主分析</small></div>
-        <div class="multisource-validation-status" :class="report.multisource_validation.status">
-          <strong>{{ multisourceStatusLabel }}</strong>
-          <span>{{ report.multisource_validation.message || multisourceSummary }}</span>
-        </div>
-        <div v-if="report.multisource_validation.status === 'complete'" class="multisource-validation-metrics">
-          <span><b>{{ report.multisource_validation.matched_count || 0 }}</b>匹配</span>
-          <span><b>{{ report.multisource_validation.review_count || 0 }}</b>待复核</span>
-          <span><b>{{ report.multisource_validation.conflict_count || 0 }}</b>冲突</span>
-          <span><b>{{ report.multisource_validation.unmatched_count || 0 }}</b>未匹配</span>
-        </div>
-      </section>
-      <div class="score-block"><div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ scoreText }}<small v-if="overallScore !== null">/100</small></div><span class="score-trend"><TrendCharts /> {{ report.scoring.explanation }}</span></div><div class="score-ring" :class="{ unavailable: overallScore === null }" :style="scoreRingStyle"><b>{{ scoreText }}</b><span>{{ overallScore === null ? '暂不展示' : '健康度' }}</span></div></div>
-      <div class="stat-grid"><div><strong>{{ report.summary.poi_count }}</strong><span>设施点位</span></div><div><strong>{{ report.summary.area_sqm.toLocaleString() }}</strong><span>可达面积 m²</span></div><div class="danger"><strong>{{ report.summary.critical_zone_count }}</strong><span>重点盲区</span></div><div class="amber"><strong>{{ report.summary.sparse_zone_count }}</strong><span>设施稀疏区</span></div></div>
-      <section class="report-section execution-section" aria-labelledby="execution-title">
-        <div class="section-title"><span id="execution-title">执行指标</span><small>可复现性能观测</small></div>
-        <div class="execution-metrics">
-          <div><span>总耗时</span><strong>{{ formatDuration(report.execution.total_duration_ms) }}</strong></div>
-          <div><span>地图 API 调用</span><strong>{{ report.execution.api_calls }}</strong></div>
-          <div><span>缓存命中</span><strong>{{ report.execution.cache.hits }}<small>（{{ formatRate(report.execution.cache.hit_rate) }}）</small></strong></div>
-          <div><span>缓存未命中</span><strong>{{ report.execution.cache.misses }}</strong></div>
-        </div>
-        <div class="stage-duration-list" aria-label="主要阶段耗时">
-          <span v-for="stage in stageDurations" :key="stage.code"><b>{{ stage.label }}</b><em>{{ formatDuration(stage.duration_ms) }}</em></span>
-        </div>
-      </section>
-      <div class="report-section"><div class="section-title"><span>设施覆盖评分</span><small>可展开核验计算过程</small></div><div ref="chartRef" class="chart"></div><div ref="radarRef" class="radar" role="img" aria-label="各类别得分雷达图"></div><ScoreBreakdown :scores="report.category_scores" /></div>
-      <div class="report-section"><div class="section-title"><span>规划建议</span><small>{{ report.recommendations.length }} 项</small></div><RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="selectedRecommendationId" @locate="emit('locate-recommendation', $event)" @simulate="(category, candidate) => emit('simulate-candidate', category, candidate)" /></div>
-      <div class="report-section">
-        <SimulationPanel
-          :report="report"
-          :category="simulationCategory"
-          :location="simulationLocation"
-          :result="simulationResult"
-          :loading="simulationLoading"
-          :picking="simulationPicking"
-          :error="simulationError"
-          @update:category="emit('update:simulation-category', $event)"
-          @pick-map="emit('pick-simulation-location')"
-          @run="emit('run-simulation')"
-          @clear="emit('clear-simulation')"
-        />
-      </div>
-      <AiPlanningAssistant :report="report" />
-      <ReportExportMenu :report-id="report.report_id" />
+    <div class="report-heading">
+      <div><div class="eyebrow">社区体检报告</div><h2 id="report-panel-title">{{ report?.center.address || '分析报告' }}</h2></div>
     </div>
-    <div v-else class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span></div>
+    <nav class="report-actions" aria-label="报告工具">
+      <button type="button" :aria-pressed="auxiliary === 'history'" @click="toggleAuxiliary('history')"><Clock />历史 <small>{{ historyTotal }}</small></button>
+      <button type="button" :disabled="!report" :aria-pressed="auxiliary === 'details'" @click="toggleAuxiliary('details')"><InfoFilled />报告说明</button>
+      <button type="button" :disabled="!report" :aria-pressed="auxiliary === 'export'" @click="toggleAuxiliary('export')"><Download />导出</button>
+    </nav>
+    <div v-if="report && !auxiliary" class="report-tabs" role="tablist" aria-label="体检报告内容">
+      <button v-for="tab in tabs" :id="`report-tab-${tab.id}`" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" :aria-controls="`report-page-${tab.id}`" :tabindex="activeTab === tab.id ? 0 : -1" @click="selectTab(tab.id)" @keydown="handleTabKey($event, tab.id)">{{ tab.label }}</button>
+    </div>
+    <div ref="scrollRef" class="report-scroll">
+      <div v-if="auxiliary" class="auxiliary-heading"><strong>{{ auxiliary === 'history' ? '历史与比较' : auxiliary === 'details' ? '报告说明' : '导出报告' }}</strong><button type="button" @click="selectTab(activeTab)">{{ report ? '返回体检' : '返回' }} <ArrowRight /></button></div>
+      <ReportHistory v-show="auxiliary === 'history'"
+        :items="historyItems" :total="historyTotal" :loading="historyLoading" :loading-more="historyLoadingMore"
+        :has-more="historyHasMore" :query="historyQuery" :error="historyError" :opening-report-id="openingReportId"
+        :rerunning-report-id="rerunningReportId" :selected-report-ids="selectedReportIds"
+        :comparison-loading="comparisonLoading" :comparison-error="comparisonError"
+        @refresh="emit('refresh-history')" @open="emit('open-history', $event)" @rerun="emit('rerun-history', $event)"
+        @toggle-comparison="emit('toggle-comparison', $event)" @compare="emit('compare-history')"
+        @search="emit('search-history', $event)" @load-more="emit('load-more-history')" />
+      <div v-if="report" v-show="auxiliary !== 'history'" class="report-content">
+        <div class="quality-banner" :class="{ limited: dataLimited }" role="status">
+          <div><Warning v-if="dataLimited" /><CircleCheck v-else /><strong>{{ report.quality.mode }} · {{ report.completeness === 'partial' ? '部分结果' : '结果已完成' }}</strong></div>
+          <p v-if="dataLimited">{{ report.data_quality.summary }}</p>
+          <button type="button" aria-label="查看报告数据与计算说明" @click="toggleAuxiliary('details')">查看说明</button>
+        </div>
+        <section v-show="!auxiliary && activeTab === 'overview'" id="report-page-overview" role="tabpanel" aria-labelledby="report-tab-overview">
+          <button type="button" class="multisource-validation-entry" :class="multisourceStatus" :aria-label="`高德辅助验证：${multisourceStatusLabel}，查看详情`" aria-controls="multisource-validation-details" @click="showMultisourceDetails">
+            <span>高德辅助验证</span><strong>{{ multisourceStatusLabel }}</strong><ArrowRight aria-hidden="true" />
+          </button>
+          <div class="overview-score">
+            <div><span class="score-label">综合生活圈指数</span><div class="score-value" :class="scoreTone">{{ scoreText }}<small v-if="overallScore !== null">/100</small></div></div>
+            <div class="overview-context"><strong>{{ report.parameters.minutes }} 分钟步行</strong><span>{{ report.scoring.valid_category_count }}/{{ report.parameters.categories.length }} 类参与评分</span></div>
+          </div>
+          <p class="report-conclusion">{{ report.recommendation_summary.message }}</p>
+          <div class="overview-stats">
+            <button type="button" class="danger" @click="selectTab('recommendations')"><strong>{{ report.summary.critical_zone_count }}</strong><span>重点盲区 <ArrowRight /></span></button>
+            <div class="amber"><strong>{{ report.summary.sparse_zone_count }}</strong><span>设施稀疏区</span></div>
+            <div><strong>{{ report.summary.poi_count }}</strong><span>设施点位</span></div>
+            <div><strong>{{ (report.summary.area_sqm / 1_000_000).toFixed(2) }}<small> km²</small></strong><span>可达面积</span></div>
+          </div>
+          <section v-if="priorityRecommendations.length" class="report-section priority-section" aria-labelledby="priority-title">
+            <div class="section-title"><span id="priority-title">优先关注</span><button type="button" @click="selectTab('recommendations')">查看全部 {{ report.recommendations.length }} 项</button></div>
+            <button v-for="item in priorityRecommendations" :key="item.id" type="button" class="priority-row" @click="locateRecommendation(item.id)"><span :class="['priority-mark', item.priority_level]">{{ item.priority }}</span><span><strong>{{ item.title }}</strong><small>{{ item.target_region_ids.length }} 个重点盲区</small></span><ArrowRight /></button>
+          </section>
+          <ReportCharts :scores="report.category_scores" :visible="!auxiliary && activeTab === 'overview'" />
+        </section>
+        <section v-show="!auxiliary && activeTab === 'facilities'" id="report-page-facilities" role="tabpanel" aria-labelledby="report-tab-facilities">
+          <div class="page-heading"><strong>设施覆盖明细</strong><span>{{ report.category_scores.length }} 类设施</span></div>
+          <p class="page-intro">{{ report.scoring.explanation }}</p>
+          <ScoreBreakdown :scores="report.category_scores" />
+          <section v-if="report.spatial_statistics" class="report-section spatial-statistics" aria-label="设施稀缺与步行缺口独立统计">
+            <div class="section-title"><span>空间缺口核验</span></div>
+            <p class="page-intro">1公里附近设施稀缺和步行超时分别统计。缺少路线证据的网格保留为未知。</p>
+            <dl class="spatial-statistics-list"><div v-for="item in report.spatial_statistics.categories" :key="item.category"><dt>{{ FACILITY_LABELS[item.category] || item.category }}</dt><dd>附近稀缺 {{ item.nearby_scarcity_count }} · 步行缺口 {{ item.walking_gap_count }}<small>步行未知 {{ item.unknown_walking_count }} · 稀缺未知 {{ item.unknown_scarcity_count }}</small></dd></div></dl>
+            <p v-if="report.gap_groups" class="page-intro">{{ report.gap_groups.features.length }} 个已确认缺口片区；按同类别网格连通关系分组。</p>
+          </section>
+        </section>
+        <section v-show="!auxiliary && activeTab === 'recommendations'" id="report-page-recommendations" role="tabpanel" aria-labelledby="report-tab-recommendations">
+          <div class="page-heading"><strong>改善建议</strong><span>{{ report.recommendations.length }} 项</span></div>
+          <p class="page-intro">{{ report.recommendation_summary.message }}</p>
+          <RecommendationList :recommendations="report.recommendations" :summary="report.recommendation_summary" :selected-id="focusedRecommendationId" :active="!auxiliary && activeTab === 'recommendations'" :simulation-disabled="simulationLoading || planningBusy" @locate="locateRecommendation" @simulate="simulateCandidate" />
+          <details v-if="report.gap_candidates?.length" class="report-section gap-candidate-list"><summary>全部缺口片区代表点（{{ report.gap_candidates.length }}）</summary><p class="page-intro">分别列出设施稀缺、已核验步行超时与重点盲区的内部代表网格。代表点供假设模拟使用，可建设条件须另行核验。</p><article v-for="item in report.gap_candidates" :key="item.id"><strong>{{ FACILITY_LABELS[item.category] || item.category }} · {{ gapKindLabel(item.gap_kind) }}</strong><p>{{ item.related_region_ids.length }} 个网格 · {{ item.gap_group_id }}</p><p>{{ item.reason }}</p><small>连通证据：{{ connectivityLabel(item.connectivity_status) }}</small><button type="button" :disabled="simulationLoading || planningBusy" @click="simulateCandidate(item.category, item)">模拟该片区代表点</button></article></details>
+          <div class="improvement-tools" aria-label="改善规划工具">
+            <button type="button" :aria-expanded="openTool === 'simulation'" aria-controls="report-simulation" @click="toggleTool('simulation')"><TrendCharts />改善模拟</button>
+            <button type="button" :aria-expanded="openTool === 'assistant'" aria-controls="report-assistant" @click="toggleTool('assistant')"><ChatDotRound />智能助手</button>
+          </div>
+          <div v-show="openTool === 'simulation'" id="report-simulation" ref="simulationRef"><SimulationPanel :report="report" :category="simulationCategory" :location="simulationLocation" :result="simulationResult" :loading="simulationLoading || planningBusy" :picking="simulationPicking" :error="simulationError" @update:category="emit('update:simulation-category', $event)" @pick-map="emit('pick-simulation-location')" @run="emit('run-simulation')" @clear="emit('clear-simulation')" /></div>
+          <div v-if="assistantOpened" v-show="openTool === 'assistant'" id="report-assistant"><AiPlanningAssistant :report="report" :simulation-location="simulationLocation" :simulation-category="simulationCategory" :grid-id="planningGridId" :disabled="simulationLoading" @busy="planningBusy = $event" @simulation-result="emit('assistant-simulation', $event)" /></div>
+        </section>
+        <section v-if="activeTab === 'ai' && !auxiliary" id="report-page-ai" role="tabpanel" aria-labelledby="report-tab-ai"><div class="page-heading"><strong>核验与规划闭环</strong></div><AiCompletionWorkbench :key="report.report_id" :report="report" :governance-revision="governanceRevision" @new-report="emit('new-report', $event)" @sampling="emit('sampling', $event)" @combination="emit('combination', $event)" /></section>
+        <section v-show="auxiliary === 'details'" class="report-details" aria-label="报告数据与计算说明">
+          <DataQualityDetails :quality="report.data_quality" />
+          <section class="report-section"><div class="section-title"><span>评分说明</span></div><p class="page-intro">{{ report.scoring.explanation }}</p><p class="page-intro">{{ report.summary.score_explanation }}</p></section>
+          <section id="multisource-validation-details" ref="multisourceRef" class="report-section multisource-validation" tabindex="-1" aria-labelledby="multisource-validation-title">
+            <div class="section-title"><span id="multisource-validation-title">高德辅助验证</span></div>
+            <div class="multisource-validation-status" :class="multisourceStatus"><strong>{{ multisourceStatusLabel }}</strong><span>{{ report.multisource_validation?.message || multisourceSummary }}</span></div>
+            <div v-if="report.multisource_validation?.status === 'complete'" class="multisource-validation-metrics"><span><b>{{ report.multisource_validation.matched_count || 0 }}</b>匹配</span><span><b>{{ report.multisource_validation.review_count || 0 }}</b>待复核</span><span><b>{{ report.multisource_validation.conflict_count || 0 }}</b>冲突</span><span><b>{{ report.multisource_validation.unmatched_count || 0 }}</b>未匹配</span></div>
+          </section>
+          <section class="report-section execution-section" aria-labelledby="execution-title">
+            <div class="section-title"><span id="execution-title">执行与缓存指标</span></div>
+            <dl class="execution-metrics"><div><dt>总耗时</dt><dd>{{ formatDuration(report.execution.total_duration_ms) }}</dd></div><div><dt>地图 API 调用</dt><dd>{{ report.execution.api_calls }}</dd></div><div><dt>缓存命中</dt><dd>{{ report.execution.cache.hits }}（{{ formatRate(report.execution.cache.hit_rate) }}）</dd></div><div><dt>缓存未命中</dt><dd>{{ report.execution.cache.misses }}</dd></div></dl>
+            <div class="stage-duration-list" aria-label="主要阶段耗时"><span v-for="stage in stageDurations" :key="stage.code"><b>{{ stage.label }}</b><em>{{ formatDuration(stage.duration_ms) }}</em></span></div>
+          </section>
+          <section v-if="executionLedger" class="report-section execution-ledger" aria-label="统一预算与版本账本">
+            <div class="section-title"><span>预算与版本账本</span></div>
+            <dl class="ledger-identifier"><dt>执行编号</dt><dd>{{ executionLedger.id }}</dd></dl>
+            <dl class="execution-metrics">
+              <div><dt>输入词元</dt><dd>{{ executionLedger.usage.prompt_tokens ?? '未知' }}</dd></div>
+              <div><dt>输出词元</dt><dd>{{ executionLedger.usage.completion_tokens ?? '未知' }}</dd></div>
+              <div><dt>真实路线对</dt><dd>{{ executionLedger.usage.route_pairs ?? 0 }}</dd></div>
+              <div><dt>估算金额</dt><dd>{{ executionLedger.cost.estimated_total === null ? '价格未知' : `${executionLedger.cost.estimated_total.toFixed(4)} ${executionLedger.cost.currency}` }}</dd></div>
+              <div class="ledger-settlement"><dt>提供方结算</dt><dd>{{ executionLedger.cost.settlement_stale || executionLedger.cost.status === 'settlement_stale' ? '旧结算已过时，待重新核对' : executionLedger.cost.settled_total ?? '待账单核对' }}</dd></div>
+            </dl>
+            <p v-if="executionLedger.cost.disclosure" class="page-intro">{{ executionLedger.cost.disclosure }}</p>
+            <div class="ledger-actions">
+              <details class="ledger-disclosure">
+                <summary>调用预算和版本</summary>
+                <dl class="ledger-values">
+                  <div v-for="(value, key) in executionLedger.budget" :key="`budget-${key}`"><dt>{{ key }}</dt><dd>{{ value }}</dd></div>
+                  <div v-for="(value, key) in executionLedger.versions" :key="`version-${key}`"><dt>{{ key }}</dt><dd>{{ value }}</dd></div>
+                </dl>
+              </details>
+              <ExecutionSettlementReview v-if="auxiliary === 'details'" :key="executionLedger.id" class="ledger-disclosure" :execution-id="executionLedger.id" @ledger="refreshExecutionLedger" />
+              <ExecutionCheckpointReview v-if="auxiliary === 'details'" :key="executionLedger.id" class="ledger-disclosure" :execution-id="executionLedger.id" />
+            </div>
+          </section>
+        </section>
+        <ReportExportMenu v-show="auxiliary === 'export'" :key="report.report_id" :report-id="report.report_id" />
+      </div>
+      <div v-else-if="!auxiliary" class="empty-report"><Warning /><strong>等待体检结果</strong><span>设置分析参数后开始生成报告</span><button type="button" @click="toggleAuxiliary('history')">查看历史报告</button></div>
+    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { ECharts } from '../utils/chartRuntime'
-import { ArrowRight, CircleCheck, TrendCharts, Warning } from '@element-plus/icons-vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { ArrowRight, ChatDotRound, CircleCheck, Clock, Download, InfoFilled, TrendCharts, Warning } from '@element-plus/icons-vue'
 import type { HistoryReportItem } from '../types/history'
 import type { RecommendationCandidate } from '../types/recommendations'
-import type { Category, Report } from '../types/report'
+import type { ExecutionLedger, Report } from '../types/report'
 import type { SimulationLocation, SimulationResult } from '../types/simulation'
+import { FACILITY_LABELS } from '../constants/facilities'
 import DataQualityDetails from './DataQualityDetails.vue'
 import ScoreBreakdown from './ScoreBreakdown.vue'
 import ReportHistory from './ReportHistory.vue'
+import ReportCharts from './ReportCharts.vue'
 import RecommendationList from './RecommendationList.vue'
 import SimulationPanel from './SimulationPanel.vue'
 import ReportExportMenu from './ReportExportMenu.vue'
 import AiPlanningAssistant from './AiPlanningAssistant.vue'
+import AiCompletionWorkbench from './AiCompletionWorkbench.vue'
+import ExecutionCheckpointReview from './ExecutionCheckpointReview.vue'
+import ExecutionSettlementReview from './ExecutionSettlementReview.vue'
+import type { Combination, SamplingLayers } from '../types/completion'
+import type { ReportGuidePage } from '../types/guide'
 
 const props = defineProps<{
   report: Report | null
@@ -129,6 +164,9 @@ const props = defineProps<{
   simulationPicking: boolean
   simulationError: string
   mobileOpen: boolean
+  planningGridId?: string | null
+  governanceRevision?: number
+  guidePage?: ReportGuidePage | null
 }>()
 const emit = defineEmits<{
   'refresh-history': []
@@ -145,32 +183,59 @@ const emit = defineEmits<{
   'run-simulation': []
   'clear-simulation': []
   'close-mobile': []
-  'toggle-collapse': []
+  'assistant-simulation': [result: SimulationResult]
+  'new-report': [report: Report]
+  sampling: [layers: SamplingLayers]
+  combination: [result: Combination]
 }>()
-
-// 标题栏整体作为折叠开关仅在桌面生效；移动端抽屉由独立关闭按钮控制。
-function toggleCollapseIfDesktop() {
-  if (window.matchMedia('(max-width: 820px)').matches) return
-  emit('toggle-collapse')
-}
-const chartRef = ref<HTMLDivElement | null>(null)
-const radarRef = ref<HTMLDivElement | null>(null)
-const showQualityDetails = ref(false)
-let chart: ECharts | null = null
-let radarChart: ECharts | null = null
-type ChartRuntime = typeof import('../utils/chartRuntime')
-let echartsImport: Promise<ChartRuntime> | null = null
+type ReportTab = 'overview' | 'facilities' | 'recommendations' | 'ai'
+type Auxiliary = 'history' | 'details' | 'export'
+type ImprovementTool = 'simulation' | 'assistant'
+const tabs: { id: ReportTab; label: string }[] = [{ id: 'overview', label: '体检概览' }, { id: 'facilities', label: '设施详情' }, { id: 'recommendations', label: '改善建议' }, { id: 'ai', label: 'AI核验' }]
+const activeTab = ref<ReportTab>('overview')
+const auxiliary = ref<Auxiliary | null>(null)
+const openTool = ref<ImprovementTool | null>(null)
+const assistantOpened = ref(false)
+const planningBusy = ref(false)
+const focusedRecommendationId = ref<string | null>(null)
+const scrollRef = ref<HTMLElement | null>(null)
+const simulationRef = ref<HTMLElement | null>(null)
+const multisourceRef = ref<HTMLElement | null>(null)
+let beforeGuide: { tab: ReportTab; auxiliary: Auxiliary | null; scrollTop: number } | null = null
+watch(() => props.guidePage, (page) => {
+  if (page) {
+    beforeGuide ??= { tab: activeTab.value, auxiliary: auxiliary.value, scrollTop: scrollRef.value?.scrollTop ?? 0 }
+    if (page === 'history' || page === 'details' || page === 'export') {
+      auxiliary.value = page
+      resetScroll()
+    } else selectTab(page)
+  } else if (beforeGuide) {
+    const saved = beforeGuide
+    beforeGuide = null
+    activeTab.value = saved.tab
+    auxiliary.value = saved.auxiliary
+    void nextTick(() => { if (scrollRef.value) scrollRef.value.scrollTop = saved.scrollTop })
+  }
+}, { immediate: true })
+const refreshedExecutionLedger = ref<ExecutionLedger | null>(null)
+const executionLedger = computed(() => refreshedExecutionLedger.value?.id === props.report?.execution_ledger?.id ? refreshedExecutionLedger.value : props.report?.execution_ledger)
+function refreshExecutionLedger(ledger: ExecutionLedger) { if (ledger.id === props.report?.execution_ledger?.id) refreshedExecutionLedger.value = ledger }
+watch(() => props.report, () => { refreshedExecutionLedger.value = null })
 const overallScore = computed(() => props.report?.summary.score ?? null)
 const scoreText = computed(() => overallScore.value === null ? '—' : overallScore.value)
 const scoreTone = computed(() => overallScore.value === null ? 'unavailable' : overallScore.value >= 80 ? 'good' : overallScore.value >= 60 ? 'fair' : 'risk')
-const scoreRingStyle = computed(() => ({ '--score': `${(overallScore.value ?? 0) * 3.6}deg` }))
+const dataLimited = computed(() => props.report?.completeness === 'partial' || props.report?.data_quality.overall_status !== 'good')
+const priorityRecommendations = computed(() => [...(props.report?.recommendations || [])].sort((a, b) => a.priority_rank - b.priority_rank).slice(0, 2))
+const multisourceStatus = computed(() => props.report?.multisource_validation?.status || 'missing')
 const multisourceStatusLabel = computed(() => {
-  const status = props.report?.multisource_validation?.status
+  const status = multisourceStatus.value
+  if (status === 'missing') return '本报告未进行辅助验证'
   return status === 'complete' ? '验证已完成' : status === 'failed' ? '验证未完成' : '验证未启用'
 })
 const multisourceSummary = computed(() => {
   const validation = props.report?.multisource_validation
-  if (!validation || validation.status === 'disabled') return '当前只使用百度地图生成正式体检结论。'
+  if (!validation) return '本报告没有辅助验证记录，体检结论来自百度地图主分析。'
+  if (validation.status === 'disabled') return '当前只使用百度地图生成正式体检结论。'
   if (validation.status === 'failed') return '高德请求失败，百度主分析结果仍然有效。'
   return `高德返回 ${validation.returned_count || 0} 条观察记录，未参与评分、盲区或步行计算。`
 })
@@ -180,190 +245,181 @@ const stageLabels: Record<string, string> = {
 }
 const stageDurations = computed(() => Object.entries(props.report?.execution.stage_durations_ms || {})
   .map(([code, duration_ms]) => ({ code, duration_ms, label: stageLabels[code] || code })))
-
-function formatDuration(value: number) {
-  return value < 1_000 ? `${value} ms` : `${(value / 1_000).toFixed(2)} s`
+function formatDuration(value: number) { return value < 1_000 ? `${value} ms` : `${(value / 1_000).toFixed(2)} s` }
+function formatRate(value: number) { return `${Math.round(value * 100)}%` }
+const gapKindLabel = (kind: string) => ({ scarcity: '1公里设施稀缺', walking_timeout: '已核验步行超时', critical: '重点盲区' })[kind] || kind
+const connectivityLabel = (status: string) => ({ geometric_with_verified_barrier_constraints: '网格邻接已应用核验障碍限制，未核验通路仍待核验', geometric_only_unverified_walk_connectivity: '仅网格邻接，步行通路未核验' })[status] || status
+function resetScroll() { if (scrollRef.value) scrollRef.value.scrollTop = 0 }
+function selectTab(tab: ReportTab) { activeTab.value = tab; auxiliary.value = null; resetScroll() }
+function toggleAuxiliary(view: Auxiliary) { auxiliary.value = auxiliary.value === view ? null : view; resetScroll() }
+async function showMultisourceDetails() {
+  auxiliary.value = 'details'
+  await nextTick()
+  multisourceRef.value?.scrollIntoView({ block: 'start' })
+  multisourceRef.value?.focus({ preventScroll: true })
 }
-
-function formatRate(value: number) {
-  return `${Math.round(value * 100)}%`
+function handleTabKey(event: KeyboardEvent, tab: ReportTab) {
+  const index = tabs.findIndex(item => item.id === tab)
+  const target = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1
+  if (target < 0) return
+  event.preventDefault()
+  selectTab(tabs[target].id)
+  document.getElementById(`report-tab-${tabs[target].id}`)?.focus()
 }
-
-// 柱状图悬浮提示：把该类别的关键体检信息一次性给出，避免用户再去翻下方明细
-function categoryTooltipHtml(item: Category, dark: boolean) {
-  const muted = dark ? '#9db8b8' : '#7b8c87'
-  const strong = dark ? '#eaf6f3' : '#22403a'
-  const divider = dark ? 'rgba(126,214,199,.2)' : '#e3eae6'
-  const row = (label: string, value: string) =>
-    `<div style="display:flex;justify-content:space-between;gap:18px;margin-top:3px;">` +
-    `<span style="color:${muted};">${label}</span>` +
-    `<span style="color:${strong};font-weight:600;">${value}</span></div>`
-  const components = item.components
-    .map((c) => row(`${c.label}（占 ${c.weight_percent}%）`, c.score === null ? '—' : `${c.score}`))
-    .join('')
-  const scoreText = item.score === null ? '—' : `${item.score} / 100`
-  const nearestText = item.nearest_walk_minutes === null ? '—' : `${item.nearest_walk_minutes} 分钟`
-  const weightText = `${formatRate(item.configured_weight)}（实际 ${formatRate(item.applied_weight)}）`
-  const note = item.valid_for_overall
-    ? ''
-    : `<div style="margin-top:6px;color:${muted};font-size:11px;line-height:1.5;">${item.status_explanation}</div>`
-  return (
-    `<div style="min-width:196px;">` +
-    `<div style="display:flex;align-items:center;gap:6px;">` +
-    `<span style="width:9px;height:9px;border-radius:2px;background:${item.color};display:inline-block;"></span>` +
-    `<strong style="color:${strong};font-size:13px;">${item.label}</strong>` +
-    `<span style="color:${muted};font-size:11px;">${item.status_label}</span></div>` +
-    row('类别得分', scoreText) +
-    row('设施数量', `${item.count} 个`) +
-    row('最近步行', nearestText) +
-    row('综合权重', weightText) +
-    `<div style="margin-top:7px;padding-top:6px;border-top:1px solid ${divider};">${components}</div>` +
-    note +
-    `</div>`
-  )
+function locateRecommendation(id: string) {
+  focusedRecommendationId.value = id
+  selectTab('recommendations')
+  emit('locate-recommendation', id)
 }
-
-async function drawChart() {
-  if (!chartRef.value || !props.report) return
-  echartsImport ||= loadChartRuntime()
-  const echarts = await echartsImport
-  if (!chartRef.value || !props.report) return
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark'
-  const axis = dark ? '#9db8b8' : '#71838a'
-  const axisMinor = dark ? '#6f8b90' : '#9aa7a5'
-  const split = dark ? 'rgba(126,214,199,.14)' : '#edf0ed'
-  const nullBar = dark ? '#3a4d59' : '#c5cfcb'
-  chart?.dispose()
-  chart = echarts.init(chartRef.value)
-  chart.setOption({
-    grid: { top: 12, right: 12, bottom: 28, left: 32 },
-    tooltip: {
-      trigger: 'item',
-      // 图表容器较矮，confine 会把提示裁掉；挂到 body 让其自由浮于面板之上
-      appendToBody: true,
-      // 默认贴光标上方会在图表靠近视口顶部时把表头顶出屏幕；改为右下优先、越界自动翻转
-      position: (point: number[], _params: unknown, _dom: unknown, _rect: unknown, size: { contentSize: number[] }) => {
-        // point 为图表容器内局部坐标；先换算到页面坐标做视口越界判断，再转回局部返回
-        const host = chartRef.value?.getBoundingClientRect()
-        const ox = host?.left ?? 0
-        const oy = host?.top ?? 0
-        // 首帧 contentSize 可能为 0，用估算尺寸兜底，保证越界翻转判断可靠
-        const tw = size.contentSize[0] || 240
-        const th = size.contentSize[1] || 240
-        let px = ox + point[0] + 16
-        let py = oy + point[1] + 16
-        if (px + tw > window.innerWidth - 8) px = ox + point[0] - tw - 16
-        if (px < 8) px = 8
-        if (py + th > window.innerHeight - 8) py = oy + point[1] - th - 16
-        if (py < 8) py = 8
-        return [px - ox, py - oy]
-      },
-      backgroundColor: dark ? 'rgba(13,25,37,.97)' : 'rgba(255,255,255,.98)',
-      borderColor: dark ? 'rgba(126,214,199,.3)' : '#dbe4df',
-      borderWidth: 1,
-      padding: 10,
-      textStyle: { color: dark ? '#e9f6f2' : '#274039', fontSize: 12 },
-      formatter: (params: { dataIndex: number }) => {
-        const item = props.report?.categories[params.dataIndex]
-        return item ? categoryTooltipHtml(item, dark) : ''
-      },
-    },
-    xAxis: { type: 'category', data: props.report.categories.map((item) => item.label), axisLabel: { color: axis, fontSize: 11 } },
-    yAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: split } }, axisLabel: { color: axisMinor } },
-    series: [{ type: 'bar', barWidth: 20, data: props.report.categories.map((item) => ({ value: item.score ?? 0, itemStyle: { color: item.score === null ? nullBar : item.color, borderRadius: [3, 3, 0, 0] } })) }],
-  })
+function toggleTool(tool: ImprovementTool) {
+  openTool.value = openTool.value === tool ? null : tool
+  if (tool === 'assistant') assistantOpened.value = true
 }
-
-async function loadChartRuntime(): Promise<ChartRuntime> {
-  return import('../utils/chartRuntime')
+async function showSimulation() {
+  selectTab('recommendations')
+  openTool.value = 'simulation'
+  await nextTick()
+  simulationRef.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }
-
-// 雷达图：把各类别得分放在同一张多边形上，便于横向比较短板类别
-async function drawRadar() {
-  if (!radarRef.value || !props.report) return
-  echartsImport ||= loadChartRuntime()
-  const echarts = await echartsImport
-  if (!radarRef.value || !props.report) return
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark'
-  const axis = dark ? '#9db8b8' : '#71838a'
-  const split = dark ? 'rgba(126,214,199,.16)' : '#e3eae6'
-  const accent = dark ? '#2ee6c5' : '#3e9b8b'
-  const categories = props.report.categories
-  radarChart?.dispose()
-  radarChart = echarts.init(radarRef.value)
-  radarChart.setOption({
-    tooltip: {
-      trigger: 'item',
-      appendToBody: true,
-      backgroundColor: dark ? 'rgba(13,25,37,.97)' : 'rgba(255,255,255,.98)',
-      borderColor: dark ? 'rgba(126,214,199,.3)' : '#dbe4df',
-      borderWidth: 1,
-      padding: 10,
-      textStyle: { color: dark ? '#e9f6f2' : '#274039', fontSize: 12 },
-      formatter: () =>
-        categories
-          .map((item) => `${item.label}：${item.score === null ? '—' : item.score}`)
-          .join('<br/>'),
-    },
-    radar: {
-      indicator: categories.map((item) => ({ name: item.label, max: 100 })),
-      radius: '66%',
-      center: ['50%', '52%'],
-      axisName: { color: axis, fontSize: 11 },
-      axisLine: { lineStyle: { color: split } },
-      splitLine: { lineStyle: { color: split } },
-      splitArea: { show: false },
-    },
-    series: [
-      {
-        type: 'radar',
-        symbolSize: 4,
-        data: [
-          {
-            name: '类别得分',
-            value: categories.map((item) => item.score ?? 0),
-            lineStyle: { color: accent, width: 2 },
-            itemStyle: { color: accent },
-            areaStyle: { color: dark ? 'rgba(46,230,197,.18)' : 'rgba(62,155,139,.16)' },
-          },
-        ],
-      },
-    ],
-  })
+function simulateCandidate(category: string, candidate: RecommendationCandidate) {
+  void showSimulation()
+  emit('simulate-candidate', category, candidate)
 }
-
-watch(() => props.report, async () => { await nextTick(); await drawChart(); await drawRadar() }, { immediate: true })
-onMounted(() => window.addEventListener('life-circle:theme', handleThemeChange))
-onBeforeUnmount(() => {
-  window.removeEventListener('life-circle:theme', handleThemeChange)
-  chart?.dispose()
-  radarChart?.dispose()
+watch(() => props.report?.report_id, () => {
+  selectTab('overview')
+  openTool.value = null
+  assistantOpened.value = false
+  focusedRecommendationId.value = null
 })
-
-function handleThemeChange() {
-  drawChart()
-  drawRadar()
-}
+watch(() => props.selectedRecommendationId, id => {
+  focusedRecommendationId.value = id
+  if (id) selectTab('recommendations')
+}, { immediate: true })
+watch(() => [props.simulationLocation, props.simulationResult, props.simulationPicking, props.simulationError], () => {
+  if (props.simulationLocation || props.simulationResult || props.simulationPicking || props.simulationError) void showSimulation()
+})
 </script>
 
 <style scoped>
-.radar { height: 232px; margin-top: 4px; }
-.execution-section { border-top: 1px solid #e7eeea; padding-top: 11px; }
-.execution-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.execution-metrics > div { padding: 7px 8px; border-radius: 4px; background: #f1f6f3; }
-.execution-metrics span, .execution-metrics strong { display: block; }
-.execution-metrics span { color: #81908c; font-size: 8px; }
-.execution-metrics strong { margin-top: 3px; color: #315e55; font-size: 11px; }
-.execution-metrics small { color: #78918a; font-size: 8px; font-weight: 500; }
-.stage-duration-list { display: flex; flex-wrap: wrap; gap: 5px 10px; margin-top: 7px; }
-.stage-duration-list span { display: inline-flex; gap: 4px; color: #7b8c87; font-size: 8px; }
-.stage-duration-list em { color: #4d7168; font-style: normal; }
-@media (max-width: 760px) { .execution-metrics { grid-template-columns: repeat(2, 1fr); } }
-html[data-theme="dark"] .execution-section { border-top-color: rgba(126,214,199,.1); }
-html[data-theme="dark"] .execution-metrics > div { background: rgba(9,18,27,.6); }
-html[data-theme="dark"] .execution-metrics span { color: #6f8b90; }
-html[data-theme="dark"] .execution-metrics strong { color: #cfe7e1; }
-html[data-theme="dark"] .execution-metrics small { color: #6f8b90; }
-html[data-theme="dark"] .stage-duration-list span { color: #9db8b8; }
-html[data-theme="dark"] .stage-duration-list em { color: #7ff0da; }
+.spatial-statistics-list { margin: 9px 0; font-size: 10px; line-height: 1.7; }
+.spatial-statistics-list > div { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 6px; padding: 7px 0; border-top: 1px solid #dce6e0; }
+.spatial-statistics-list dt { font-weight: 600; }.spatial-statistics-list dd { margin: 0; overflow-wrap: anywhere; }.spatial-statistics-list small { display: block; opacity: .65; font-size: 9px; }
+html[data-theme="dark"] .spatial-statistics-list > div { border-color: rgba(126,214,199,.18); }
+</style>
+
+<style scoped>
+/* 报告容器负责信息层级和滚动；图表与明细保留各自组件样式。 */
+.report-panel { --report-ink: #294d46; --report-muted: #667d75; --report-line: #dce6e0; --report-accent: #2f7d6d; --report-soft: #e9f2ec; display: flex; flex-direction: column; overflow: hidden; }
+:global(html[data-theme="dark"] .report-panel) { --report-ink: #eaf6f3; --report-muted: #a7bfb9; --report-line: rgba(126,214,199,.18); --report-accent: #7ff0da; --report-soft: rgba(46,230,197,.1); }
+.report-heading { flex-shrink: 0; gap: 8px; padding-bottom: 12px; }
+.report-heading > div { min-width: 0; }
+.report-heading h2 { font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
+.report-actions { display: flex; gap: 5px; padding: 10px 0; flex-shrink: 0; }
+.report-actions button { display: inline-flex; justify-content: center; align-items: center; gap: 4px; min-height: 28px; padding: 3px 7px; border: 1px solid var(--report-line); border-radius: 5px; background: transparent; color: var(--report-muted); font-size: 12px; }
+.report-actions small { font-size: 11px; }
+.report-actions svg, .improvement-tools svg { width: 13px; height: 13px; flex: 0 0 auto; }
+.report-actions button[aria-pressed="true"], .report-actions button:hover:not(:disabled) { background: var(--report-soft); color: var(--report-accent); }
+.report-actions button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible { outline: 2px solid var(--report-accent); outline-offset: -2px; }
+.report-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex-shrink: 0; border-bottom: 1px solid var(--report-line); margin-bottom: 10px; }
+.report-tabs button { min-height: 34px; padding: 4px 0 8px; border-bottom: 2px solid transparent; background: transparent; color: var(--report-muted); font-size: 12px; }
+.report-tabs button[aria-selected="true"] { border-color: var(--report-accent); color: var(--report-accent); font-weight: 700; }
+.report-scroll { min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; padding-right: 2px; }
+.report-content { padding-bottom: 4px; }
+.auxiliary-heading { display: flex; justify-content: space-between; align-items: center; margin: 3px 0 12px; color: var(--report-ink); font-size: 13px; }
+.auxiliary-heading button { display: inline-flex; align-items: center; gap: 3px; background: transparent; color: var(--report-accent); font-size: 12px; }
+.auxiliary-heading svg { width: 12px; }
+.quality-banner { display: block; position: relative; height: auto; margin: 0 0 10px; padding: 9px 10px; font-size: 12px; border-radius: 5px; }
+.quality-banner > div { display: flex; align-items: center; gap: 5px; padding-right: 56px; }
+.quality-banner svg { width: 14px; height: 14px; flex-shrink: 0; }
+.quality-banner strong { font-size: 11px; line-height: 1.5; }
+.quality-banner p { margin: 6px 0 0; font-size: 12px; line-height: 1.55; }
+.quality-banner button { position: absolute; right: 7px; top: 9px; width: auto; height: auto; border: 0; border-radius: 0; background: transparent; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.quality-banner.limited { color: #815b21; background: #fff1d9; }
+.quality-banner.limited svg, .quality-banner.limited button { color: inherit; }
+:global(html[data-theme="dark"] .quality-banner.limited) { color: #ffcf8a; background: rgba(255,181,71,.12); }
+.multisource-validation-entry { display: grid; grid-template-columns: auto minmax(0, 1fr) 12px; align-items: center; gap: 7px; width: 100%; min-height: 34px; margin-bottom: 6px; padding: 8px; border-radius: 4px; background: var(--report-soft); color: var(--report-ink); text-align: left; font-size: 12px; }
+.multisource-validation-entry strong { color: var(--report-muted); text-align: right; font-size: 11px; font-weight: 500; overflow-wrap: anywhere; }
+.multisource-validation-entry svg { width: 12px; height: 12px; color: var(--report-muted); }
+.multisource-validation-entry:hover { box-shadow: inset 0 0 0 1px var(--report-accent); }
+.multisource-validation-entry.complete strong { color: var(--report-accent); }
+.multisource-validation-entry.failed strong { color: #b35439; }
+:global(html[data-theme="dark"] .multisource-validation-entry.failed strong) { color: #ffb29e; }
+.multisource-validation:focus-visible { outline: 2px solid var(--report-accent); outline-offset: -2px; }
+.overview-score { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0 0; }
+.score-label { font-size: 12px; }
+.score-value { font-size: 44px; line-height: 1.2; }
+.score-value small { font-size: 12px; margin-left: 3px; }
+.overview-context { display: grid; gap: 6px; color: var(--report-muted); text-align: right; font-size: 11px; }
+.overview-context strong { color: var(--report-ink); font-size: 12px; }
+.report-conclusion { margin: 10px 0 14px; color: var(--report-ink); font-size: 13px; line-height: 1.6; }
+.overview-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 12px 0; border-top: 1px solid var(--report-line); border-bottom: 1px solid var(--report-line); }
+.overview-stats > * { min-width: 0; text-align: left; background: transparent; padding: 0; }
+.overview-stats strong { display: block; color: var(--report-ink); font-size: 20px; font-weight: 700; }
+.overview-stats strong small { font-size: 11px; font-weight: 400; }
+.overview-stats span { display: flex; align-items: center; gap: 3px; color: var(--report-muted); font-size: 12px; margin-top: 2px; }
+.overview-stats span svg { width: 11px; }
+.overview-stats .danger strong { color: #c65b45; }
+.overview-stats .amber strong { color: #af7b2d; }
+:global(html[data-theme="dark"] .overview-stats .danger strong) { color: #ff9d8d; }
+:global(html[data-theme="dark"] .overview-stats .amber strong) { color: #ffcf8a; }
+.section-title { font-size: 13px; align-items: center; gap: 6px; }
+.section-title button { background: transparent; color: var(--report-accent); font-size: 11px; padding: 0; }
+.priority-row { display: flex; width: 100%; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--report-line); background: transparent; text-align: left; }
+.priority-row > span:nth-child(2) { flex: 1; min-width: 0; }
+.priority-row strong { display: block; color: var(--report-ink); font-size: 12px; line-height: 1.5; }
+.priority-row small { display: block; color: var(--report-muted); font-size: 11px; margin-top: 2px; }
+.priority-row > svg { width: 12px; color: var(--report-muted); flex: 0 0 auto; }
+.gap-candidate-list { font-size: 11px; }.gap-candidate-list summary { cursor: pointer; }.gap-candidate-list article { padding: 9px 0; border-top: 1px solid var(--report-line); line-height: 1.65; }.gap-candidate-list p { margin: 4px 0; }.gap-candidate-list small { display: block; color: var(--report-muted); }.gap-candidate-list button { margin-top: 6px; padding: 5px 7px; background: transparent; color: var(--report-ink); border: 1px solid var(--report-line); border-radius: 5px; font: inherit; }
+.priority-mark { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; color: #aa4d3a; background: #fbe8e2; font-size: 11px; }
+.priority-mark.medium { color: #896326; background: #f8edd5; }
+:global(html[data-theme="dark"] .priority-mark) { background: rgba(255,107,87,.14); color: #ff9d8d; }
+:global(html[data-theme="dark"] .priority-mark.medium) { background: rgba(255,181,71,.12); color: #ffcf8a; }
+.page-heading { display: flex; justify-content: space-between; align-items: center; color: var(--report-ink); padding-top: 8px; font-size: 13px; }
+.page-heading span { color: var(--report-muted); font-size: 12px; }
+.page-intro { color: var(--report-muted); font-size: 12px; line-height: 1.6; margin: 8px 0 12px; }
+.improvement-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--report-line); }
+.improvement-tools button { display: flex; justify-content: center; align-items: center; gap: 5px; min-height: 32px; border: 1px solid var(--report-line); border-radius: 5px; color: var(--report-accent); background: transparent; font-size: 12px; }
+.improvement-tools button[aria-expanded="true"] { background: var(--report-soft); border-color: var(--report-accent); }
+.execution-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.execution-metrics dt { color: var(--report-muted); font-size: 11px; }
+.execution-metrics dd { margin: 4px 0 0; color: var(--report-ink); font-size: 13px; }
+.ledger-identifier { margin: 10px 0 12px; color: var(--report-muted); font-size: 11px; line-height: 1.6; }
+.ledger-identifier dd { margin: 3px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.execution-ledger .execution-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.execution-ledger .execution-metrics > div { min-width: 0; }
+.execution-ledger .execution-metrics dd { overflow-wrap: anywhere; }
+.ledger-settlement { grid-column: 1 / -1; }
+.ledger-actions { margin-top: 12px; }
+.ledger-actions > .ledger-disclosure { margin: 0; border-top: 1px solid var(--report-line); color: var(--report-ink); font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+.ledger-actions :deep(.ledger-disclosure > summary) { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 10px 0; color: var(--report-ink); font-size: 12px; font-weight: 600; line-height: 1.6; cursor: pointer; list-style: none; }
+.ledger-actions :deep(.ledger-disclosure > summary::-webkit-details-marker) { display: none; }
+.ledger-actions :deep(.ledger-disclosure > summary::before) { content: ''; flex: 0 0 auto; width: 0; height: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 5px solid var(--report-muted); }
+.ledger-actions :deep(.ledger-disclosure[open] > summary::before) { transform: rotate(90deg); }
+.ledger-actions :deep(.ledger-disclosure > summary:focus-visible) { outline: 2px solid var(--report-accent); outline-offset: -2px; border-radius: 3px; }
+.ledger-values { margin: 0 0 12px; color: var(--report-muted); }
+.ledger-values > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 5px 0; }
+.ledger-values dt, .ledger-values dd { min-width: 0; overflow-wrap: anywhere; }
+.ledger-values dd { margin: 0; color: var(--report-ink); text-align: right; }
+.stage-duration-list { display: grid; gap: 8px; }
+.stage-duration-list span { display: flex; justify-content: space-between; gap: 8px; color: var(--report-muted); font-size: 11px; }
+.stage-duration-list em { font-style: normal; color: var(--report-ink); }
+.report-details :deep(.quality-details) { margin-top: 0; }
+.report-details :deep(.quality-source strong), .report-details :deep(.quality-details-heading strong) { font-size: 12px; }
+.report-details :deep(.quality-source span), .report-details :deep(.quality-failures), .report-details :deep(.quality-events), .report-details :deep(.quality-details p), .report-details :deep(.quality-source em) { font-size: 11px; line-height: 1.6; }
+.report-scroll :deep(.history-section) { padding-top: 0; border-bottom: 0; }
+.report-scroll :deep(.history-list) { max-height: 340px; }
+.report-scroll :deep(.history-open strong) { font-size: 12px; }
+.report-scroll :deep(.history-open span) { font-size: 11px; line-height: 1.5; }
+.report-scroll :deep(.export-menu) { margin-top: 4px; padding-top: 8px; }
+.report-scroll :deep(.export-options strong) { font-size: 12px; }
+.report-scroll :deep(.export-options small) { font-size: 11px; }
+.empty-report button { background: var(--report-soft); color: var(--report-accent); border-radius: 5px; padding: 8px 12px; font-size: 12px; }
+@media (max-width: 820px) {
+  .report-panel { height: min(76dvh, 680px); }
+  .mobile-panel-heading { flex-shrink: 0; }
+  .report-heading { padding: 11px 0; }
+  .report-heading h2 { font-size: 15px; }
+  .report-actions { padding: 8px 0; }
+}
 </style>

@@ -63,6 +63,7 @@ describe('服务区域选中定位', () => {
       setup() {
         renderer = useMapRenderer({
           report: ref(report),
+          minutes: ref(15),
           analysisCenter: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
           visibleCategories: ref(['school']), showNormal: ref(true), showSparse: ref(true), showCritical: ref(true),
           focusRecommendationId: ref(null), simulation: ref(null), simulationPicking: ref(false),
@@ -92,6 +93,7 @@ describe('服务区域选中定位', () => {
       setup() {
         renderer = useMapRenderer({
           report: ref(report),
+          minutes: ref(15),
           analysisCenter: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
           visibleCategories: ref(['school']), showNormal: ref(true), showSparse: ref(true), showCritical: ref(true),
           focusRecommendationId: ref(null), simulation: ref(null), simulationPicking: ref(false),
@@ -127,6 +129,7 @@ describe('服务区域选中定位', () => {
       setup() {
         renderer = useMapRenderer({
           report: ref({ ...report, service_areas: { type: 'FeatureCollection', features: [area, otherArea] }, recommendations: [recommendation] } as unknown as Report),
+          minutes: ref(15),
           analysisCenter: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
           visibleCategories: ref(['school']), showNormal: ref(true), showSparse: ref(true), showCritical: ref(true),
           focusRecommendationId: selectedRecommendationId, simulation: ref(null), simulationPicking: ref(false),
@@ -154,6 +157,7 @@ describe('服务区域选中定位', () => {
       setup() {
         renderer = useMapRenderer({
           report: ref(poiReport),
+          minutes: ref(15),
           analysisCenter: ref({ lng: 113.4872, lat: 23.1068, address: '测试中心', selectionMethod: 'default', source: 'fixture', supportStatus: 'supported' }),
           visibleCategories: ref(['pharmacy']), showNormal: ref(true), showSparse: ref(true), showCritical: ref(true),
           focusRecommendationId: ref(null), simulation: ref(null), simulationPicking: ref(false),

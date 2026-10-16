@@ -19,6 +19,8 @@
 
 ### 改进
 
+- API 运行时迁移至 Python 3.12.15 Alpine，前端构建升级至 Node 22.23.2/npm 12.2.0，并在镜像构建中应用系统安全更新；Trivy/Grype 复验确认最终运行镜像为 0 Critical / 0 High。
+- 补齐 `pytest-asyncio` 开发依赖，避免异步测试只依赖本机全局环境；同步修正离线样例中心提示文案。
 - 前端生产容器改为 Vite 构建后由 Nginx 提供静态资源，后端生产镜像不再复制测试代码。
 - 生产依赖与开发/测试依赖拆分；Python、Node 和容器构建运行时固定到候选版验证口径。
 - 升级存在已知漏洞的 Python 与 npm 依赖，并将 Python 生产/开发审计和 npm high/critical 审计改为阻断门禁。

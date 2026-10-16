@@ -173,14 +173,16 @@ def test_walking_matrix_chunks_by_pair_limit():
 
     matrix = asyncio.run(provider.walking_matrix([(113.4872, 23.1068)], destinations))
 
-    # 点对乘积上限 100：1×250 应拆成 100/100/50 三次批量请求
-    assert client.batch_calls == [(1, 100), (1, 100), (1, 50)]
+    # 官方步行矩阵每批最多 50 路线对。
+    assert client.batch_calls == [(1, 50)] * 5
     assert client.pair_calls == []
     assert len(matrix) == 1 and len(matrix[0]) == 250
-    # stub 按块内行优先下标赋值：首块第 1/100 对、次块首对、末块第 50 对
+    # stub 按块内行优先下标赋值，验证每个 50 对分块的边界。
     assert matrix[0][0].success and matrix[0][0].distance_m == 100.0
     assert matrix[0][0].duration_s == 60.0
-    assert matrix[0][99].distance_m == 100.0 * 100
+    assert matrix[0][49].distance_m == 100.0 * 50
+    assert matrix[0][50].distance_m == 100.0
+    assert matrix[0][99].distance_m == 100.0 * 50
     assert matrix[0][100].distance_m == 100.0
     assert matrix[0][249].distance_m == 100.0 * 50
     assert all(item.method == "baidu_walking_route_matrix" for item in matrix[0])

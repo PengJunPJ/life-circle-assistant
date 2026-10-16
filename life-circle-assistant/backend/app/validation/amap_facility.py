@@ -50,7 +50,10 @@ class AmapFacilityValidator:
                         amap_records_by_id.setdefault(record["source_record_id"], record)
             baidu_records = [self._baidu_record(item) for item in facilities]
             result = reconcile_facilities([*baidu_records, *amap_records_by_id.values()], as_of=started_at)
-            return self._summary(result, query_audit, started_at)
+            summary = self._summary(result, query_audit, started_at)
+            # Retain source records separately from matches; identity remains reviewed.
+            summary["raw_records"] = list(amap_records_by_id.values())
+            return summary
         except AmapError as exc:
             return self._failed(exc.code, str(exc), started_at)
         except BaiduMapError as exc:

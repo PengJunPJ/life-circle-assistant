@@ -1,0 +1,1520 @@
+{
+  "schema_version": "spatial-evaluation-v1",
+  "status": "offline_snapshot_replay",
+  "community_ids": [
+    "synthetic-flat-a",
+    "synthetic-barrier-b"
+  ],
+  "calibration_community_ids": [],
+  "cross_community_policy": "independent_local_models_no_label_or_hyperparameter_pooling",
+  "strategies": [
+    "active",
+    "radial",
+    "uniform",
+    "rule_densification",
+    "idw"
+  ],
+  "budgets": [
+    6,
+    12,
+    20
+  ],
+  "results": [
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "active",
+      "budget": 6,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a05",
+        "a09"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 1.8640421330928802,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 5.126242013969241
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.9090909090909091,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "radial",
+      "budget": 6,
+      "training_ids": [
+        "a03",
+        "a07",
+        "a16",
+        "a22"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 1.114916056394577,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.2363306841333515
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.8636363636363636,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "uniform",
+      "budget": 6,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a16",
+        "a07"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 1.1578330304473639,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.2363306841333515
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.8636363636363636,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "rule_densification",
+      "budget": 6,
+      "training_ids": [
+        "a03",
+        "a04",
+        "a05",
+        "a06"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 0.9944168850779533,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.0613158327010233
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.9545454545454546,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "idw",
+      "budget": 6,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a16",
+        "a07"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 0.8285839576274157,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.8438864652114137
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.3181818181818182,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "active",
+      "budget": 12,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a05",
+        "a09",
+        "a18",
+        "a11",
+        "a14",
+        "a16",
+        "a20",
+        "a12"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 5.8653338346630335,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 4.896121676227725
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.7272727272727273,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "radial",
+      "budget": 12,
+      "training_ids": [
+        "a03",
+        "a07",
+        "a16",
+        "a22",
+        "a06",
+        "a17",
+        "a05",
+        "a08",
+        "a11",
+        "a12"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 4.287834046408534,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.0423008201619837
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.7727272727272727,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "uniform",
+      "budget": 12,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a16",
+        "a07",
+        "a19",
+        "a08",
+        "a10",
+        "a13",
+        "a05",
+        "a09"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 3.589291125535965,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.3515934851291984
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.7272727272727273,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "rule_densification",
+      "budget": 12,
+      "training_ids": [
+        "a03",
+        "a04",
+        "a05",
+        "a06",
+        "a07",
+        "a09",
+        "a10",
+        "a08",
+        "a12",
+        "a13"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 3.280250122770667,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.416688541479589
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.7727272727272727,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "idw",
+      "budget": 12,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a16",
+        "a07",
+        "a19",
+        "a08",
+        "a10",
+        "a13",
+        "a05",
+        "a09"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 2.7643749490380287,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 2,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 6.424521572635455
+      },
+      "false_reachable_rate": 1.0,
+      "unresolved_ratio": 0.5454545454545454,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "active",
+      "budget": 20,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a05",
+        "a09",
+        "a18",
+        "a11",
+        "a14",
+        "a16",
+        "a20",
+        "a12",
+        "a15",
+        "a07",
+        "a08",
+        "a04",
+        "a19",
+        "a10",
+        "a13",
+        "a06"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 15.019458020105958,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 2.8219453614211396
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5454545454545454,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "radial",
+      "budget": 20,
+      "training_ids": [
+        "a03",
+        "a07",
+        "a16",
+        "a22",
+        "a06",
+        "a17",
+        "a05",
+        "a08",
+        "a11",
+        "a12",
+        "a15",
+        "a18",
+        "a20",
+        "a09",
+        "a21",
+        "a04",
+        "a19",
+        "a10"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 11.028916807845235,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 2.3673113971459614
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.6363636363636364,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "uniform",
+      "budget": 20,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a16",
+        "a07",
+        "a19",
+        "a08",
+        "a10",
+        "a13",
+        "a05",
+        "a09",
+        "a11",
+        "a12",
+        "a14",
+        "a15",
+        "a04",
+        "a06",
+        "a17",
+        "a18"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 10.18900005146861,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 2.7920029612548003
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5909090909090909,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "rule_densification",
+      "budget": 20,
+      "training_ids": [
+        "a03",
+        "a04",
+        "a05",
+        "a06",
+        "a07",
+        "a09",
+        "a10",
+        "a08",
+        "a12",
+        "a13",
+        "a16",
+        "a17",
+        "a11",
+        "a15",
+        "a14",
+        "a22",
+        "a21",
+        "a18"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 9.238874772563577,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 2.7374307956061017
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5454545454545454,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-flat-a",
+      "strategy": "idw",
+      "budget": 20,
+      "training_ids": [
+        "a03",
+        "a22",
+        "a16",
+        "a07",
+        "a19",
+        "a08",
+        "a10",
+        "a13",
+        "a05",
+        "a09",
+        "a11",
+        "a12",
+        "a14",
+        "a15",
+        "a04",
+        "a06",
+        "a17",
+        "a18"
+      ],
+      "validation_ids": [
+        "a01",
+        "a02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 8.271750062704086,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 2,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 6.178650384613258
+      },
+      "false_reachable_rate": 1.0,
+      "unresolved_ratio": 0.18181818181818182,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "active",
+      "budget": 6,
+      "training_ids": [
+        "b05",
+        "b20",
+        "b10",
+        "b14"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 1.6304999589920044,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 1.895604591581387
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.7272727272727273,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": true
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "radial",
+      "budget": 6,
+      "training_ids": [
+        "b03",
+        "b07",
+        "b16",
+        "b22"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 1.0266248136758804,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 1.0637537035753883
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.6818181818181818,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": true
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "uniform",
+      "budget": 6,
+      "training_ids": [
+        "b03",
+        "b22",
+        "b16",
+        "b07"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 1.042833086103201,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 1.0637537035753883
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.6818181818181818,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": true
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "rule_densification",
+      "budget": 6,
+      "training_ids": [
+        "b03",
+        "b04",
+        "b05",
+        "b06"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 1.1415830813348293,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.1056333597367836
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.8636363636363636,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "idw",
+      "budget": 6,
+      "training_ids": [
+        "b03",
+        "b22",
+        "b16",
+        "b07"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 6,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 0.8138748817145824,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 2.3412429221821753
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5454545454545454,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "active",
+      "budget": 12,
+      "training_ids": [
+        "b05",
+        "b20",
+        "b10",
+        "b14",
+        "b09",
+        "b12",
+        "b03",
+        "b13",
+        "b17",
+        "b08"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 5.889958003535867,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 1,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 4.73053754768739
+      },
+      "false_reachable_rate": 0.5,
+      "unresolved_ratio": 0.5909090909090909,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 1,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "radial",
+      "budget": 12,
+      "training_ids": [
+        "b03",
+        "b07",
+        "b16",
+        "b22",
+        "b06",
+        "b17",
+        "b05",
+        "b08",
+        "b11",
+        "b12"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 3.5220838617533445,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.8251279223394903
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5454545454545454,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "uniform",
+      "budget": 12,
+      "training_ids": [
+        "b03",
+        "b22",
+        "b16",
+        "b07",
+        "b19",
+        "b08",
+        "b10",
+        "b13",
+        "b05",
+        "b09"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 3.59895802102983,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.208340657587243
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5909090909090909,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "rule_densification",
+      "budget": 12,
+      "training_ids": [
+        "b03",
+        "b04",
+        "b05",
+        "b06",
+        "b09",
+        "b10",
+        "b11",
+        "b14",
+        "b13",
+        "b15"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 3.015250200405717,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 1.9314991037030165
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.6818181818181818,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": true
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "idw",
+      "budget": 12,
+      "training_ids": [
+        "b03",
+        "b22",
+        "b16",
+        "b07",
+        "b19",
+        "b08",
+        "b10",
+        "b13",
+        "b05",
+        "b09"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 12,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 2.9700000304728746,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 4.2909968840154225
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5454545454545454,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "active",
+      "budget": 20,
+      "training_ids": [
+        "b05",
+        "b20",
+        "b10",
+        "b14",
+        "b09",
+        "b12",
+        "b03",
+        "b13",
+        "b17",
+        "b08",
+        "b11",
+        "b22",
+        "b18",
+        "b07",
+        "b15",
+        "b16",
+        "b04",
+        "b19"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 14.051249949261546,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 1.7009650438844623
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.45454545454545453,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": true
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "radial",
+      "budget": 20,
+      "training_ids": [
+        "b03",
+        "b07",
+        "b16",
+        "b22",
+        "b06",
+        "b17",
+        "b05",
+        "b08",
+        "b11",
+        "b12",
+        "b15",
+        "b18",
+        "b20",
+        "b09",
+        "b21",
+        "b04",
+        "b19",
+        "b10"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 10.68491698242724,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 2.232682863379649
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "uniform",
+      "budget": 20,
+      "training_ids": [
+        "b03",
+        "b22",
+        "b16",
+        "b07",
+        "b19",
+        "b08",
+        "b10",
+        "b13",
+        "b05",
+        "b09",
+        "b11",
+        "b12",
+        "b14",
+        "b15",
+        "b04",
+        "b06",
+        "b17",
+        "b18"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 9.820458944886923,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 1.45794638742899
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.5,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": true
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "rule_densification",
+      "budget": 20,
+      "training_ids": [
+        "b03",
+        "b04",
+        "b05",
+        "b06",
+        "b09",
+        "b10",
+        "b11",
+        "b14",
+        "b13",
+        "b15",
+        "b20",
+        "b19",
+        "b18",
+        "b17",
+        "b16",
+        "b21",
+        "b07",
+        "b08"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 9.31754196062684,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 1.7312957431317333
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.45454545454545453,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": true
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "strategy": "idw",
+      "budget": 20,
+      "training_ids": [
+        "b03",
+        "b22",
+        "b16",
+        "b07",
+        "b19",
+        "b08",
+        "b10",
+        "b13",
+        "b05",
+        "b09",
+        "b11",
+        "b12",
+        "b14",
+        "b15",
+        "b04",
+        "b06",
+        "b17",
+        "b18"
+      ],
+      "validation_ids": [
+        "b01",
+        "b02"
+      ],
+      "heldout_spatial_block": [
+        -2,
+        -2
+      ],
+      "route_pairs_replayed": 20,
+      "external_route_pairs_used": 0,
+      "offline_runtime_ms": 8.129540830850601,
+      "recorded_latency_sum_ms": null,
+      "evaluation": {
+        "evaluated_count": 2,
+        "unknown_measurements": 0,
+        "false_reachable_count": 0,
+        "false_unreachable_count": 0,
+        "unresolved_count": 2,
+        "mae_minutes": 3.607592850628592
+      },
+      "false_reachable_rate": 0.0,
+      "unresolved_ratio": 0.22727272727272727,
+      "boundary": {
+        "method": "heldout_nearest_neighbor_threshold_crossing_midpoints",
+        "boundary_location_error_m": null,
+        "observed_crossing_count": 0,
+        "estimated_crossing_count": 0,
+        "unknown_edge_count": 0,
+        "disclosure": "仅为留出点邻接边阈值跨越位置误差，不是连续区域边界或现场通行认证；无跨越时误差保持未知。"
+      },
+      "meets_error_target": false
+    }
+  ],
+  "same_error_comparison": [
+    {
+      "community_id": "synthetic-flat-a",
+      "minimum_replayed_pairs_at_target": {
+        "active": null,
+        "radial": null,
+        "uniform": null,
+        "rule_densification": null,
+        "idw": null
+      },
+      "active_savings_vs_uniform": null
+    },
+    {
+      "community_id": "synthetic-barrier-b",
+      "minimum_replayed_pairs_at_target": {
+        "active": 6,
+        "radial": 6,
+        "uniform": 6,
+        "rule_densification": 12,
+        "idw": null
+      },
+      "active_savings_vs_uniform": 0
+    }
+  ],
+  "enabled_for_official_analysis": false,
+  "source_manifest": {
+    "status": "synthetic_contract_only",
+    "label_origin": "handcrafted_contract_labels_not_real_map_or_field_measurements",
+    "created_at": "2026-10-14",
+    "disclosure": "只验证评估流程、预算及独立留出，不用于证明AI优于基线或现场有效。"
+  },
+  "error_target": {
+    "mae_minutes": 2.0,
+    "max_false_reachable_rate": 0.05
+  },
+  "disclosure": "使用独立社区原始标签离线回放，同预算独立选点且空间块留出。校准社区与评估社区隔离；不代表真实API耗时、实际配额节约或现场边界精度。默认规则评分未使用预测。"
+}

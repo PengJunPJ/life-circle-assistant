@@ -88,6 +88,20 @@ export function useSimulation(report: Ref<Report | null>) {
     error.value = ''
   }
 
+  function applyAssistantSimulation(simulation: SimulationResult) {
+    if (simulation.report_id !== report.value?.report_id || loading.value) return
+    category.value = simulation.category
+    location.value = {
+      lng: simulation.hypothetical_facility.lng,
+      lat: simulation.hypothetical_facility.lat,
+      selectionMethod: simulation.selection_method,
+      candidateId: simulation.candidate_id || undefined,
+    }
+    result.value = simulation
+    picking.value = false
+    error.value = ''
+  }
+
   return {
     category,
     location,
@@ -101,5 +115,6 @@ export function useSimulation(report: Ref<Report | null>) {
     simulateCandidate,
     run,
     clear,
+    applyAssistantSimulation,
   }
 }

@@ -2,11 +2,11 @@
   <section class="simulation-panel" aria-labelledby="simulation-title">
     <div class="simulation-heading">
       <div><strong id="simulation-title">新增设施改善模拟</strong><small>原报告与来源设施保持不变</small></div>
-      <button v-if="location || result" type="button" class="simulation-clear" @click="emit('clear')">清除模拟</button>
+      <button v-if="location || result" type="button" class="simulation-clear" :disabled="loading" @click="emit('clear')">清除模拟</button>
     </div>
     <label class="simulation-field">
       <span>假设设施类别</span>
-      <select :value="category" @change="emit('update:category', ($event.target as HTMLSelectElement).value)">
+      <select :value="category" :disabled="loading" @change="emit('update:category', ($event.target as HTMLSelectElement).value)">
         <option v-for="item in report.parameters.categories" :key="item" :value="item">{{ FACILITY_LABELS[item] || item }}</option>
       </select>
     </label>
@@ -18,7 +18,7 @@
         <small v-if="location">{{ location.selectionMethod === 'recommendation' ? '来自规划建议候选点' : '来自地图选点' }}</small>
         <small v-else>可从建议中直接模拟，或在地图指定位置</small>
       </div>
-      <button type="button" :class="{ active: picking }" @click="emit('pick-map')">{{ picking ? '请点击地图' : '地图选点' }}</button>
+      <button type="button" :disabled="loading" :class="{ active: picking }" @click="emit('pick-map')">{{ picking ? '请点击地图' : '地图选点' }}</button>
     </div>
     <p v-if="error" class="simulation-error" role="alert">{{ error }}</p>
     <button type="button" class="simulation-run" :disabled="!location || loading" @click="emit('run')">

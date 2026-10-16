@@ -106,3 +106,15 @@ def test_no_critical_regions_returns_explicit_no_shortage_state():
         "recommendation_count": 0,
         "target_region_count": 0,
     }
+
+
+def test_unconfirmed_estimated_critical_regions_never_create_empty_or_unverified_gap_recommendations():
+    feature = area_feature("school-r1c1", "school")
+    feature["properties"].update(source="degraded_estimate", calculation_method="straight_line_walking_estimate")
+    result = build_planning_recommendations(
+        [score("school", "小学", 20)],
+        {"features": [feature]},
+        gap_groups={"features": []},
+    )
+    assert result["recommendations"] == []
+    assert result["summary"]["status"] == "calculation_incomplete"

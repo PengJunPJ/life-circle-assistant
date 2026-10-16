@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 import time
 import uuid
@@ -14,7 +15,8 @@ from ..maps.walking import WalkingService
 from ..mock_data import CATEGORIES, mock_isochrone
 from ..schemas import AnalyzeRequest
 from .facility_normalization import normalize_facilities
-from .recommendations import build_planning_recommendations
+from .gap_groups import build_gap_groups, spatial_statistics
+from .recommendations import build_gap_candidates, build_planning_recommendations
 from .scoring import score_report
 from .service_areas import build_category_service_areas
 
@@ -57,11 +59,13 @@ class AnalysisApplicationService:
         update_stage: StageUpdater | None = None,
         walking_service: WalkingService | None = None,
         facility_validator: Any | None = None,
+        adjacency_repository: Any | None = None,
     ) -> None:
         self.provider = provider
         self.walking_service = walking_service or WalkingService(provider)
         self.update_stage = update_stage or (lambda _code, _label, _progress: None)
         self.facility_validator = facility_validator
+        self.adjacency_repository = adjacency_repository
         self.stage_history: list[dict[str, Any]] = []
         self._stage_durations_ms: dict[str, int] = {}
         self._active_stage: str | None = None
@@ -117,11 +121,45 @@ class AnalysisApplicationService:
         facility_search_failed_categories: set[str] = set()
         facility_provider_calls = 0
         facility_request_start = getattr(self.provider, "facility_request_count", None)
+        facility_search: list[dict[str, Any]] = []
         for category in request.categories:
             try:
                 facility_provider_calls += 1
                 results = await self.provider.search_facilities(category, center, radius_m=3_000)
                 facilities.extend(asdict(item) for item in results)
+                metadata_getter = getattr(self.provider, "get_facility_search_metadata", None)
+                metadata = (
+                    metadata_getter(category, center, 3_000)
+                    if callable(metadata_getter)
+                    else {
+                        "category": category,
+                        "scope": "provider_unreported",
+                        "is_full_inventory": False,
+                        "truncated": None,
+                    }
+                )
+                facility_search.append(metadata)
+                if metadata.get("truncated") is True:
+                    facility_search_failed_categories.add(category)
+                    partial_failures.append(
+                        {
+                            "scope": "category",
+                            "category": category,
+                            "code": "facility_search_truncated",
+                            "message": "设施检索达到分页预算，结果不完整；该类排除评分和确定性缺口结论。",
+                        }
+                    )
+                    events.append(
+                        quality_event(
+                            "facility_search_truncated",
+                            "warning",
+                            "category",
+                            partial_failures[-1]["message"],
+                            descriptor.source,
+                            "bounded_poi_pagination",
+                            category=category,
+                        )
+                    )
             except MapProviderError as exc:
                 facility_search_failed_categories.add(category)
                 partial_failures.append(
@@ -139,8 +177,15 @@ class AnalysisApplicationService:
                     )
                 )
 
+        raw_facility_records = copy.deepcopy(facilities)
         normalization = normalize_facilities(facilities)
-        facilities = normalization.facilities
+        catalog_version = getattr(self.provider, "facility_catalog_version", None)
+        if catalog_version is not None:
+            # 人工已确认 distinct/merge 的目录，不再以名称规则覆盖审核决定。
+            normalization_summary = self.provider.facility_catalog_summary
+        else:
+            facilities = normalization.facilities
+            normalization_summary = normalization.summary
         multisource_validation: dict[str, Any] = {
             "status": "disabled",
             "provider": "amap",
@@ -160,9 +205,9 @@ class AnalysisApplicationService:
                 "info",
                 "facility_collection",
                 (
-                    f"已按设施语义归一化规则 {normalization.summary['rules_version']} "
-                    f"处理 {normalization.summary['input_count']} 条记录，"
-                    f"合并 {normalization.summary['merged_count']} 条同机构重复记录。"
+                    f"已按设施语义归一化规则 {normalization_summary['rules_version']} "
+                    f"处理 {normalization_summary['input_count']} 条记录，"
+                    f"合并 {normalization_summary['merged_count']} 条同机构重复记录。"
                 ),
                 descriptor.source,
                 "facility_semantic_normalization",
@@ -176,6 +221,7 @@ class AnalysisApplicationService:
 
         self._stage("walking_calculation", 56)
         walking_http_start = getattr(getattr(self.provider, "client", None), "walking_request_count", None)
+        native_http_start = getattr(getattr(self.provider, "client", None), "native_isochrone_request_count", 0)
         await self._attach_walking_results(center, facilities, events, partial_failures)
         isochrone = await self._build_isochrone(center, request, events, partial_failures)
 
@@ -231,7 +277,9 @@ class AnalysisApplicationService:
         overall_scoring = scoring["overall"]
         critical = sum(item["properties"]["kind"] == "critical" for item in zones["features"])
         sparse = sum(item["properties"]["kind"] == "sparse" for item in zones["features"])
-        recommendation_result = build_planning_recommendations(stats, zones)
+        adjacency = self.adjacency_repository.get_verified_edges(center) if self.adjacency_repository else []
+        gap_groups = build_gap_groups(zones, adjacency_evidence=adjacency)
+        recommendation_result = build_planning_recommendations(stats, zones, gap_groups=gap_groups)
 
         self._stage("report_assembly", 95)
         if self.walking_service.metrics.cache_hits:
@@ -287,6 +335,11 @@ class AnalysisApplicationService:
             "facility_count": len(facilities),
             "facility_provider_calls": facility_provider_calls,
             "facility_api_calls": facility_api_calls,
+            "native_isochrone_api_calls": max(
+                0,
+                getattr(getattr(self.provider, "client", None), "native_isochrone_request_count", 0)
+                - native_http_start,
+            ),
             "quality_event_count": len(events),
             "partial_failure_count": len(partial_failures),
             **self.walking_service.metrics.report_values(),
@@ -298,7 +351,9 @@ class AnalysisApplicationService:
             "stages": [*self.stage_history],
             "total_duration_ms": round((time.perf_counter() - started_clock) * 1_000),
             "stage_durations_ms": dict(self._stage_durations_ms),
-            "api_calls": metrics["facility_api_calls"] + metrics["walking_api_calls"],
+            "api_calls": metrics["facility_api_calls"]
+            + metrics["walking_api_calls"]
+            + metrics["native_isochrone_api_calls"],
             "cache": {
                 "hits": metrics["walking_cache_hits"],
                 "misses": metrics["walking_cache_misses"],
@@ -332,10 +387,17 @@ class AnalysisApplicationService:
                 "isochrone": isochrone,
                 "pois": facilities,
                 "facilities": facilities,
-                "facility_normalization": normalization.summary,
+                "facility_normalization": normalization_summary,
+                "raw_facility_records": raw_facility_records,
+                "facility_catalog_version": catalog_version,
+                "facility_search": facility_search,
                 "multisource_validation": multisource_validation,
                 "zones": zones,
                 "service_areas": zones,
+                "gap_groups": gap_groups,
+                "gap_candidates": build_gap_candidates(stats, zones, gap_groups),
+                "spatial_adjacency_evidence": adjacency,
+                "spatial_statistics": spatial_statistics(zones),
                 "summary": {
                     "score": overall_scoring["score"],
                     "score_status": overall_scoring["status"],
@@ -420,6 +482,7 @@ class AnalysisApplicationService:
             item["walk_minutes"] = round((route.duration_s or 0) / 60, 1)
             item["walk_distance_m"] = round(route.distance_m or 0)
             item["source"] = route.source
+            item["underlying_source"] = route.underlying_source
             item["calculation_method"] = route.method
             self._record_degraded_route(route, events, item["category"], item["id"])
         for category, failure_count in walking_failures_by_category.items():
@@ -440,6 +503,44 @@ class AnalysisApplicationService:
         events: list[dict[str, Any]],
         partial_failures: list[dict[str, Any]],
     ) -> dict[str, Any]:
+        capability = getattr(self.provider, "isochrone_capability", None)
+        native = getattr(self.provider, "native_isochrone", None)
+        if callable(capability) and callable(native) and capability().get("configured"):
+            from ..maps.isochrone import geometry_area_sqm, validate_isochrone_geometry
+
+            try:
+                result = await native(center, request.minutes * 60, "foot_fastest")
+                geometry = validate_isochrone_geometry(result.geometry)
+                return {
+                    "type": "Feature",
+                    "geometry": geometry,
+                    "properties": {
+                        "minutes": request.minutes,
+                        "mode": request.mode,
+                        "area_sqm": geometry_area_sqm(geometry),
+                        "source": result.source,
+                        "method": result.method,
+                        "coordinate_system": result.coordinate_system,
+                        "strategy": result.strategy,
+                        "duration_s": result.duration_s,
+                        "account_verified": True,
+                        "field_accuracy_verified": False,
+                        "sample_count": 0,
+                        "successful_sample_count": 0,
+                        "disclosure": "几何来自百度原生步行等时圈；账号当前请求成功，现场边界精度与费用仍待独立验证。",
+                    },
+                }
+            except MapProviderError as exc:
+                events.append(
+                    quality_event(
+                        "native_isochrone_unavailable",
+                        "warning",
+                        "isochrone",
+                        f"原生等时圈未通过请求/几何核验，改用径向路线采样：{exc}",
+                        self.provider.descriptor.source,
+                        "native_isochrone_probe",
+                    )
+                )
         directions = 24 if request.mode == "analysis" else 16
         max_radius = 1_250
         boundary: list[tuple[float, float]] = []
@@ -551,6 +652,10 @@ class AnalysisApplicationService:
                 "successful_sample_count": len(boundary),
                 "max_duration_s": round(max(durations or [0])),
                 "source": self.provider.descriptor.source,
+                "method": "radial_provider_routes_interpolated_boundary",
+                "coordinate_system": "BD-09",
+                "field_accuracy_verified": False,
+                "disclosure": "边界来自径向步行采样与连线插值，不证明多边形内部全部位置可达，未采样孔洞/障碍需独立验证。",
             },
         )
 

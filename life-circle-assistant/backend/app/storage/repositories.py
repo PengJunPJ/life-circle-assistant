@@ -20,18 +20,41 @@ class TaskRepository:
     def __init__(self, database: Database) -> None:
         self.database = database
 
-    def create(self, request_parameters: dict[str, Any], *, rerun_of_report_id: str | None = None) -> dict[str, Any]:
+    def create(
+        self,
+        request_parameters: dict[str, Any],
+        *,
+        rerun_of_report_id: str | None = None,
+        idempotency_key: str | None = None,
+        retry_of_task_id: str | None = None,
+    ) -> dict[str, Any]:
         task_id = str(uuid.uuid4())
         created_at = now()
         with self.database.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if idempotency_key or retry_of_task_id:
+                existing = connection.execute(
+                    "SELECT * FROM analysis_tasks WHERE idempotency_key=? OR retry_of_task_id=?",
+                    (idempotency_key, retry_of_task_id),
+                ).fetchone()
+                if existing:
+                    return self._row_to_dict(existing)
             connection.execute(
                 """
                 INSERT INTO analysis_tasks(
                     id, status, stage, stage_label, progress, request_json,
-                    rerun_of_report_id, created_at, updated_at
-                ) VALUES (?, 'queued', 'request_validation', '请求校验', 12, ?, ?, ?, ?)
+                    rerun_of_report_id, created_at, updated_at, idempotency_key, retry_of_task_id
+                ) VALUES (?, 'queued', 'request_validation', '请求校验', 12, ?, ?, ?, ?, ?, ?)
                 """,
-                (task_id, _dump(request_parameters), rerun_of_report_id, created_at, created_at),
+                (
+                    task_id,
+                    _dump(request_parameters),
+                    rerun_of_report_id,
+                    created_at,
+                    created_at,
+                    idempotency_key,
+                    retry_of_task_id,
+                ),
             )
             connection.commit()
         return self.get(task_id) or {}
@@ -41,10 +64,10 @@ class TaskRepository:
             row = connection.execute("SELECT * FROM analysis_tasks WHERE id = ?", (task_id,)).fetchone()
         return self._row_to_dict(row) if row else None
 
-    def mark_running(self, task_id: str) -> None:
+    def mark_running(self, task_id: str) -> bool:
         timestamp = now()
         with self.database.connect() as connection:
-            connection.execute(
+            cursor = connection.execute(
                 """
                 UPDATE analysis_tasks
                 SET status = 'running', started_at = COALESCE(started_at, ?), updated_at = ?
@@ -53,6 +76,20 @@ class TaskRepository:
                 (timestamp, timestamp, task_id),
             )
             connection.commit()
+            return cursor.rowcount == 1
+
+    def cancel(self, task_id: str) -> dict[str, Any] | None:
+        timestamp = now()
+        with self.database.connect() as connection:
+            # 兼容旧数据库 status 的 CHECK；对外 cancelled 由 cancelled_at 映射。
+            connection.execute(
+                """UPDATE analysis_tasks SET status='failed',stage='cancelled',stage_label='已取消',
+                cancelled_at=?,completed_at=?,updated_at=?,error='用户已取消分析'
+                WHERE id=? AND status IN ('queued','running')""",
+                (timestamp, timestamp, timestamp, task_id),
+            )
+            connection.commit()
+        return self.get(task_id)
 
     def update_stage(self, task_id: str, code: str, label: str, progress: int) -> None:
         with self.database.connect() as connection:
@@ -87,7 +124,7 @@ class TaskRepository:
                 UPDATE analysis_tasks
                 SET status = 'failed', stage = 'failed', stage_label = ?, progress = 100,
                     error = ?, completed_at = ?, updated_at = ?
-                WHERE id = ?
+                WHERE id = ? AND status IN ('queued', 'running')
                 """,
                 (stage_label, error, timestamp, timestamp, task_id),
             )
@@ -109,17 +146,44 @@ class TaskRepository:
             connection.commit()
             return cursor.rowcount
 
+    def prepare_resume(self) -> list[dict]:
+        """具有账本的任务恢复为排队；旧任务没有检查点仍显式中断。"""
+        with self.database.connect() as connection:
+            connection.execute(
+                "UPDATE analysis_tasks SET status='queued',stage_label='从检查点恢复',updated_at=? WHERE cancelled_at IS NULL AND status IN ('queued','running') AND id IN (SELECT id FROM execution_runs WHERE entrypoint='analysis_task')",
+                (now(),),
+            )
+            rows = connection.execute(
+                "SELECT * FROM analysis_tasks WHERE status='queued' AND cancelled_at IS NULL AND id IN (SELECT id FROM execution_runs WHERE entrypoint='analysis_task')"
+            ).fetchall()
+            connection.execute(
+                "UPDATE analysis_tasks SET status='failed',stage='failed',stage_label='服务重启已中断',error='旧任务缺少持久检查点，请重新运行',completed_at=?,updated_at=? WHERE status IN ('queued','running') AND id NOT IN (SELECT id FROM execution_runs WHERE entrypoint='analysis_task')",
+                (now(), now()),
+            )
+            connection.commit()
+        return [self._row_to_dict(row) for row in rows]
+
+    def queue_resume(self, task_id: str) -> dict | None:
+        with self.database.connect() as connection:
+            connection.execute(
+                "UPDATE analysis_tasks SET status='queued',stage_label='从检查点恢复',completed_at=NULL,error=NULL,updated_at=? WHERE id=? AND status='failed' AND cancelled_at IS NULL AND id IN (SELECT id FROM execution_runs WHERE entrypoint='analysis_task')",
+                (now(), task_id),
+            )
+            connection.commit()
+        return self.get(task_id)
+
     @staticmethod
     def _row_to_dict(row: Any) -> dict[str, Any]:
         return {
             "id": row["id"],
-            "status": row["status"],
+            "status": "cancelled" if row["cancelled_at"] else row["status"],
             "stage": row["stage"],
             "stage_label": row["stage_label"],
             "progress": row["progress"],
             "request": json.loads(row["request_json"]),
             "report_id": row["report_id"],
             "rerun_of_report_id": row["rerun_of_report_id"],
+            "retry_of_task_id": row["retry_of_task_id"],
             "error": row["error"],
             "created_at": row["created_at"],
             "started_at": row["started_at"],
@@ -131,13 +195,18 @@ class ReportRepository:
     def __init__(self, database: Database) -> None:
         self.database = database
 
-    def save_for_task(self, task_id: str, report: dict[str, Any]) -> None:
+    def save_for_task(self, task_id: str, report: dict[str, Any]) -> bool:
         report_id = report["report_id"]
         center = report["analysis_center"]
         parameters = report["request"]
         completed_at = report["completed_at"]
         with self.database.connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            active = connection.execute(
+                "SELECT status,cancelled_at FROM analysis_tasks WHERE id=?", (task_id,)
+            ).fetchone()
+            if active is None or active["status"] not in {"queued", "running"} or active["cancelled_at"]:
+                return False
             connection.execute(
                 """
                 INSERT INTO analysis_reports(
@@ -171,6 +240,7 @@ class ReportRepository:
                 (report_id, completed_at, completed_at, task_id),
             )
             connection.commit()
+        return True
 
     def get(self, report_id: str) -> dict[str, Any] | None:
         with self.database.connect() as connection:
@@ -266,3 +336,11 @@ class ReportRepository:
                 (report_id, limit),
             ).fetchall()
         return [{"id": row["id"], **json.loads(row["result_json"])} for row in rows]
+
+    def get_ai_interpretation(self, report_id: str, interpretation_id: str) -> dict[str, Any] | None:
+        with self.database.connect() as connection:
+            row = connection.execute(
+                "SELECT id, result_json FROM ai_interpretations WHERE report_id = ? AND id = ?",
+                (report_id, interpretation_id),
+            ).fetchone()
+        return {"id": row["id"], **json.loads(row["result_json"])} if row else None

@@ -1,0 +1,6695 @@
+{
+  "reviewed_at": "2026-10-12T10:41:16.519492+08:00",
+  "inputs": [
+    {
+      "file": "api-image-20261012.cdx.json",
+      "sha256": "94f0cb762d576f38b97ea4d4de38a90d85eb59f4dd8d5a3019bc5c1d49dbf5eb",
+      "component_count": 74,
+      "spec_version": "1.7"
+    },
+    {
+      "file": "backend-development-20261012.cdx.json",
+      "sha256": "59bdc6cc60e0443c08754976cb4863428d59f88459d98f2e3cd66b15ea0a0f2a",
+      "component_count": 33,
+      "spec_version": "1.4"
+    },
+    {
+      "file": "backend-production-20261012.cdx.json",
+      "sha256": "c1bd07b07b8e580dc1f2ab46098ede725261adf8cd38aa87c16848fb52d5cc77",
+      "component_count": 26,
+      "spec_version": "1.4"
+    },
+    {
+      "file": "frontend-20261012.cdx.json",
+      "sha256": "9cf2c98210247a1079122eff6b9f4ba530f871a256906f813c16941184862135",
+      "component_count": 235,
+      "spec_version": "1.6"
+    },
+    {
+      "file": "web-image-20261012.cdx.json",
+      "sha256": "a561f34c219be82d08461cd478a5c2923ad220133afae64bf841da0f0419d94b",
+      "component_count": 72,
+      "spec_version": "1.7"
+    }
+  ],
+  "boundary": "逐包声明和证据核对，不是授权或相容性法律结论。镜像仅对应已审计本地镜像，未宣称为 GHCR 发布。",
+  "components": [
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "alpine",
+      "version": "3.24.2",
+      "purl": null,
+      "licenses": [],
+      "status": "needs-review"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": ".python-rundeps",
+      "version": "20261001.215423",
+      "purl": "pkg:apk/alpine/.python-rundeps@20261001.215423?arch=noarch&distro=3.24.2",
+      "licenses": [],
+      "status": "needs-review"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "alpine-baselayout-data",
+      "version": "3.7.2-r1",
+      "purl": "pkg:apk/alpine/alpine-baselayout-data@3.7.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "alpine-baselayout",
+      "version": "3.7.2-r1",
+      "purl": "pkg:apk/alpine/alpine-baselayout@3.7.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "alpine-keys",
+      "version": "2.6-r0",
+      "purl": "pkg:apk/alpine/alpine-keys@2.6-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "alpine-release",
+      "version": "3.24.2-r0",
+      "purl": "pkg:apk/alpine/alpine-release@3.24.2-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "apk-tools",
+      "version": "3.0.8-r0",
+      "purl": "pkg:apk/alpine/apk-tools@3.0.8-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "brotli-libs",
+      "version": "1.2.0-r1",
+      "purl": "pkg:apk/alpine/brotli-libs@1.2.0-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "busybox-binsh",
+      "version": "1.37.0-r31",
+      "purl": "pkg:apk/alpine/busybox-binsh@1.37.0-r31?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "busybox",
+      "version": "1.37.0-r31",
+      "purl": "pkg:apk/alpine/busybox@1.37.0-r31?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "ca-certificates-bundle",
+      "version": "20260909-r0",
+      "purl": "pkg:apk/alpine/ca-certificates-bundle@20260909-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "ca-certificates",
+      "version": "20260909-r0",
+      "purl": "pkg:apk/alpine/ca-certificates@20260909-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "font-wqy-zenhei",
+      "version": "0.9.46-r0",
+      "purl": "pkg:apk/alpine/font-wqy-zenhei@0.9.46-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "fontconfig",
+      "version": "2.17.1-r1",
+      "purl": "pkg:apk/alpine/fontconfig@2.17.1-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "freetype",
+      "version": "2.14.3-r0",
+      "purl": "pkg:apk/alpine/freetype@2.14.3-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "FTL"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "gdbm",
+      "version": "1.26-r0",
+      "purl": "pkg:apk/alpine/gdbm@1.26-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "keyutils-libs",
+      "version": "1.6.3-r4",
+      "purl": "pkg:apk/alpine/keyutils-libs@1.6.3-r4?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "krb5-conf",
+      "version": "1.0-r2",
+      "purl": "pkg:apk/alpine/krb5-conf@1.0-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "krb5-libs",
+      "version": "1.22.2-r1",
+      "purl": "pkg:apk/alpine/krb5-libs@1.22.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libapk",
+      "version": "3.0.8-r0",
+      "purl": "pkg:apk/alpine/libapk@3.0.8-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libbz2",
+      "version": "1.0.8-r6",
+      "purl": "pkg:apk/alpine/libbz2@1.0.8-r6?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "bzip-2-1.0.6"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libcom_err",
+      "version": "1.47.4-r0",
+      "purl": "pkg:apk/alpine/libcom_err@1.47.4-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libcrypto3",
+      "version": "3.5.9-r0",
+      "purl": "pkg:apk/alpine/libcrypto3@3.5.9-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libexpat",
+      "version": "2.8.5-r0",
+      "purl": "pkg:apk/alpine/libexpat@2.8.5-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libffi",
+      "version": "3.5.2-r1",
+      "purl": "pkg:apk/alpine/libffi@3.5.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libfontenc",
+      "version": "1.1.9-r0",
+      "purl": "pkg:apk/alpine/libfontenc@1.1.9-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libintl",
+      "version": "1.0-r0",
+      "purl": "pkg:apk/alpine/libintl@1.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libncursesw",
+      "version": "6.6_p20260516-r0",
+      "purl": "pkg:apk/alpine/libncursesw@6.6_p20260516-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libnsl",
+      "version": "2.0.1-r2",
+      "purl": "pkg:apk/alpine/libnsl@2.0.1-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libpanelw",
+      "version": "6.6_p20260516-r0",
+      "purl": "pkg:apk/alpine/libpanelw@6.6_p20260516-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libpng",
+      "version": "1.6.59-r0",
+      "purl": "pkg:apk/alpine/libpng@1.6.59-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Libpng"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libssl3",
+      "version": "3.5.9-r0",
+      "purl": "pkg:apk/alpine/libssl3@3.5.9-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libtirpc-conf",
+      "version": "1.3.5-r1",
+      "purl": "pkg:apk/alpine/libtirpc-conf@1.3.5-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libtirpc",
+      "version": "1.3.5-r1",
+      "purl": "pkg:apk/alpine/libtirpc@1.3.5-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libuuid",
+      "version": "2.42.3-r1",
+      "purl": "pkg:apk/alpine/libuuid@2.42.3-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "libverto",
+      "version": "0.3.2-r2",
+      "purl": "pkg:apk/alpine/libverto@0.3.2-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "mkfontscale",
+      "version": "1.2.4-r0",
+      "purl": "pkg:apk/alpine/mkfontscale@1.2.4-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "musl-utils",
+      "version": "1.2.6-r2",
+      "purl": "pkg:apk/alpine/musl-utils@1.2.6-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "musl",
+      "version": "1.2.6-r2",
+      "purl": "pkg:apk/alpine/musl@1.2.6-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "ncurses-terminfo-base",
+      "version": "6.6_p20260516-r0",
+      "purl": "pkg:apk/alpine/ncurses-terminfo-base@6.6_p20260516-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "readline",
+      "version": "8.3.3-r1",
+      "purl": "pkg:apk/alpine/readline@8.3.3-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "scanelf",
+      "version": "1.3.9-r1",
+      "purl": "pkg:apk/alpine/scanelf@1.3.9-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "sqlite-libs",
+      "version": "3.53.4-r0",
+      "purl": "pkg:apk/alpine/sqlite-libs@3.53.4-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "blessing"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "ssl_client",
+      "version": "1.37.0-r31",
+      "purl": "pkg:apk/alpine/ssl_client@1.37.0-r31?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "tzdata",
+      "version": "2026e-r0",
+      "purl": "pkg:apk/alpine/tzdata@2026e-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Public-Domain"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "xz-libs",
+      "version": "5.8.4-r0",
+      "purl": "pkg:apk/alpine/xz-libs@5.8.4-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        },
+        {
+          "license": {
+            "name": "Public-Domain"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "zlib",
+      "version": "1.3.2-r1",
+      "purl": "pkg:apk/alpine/zlib@1.3.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "annotated-doc",
+      "version": "0.0.5",
+      "purl": "pkg:pypi/annotated-doc@0.0.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "purl": "pkg:pypi/annotated-types@0.8.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "anyio",
+      "version": "4.15.1",
+      "purl": "pkg:pypi/anyio@4.15.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "certifi",
+      "version": "2026.7.22",
+      "purl": "pkg:pypi/certifi@2026.7.22",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "charset-normalizer",
+      "version": "3.5.2",
+      "purl": "pkg:pypi/charset-normalizer@3.5.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "click",
+      "version": "8.5.0",
+      "purl": "pkg:pypi/click@8.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "fastapi",
+      "version": "0.143.0",
+      "purl": "pkg:pypi/fastapi@0.143.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "h11",
+      "version": "0.16.0",
+      "purl": "pkg:pypi/h11@0.16.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "httpcore",
+      "version": "1.0.9",
+      "purl": "pkg:pypi/httpcore@1.0.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "httptools",
+      "version": "0.9.0",
+      "purl": "pkg:pypi/httptools@0.9.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "httpx",
+      "version": "0.28.1",
+      "purl": "pkg:pypi/httpx@0.28.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "idna",
+      "version": "3.20",
+      "purl": "pkg:pypi/idna@3.20",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "opentelemetry-api",
+      "version": "1.45.1",
+      "purl": "pkg:pypi/opentelemetry-api@1.45.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "pillow",
+      "version": "12.3.0",
+      "purl": "pkg:pypi/pillow@12.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT-CMU"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "pip",
+      "version": "25.0.1",
+      "purl": "pkg:pypi/pip@25.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "pydantic_core",
+      "version": "2.50.0",
+      "purl": "pkg:pypi/pydantic-core@2.50.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "pydantic",
+      "version": "2.14.0",
+      "purl": "pkg:pypi/pydantic@2.14.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "purl": "pkg:pypi/python-dotenv@1.2.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "purl": "pkg:pypi/pyyaml@6.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "reportlab",
+      "version": "4.4.9",
+      "purl": "pkg:pypi/reportlab@4.4.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "starlette",
+      "version": "1.7.0",
+      "purl": "pkg:pypi/starlette@1.7.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "purl": "pkg:pypi/typing-extensions@4.16.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "PSF-2.0"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "typing-inspection",
+      "version": "0.4.4",
+      "purl": "pkg:pypi/typing-inspection@0.4.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "purl": "pkg:pypi/uvicorn@0.54.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "uvloop",
+      "version": "0.23.0",
+      "purl": "pkg:pypi/uvloop@0.23.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "watchfiles",
+      "version": "1.3.0",
+      "purl": "pkg:pypi/watchfiles@1.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "api-image-20261012.cdx.json",
+      "name": "websockets",
+      "version": "17.2",
+      "purl": "pkg:pypi/websockets@17.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/PyYAML/6.0.3/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "Pygments",
+      "version": "2.21.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-2-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/Pygments/2.21.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "annotated-doc",
+      "version": "0.0.5",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/annotated-doc/0.0.5/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/annotated-types/0.8.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "anyio",
+      "version": "4.15.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/anyio/4.15.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "certifi",
+      "version": "2026.7.22",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+        ],
+        "declared_text": "MPL-2.0",
+        "source": "https://pypi.org/pypi/certifi/2026.7.22/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "charset-normalizer",
+      "version": "3.5.2",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/charset-normalizer/3.5.2/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "click",
+      "version": "8.5.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/click/8.5.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "fastapi",
+      "version": "0.143.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/fastapi/0.143.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "h11",
+      "version": "0.16.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/h11/0.16.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "httpcore",
+      "version": "1.0.9",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [
+          "License :: OSI Approved :: BSD License"
+        ],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/httpcore/1.0.9/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "httptools",
+      "version": "0.9.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/httptools/0.9.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "httpx",
+      "version": "0.28.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: BSD License"
+        ],
+        "declared_text": "BSD-3-Clause",
+        "source": "https://pypi.org/pypi/httpx/0.28.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "idna",
+      "version": "3.20",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/idna/3.20/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "iniconfig",
+      "version": "2.3.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/iniconfig/2.3.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "opentelemetry-api",
+      "version": "1.45.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "Apache-2.0",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/opentelemetry-api/1.45.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "pillow",
+      "version": "12.3.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT-CMU",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pillow/12.3.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "pluggy",
+      "version": "1.6.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/pluggy/1.6.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "pydantic",
+      "version": "2.14.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pydantic/2.14.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "pydantic_core",
+      "version": "2.50.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pydantic_core/2.50.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "pypdf",
+      "version": "6.19.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pypdf/6.19.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "pytest",
+      "version": "9.1.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pytest/9.1.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "pytest-asyncio",
+      "version": "1.4.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "Apache-2.0",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pytest-asyncio/1.4.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [],
+        "declared_text": "BSD-3-Clause",
+        "source": "https://pypi.org/pypi/python-dotenv/1.2.4/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "reportlab",
+      "version": "4.4.9",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: BSD License"
+        ],
+        "declared_text": "BSD license (see license.txt for details), Copyright (c) 2000-2025, ReportLab Inc.",
+        "source": "https://pypi.org/pypi/reportlab/4.4.9/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "ruff",
+      "version": "0.16.10",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/ruff/0.16.10/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "starlette",
+      "version": "1.7.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/starlette/1.7.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "typing-inspection",
+      "version": "0.4.4",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/typing-inspection/0.4.4/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "PSF-2.0",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/typing_extensions/4.16.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/uvicorn/0.54.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "uvloop",
+      "version": "0.23.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: Apache Software License",
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT License",
+        "source": "https://pypi.org/pypi/uvloop/0.23.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "watchfiles",
+      "version": "1.3.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/watchfiles/1.3.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-development-20261012.cdx.json",
+      "name": "websockets",
+      "version": "17.2",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/websockets/17.2/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/PyYAML/6.0.3/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "annotated-doc",
+      "version": "0.0.5",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/annotated-doc/0.0.5/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/annotated-types/0.8.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "anyio",
+      "version": "4.15.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/anyio/4.15.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "certifi",
+      "version": "2026.7.22",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+        ],
+        "declared_text": "MPL-2.0",
+        "source": "https://pypi.org/pypi/certifi/2026.7.22/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "charset-normalizer",
+      "version": "3.5.2",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/charset-normalizer/3.5.2/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "click",
+      "version": "8.5.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/click/8.5.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "fastapi",
+      "version": "0.143.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/fastapi/0.143.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "h11",
+      "version": "0.16.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/h11/0.16.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "httpcore",
+      "version": "1.0.9",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [
+          "License :: OSI Approved :: BSD License"
+        ],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/httpcore/1.0.9/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "httptools",
+      "version": "0.9.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/httptools/0.9.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "httpx",
+      "version": "0.28.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: BSD License"
+        ],
+        "declared_text": "BSD-3-Clause",
+        "source": "https://pypi.org/pypi/httpx/0.28.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "idna",
+      "version": "3.20",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/idna/3.20/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "opentelemetry-api",
+      "version": "1.45.1",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "Apache-2.0",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/opentelemetry-api/1.45.1/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "pillow",
+      "version": "12.3.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT-CMU",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pillow/12.3.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "pydantic",
+      "version": "2.14.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pydantic/2.14.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "pydantic_core",
+      "version": "2.50.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/pydantic_core/2.50.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [],
+        "declared_text": "BSD-3-Clause",
+        "source": "https://pypi.org/pypi/python-dotenv/1.2.4/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "reportlab",
+      "version": "4.4.9",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: BSD License"
+        ],
+        "declared_text": "BSD license (see license.txt for details), Copyright (c) 2000-2025, ReportLab Inc.",
+        "source": "https://pypi.org/pypi/reportlab/4.4.9/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "starlette",
+      "version": "1.7.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/starlette/1.7.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "typing-inspection",
+      "version": "0.4.4",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "MIT",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/typing-inspection/0.4.4/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "PSF-2.0",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/typing_extensions/4.16.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/uvicorn/0.54.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "uvloop",
+      "version": "0.23.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: Apache Software License",
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT License",
+        "source": "https://pypi.org/pypi/uvloop/0.23.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "watchfiles",
+      "version": "1.3.0",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": null,
+        "classifiers": [
+          "License :: OSI Approved :: MIT License"
+        ],
+        "declared_text": "MIT",
+        "source": "https://pypi.org/pypi/watchfiles/1.3.0/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "backend-production-20261012.cdx.json",
+      "name": "websockets",
+      "version": "17.2",
+      "purl": null,
+      "licenses": [],
+      "pypi_evidence": {
+        "expression": "BSD-3-Clause",
+        "classifiers": [],
+        "declared_text": "",
+        "source": "https://pypi.org/pypi/websockets/17.2/json"
+      },
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "icons-vue",
+      "version": "2.3.2",
+      "purl": "pkg:npm/%40element-plus/icons-vue@2.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "js",
+      "version": "10.0.1",
+      "purl": "pkg:npm/%40eslint/js@10.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "node",
+      "version": "22.20.5",
+      "purl": "pkg:npm/%40types/node@22.20.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "plugin-vue",
+      "version": "6.0.9",
+      "purl": "pkg:npm/%40vitejs/plugin-vue@6.0.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "test-utils",
+      "version": "2.5.1",
+      "purl": "pkg:npm/%40vue/test-utils@2.5.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "echarts",
+      "version": "6.1.0",
+      "purl": "pkg:npm/echarts@6.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "element-plus",
+      "version": "2.14.7",
+      "purl": "pkg:npm/element-plus@2.14.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "eslint-plugin-vue",
+      "version": "10.11.1",
+      "purl": "pkg:npm/eslint-plugin-vue@10.11.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "eslint",
+      "version": "10.12.0",
+      "purl": "pkg:npm/eslint@10.12.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "jsdom",
+      "version": "29.1.1",
+      "purl": "pkg:npm/jsdom@29.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "playwright-core",
+      "version": "1.64.0",
+      "purl": "pkg:npm/playwright-core@1.64.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "typescript-eslint",
+      "version": "8.71.1",
+      "purl": "pkg:npm/typescript-eslint@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "typescript",
+      "version": "5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "vite",
+      "version": "8.3.4",
+      "purl": "pkg:npm/vite@8.3.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "vitest",
+      "version": "5.0.3",
+      "purl": "pkg:npm/vitest@5.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "vue-tsc",
+      "version": "3.3.12",
+      "purl": "pkg:npm/vue-tsc@3.3.12",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "vue",
+      "version": "3.5.43",
+      "purl": "pkg:npm/vue@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "undici-types",
+      "version": "6.21.0",
+      "purl": "pkg:npm/undici-types@6.21.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "pluginutils",
+      "version": "1.0.1",
+      "purl": "pkg:npm/%40rolldown/pluginutils@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "compiler-dom",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/compiler-dom@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "server-renderer",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/server-renderer@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "js-beautify",
+      "version": "2.0.3",
+      "purl": "pkg:npm/js-beautify@2.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "vue-component-type-helpers",
+      "version": "3.3.11",
+      "purl": "pkg:npm/vue-component-type-helpers@3.3.11",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tslib",
+      "version": "2.3.0",
+      "purl": "pkg:npm/tslib@2.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "zrender",
+      "version": "6.1.0",
+      "purl": "pkg:npm/zrender@6.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tinycolor",
+      "version": "4.2.1",
+      "purl": "pkg:npm/%40ctrl/tinycolor@4.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "dom",
+      "version": "1.8.0",
+      "purl": "pkg:npm/%40floating-ui/dom@1.8.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "popperjs-es",
+      "version": "2.11.8",
+      "purl": "pkg:npm/%40sxzz/popperjs-es@2.11.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lodash-es",
+      "version": "4.17.12",
+      "purl": "pkg:npm/%40types/lodash-es@4.17.12",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lodash",
+      "version": "4.17.25",
+      "purl": "pkg:npm/%40types/lodash@4.17.25",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "core",
+      "version": "15.0.0",
+      "purl": "pkg:npm/%40vueuse/core@15.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "async-validator",
+      "version": "4.2.5",
+      "purl": "pkg:npm/async-validator@4.2.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "dayjs",
+      "version": "1.11.23",
+      "purl": "pkg:npm/dayjs@1.11.23",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lodash-es",
+      "version": "4.18.1",
+      "purl": "pkg:npm/lodash-es@4.18.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lodash-unified",
+      "version": "1.0.3",
+      "purl": "pkg:npm/lodash-unified@1.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lodash",
+      "version": "4.18.1",
+      "purl": "pkg:npm/lodash@4.18.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "memoize-one",
+      "version": "6.0.0",
+      "purl": "pkg:npm/memoize-one@6.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "normalize-wheel-es",
+      "version": "1.2.0",
+      "purl": "pkg:npm/normalize-wheel-es@1.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "eslint-utils",
+      "version": "4.10.1",
+      "purl": "pkg:npm/%40eslint-community/eslint-utils@4.10.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "parser",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/parser@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "natural-compare",
+      "version": "1.4.0",
+      "purl": "pkg:npm/natural-compare@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "nth-check",
+      "version": "2.1.1",
+      "purl": "pkg:npm/nth-check@2.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "postcss-selector-parser",
+      "version": "7.1.6",
+      "purl": "pkg:npm/postcss-selector-parser@7.1.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "semver",
+      "version": "7.8.5",
+      "purl": "pkg:npm/semver@7.8.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "vue-eslint-parser",
+      "version": "10.4.1",
+      "purl": "pkg:npm/vue-eslint-parser@10.4.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "xml-name-validator",
+      "version": "5.0.0",
+      "purl": "pkg:npm/xml-name-validator@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "regexpp",
+      "version": "4.12.2",
+      "purl": "pkg:npm/%40eslint-community/regexpp@4.12.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "config-array",
+      "version": "0.23.5",
+      "purl": "pkg:npm/%40eslint/config-array@0.23.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "config-helpers",
+      "version": "0.7.0",
+      "purl": "pkg:npm/%40eslint/config-helpers@0.7.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "core",
+      "version": "1.2.1",
+      "purl": "pkg:npm/%40eslint/core@1.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "plugin-kit",
+      "version": "0.7.3",
+      "purl": "pkg:npm/%40eslint/plugin-kit@0.7.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "node",
+      "version": "0.16.8",
+      "purl": "pkg:npm/%40humanfs/node@0.16.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "module-importer",
+      "version": "1.0.1",
+      "purl": "pkg:npm/%40humanwhocodes/module-importer@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "retry",
+      "version": "0.4.3",
+      "purl": "pkg:npm/%40humanwhocodes/retry@0.4.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "estree",
+      "version": "1.0.9",
+      "purl": "pkg:npm/%40types/estree@1.0.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "ajv",
+      "version": "6.15.0",
+      "purl": "pkg:npm/ajv@6.15.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "cross-spawn",
+      "version": "7.0.6",
+      "purl": "pkg:npm/cross-spawn@7.0.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "debug",
+      "version": "4.4.3",
+      "purl": "pkg:npm/debug@4.4.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "escape-string-regexp",
+      "version": "4.0.0",
+      "purl": "pkg:npm/escape-string-regexp@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "eslint-scope",
+      "version": "9.1.2",
+      "purl": "pkg:npm/eslint-scope@9.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "eslint-visitor-keys",
+      "version": "5.0.1",
+      "purl": "pkg:npm/eslint-visitor-keys@5.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "espree",
+      "version": "11.2.0",
+      "purl": "pkg:npm/espree@11.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "esquery",
+      "version": "1.7.0",
+      "purl": "pkg:npm/esquery@1.7.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "esutils",
+      "version": "2.0.3",
+      "purl": "pkg:npm/esutils@2.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "fast-deep-equal",
+      "version": "3.1.3",
+      "purl": "pkg:npm/fast-deep-equal@3.1.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "file-entry-cache",
+      "version": "11.1.5",
+      "purl": "pkg:npm/file-entry-cache@11.1.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "find-up",
+      "version": "5.0.0",
+      "purl": "pkg:npm/find-up@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "glob-parent",
+      "version": "6.0.2",
+      "purl": "pkg:npm/glob-parent@6.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "ignore",
+      "version": "5.3.2",
+      "purl": "pkg:npm/ignore@5.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "imurmurhash",
+      "version": "0.1.4",
+      "purl": "pkg:npm/imurmurhash@0.1.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "is-glob",
+      "version": "4.0.3",
+      "purl": "pkg:npm/is-glob@4.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "json-stable-stringify-without-jsonify",
+      "version": "1.0.1",
+      "purl": "pkg:npm/json-stable-stringify-without-jsonify@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "minimatch",
+      "version": "10.2.6",
+      "purl": "pkg:npm/minimatch@10.2.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "optionator",
+      "version": "0.9.4",
+      "purl": "pkg:npm/optionator@0.9.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "css-color",
+      "version": "5.1.11",
+      "purl": "pkg:npm/%40asamuzakjp/css-color@5.1.11",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "dom-selector",
+      "version": "7.1.1",
+      "purl": "pkg:npm/%40asamuzakjp/dom-selector@7.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "specificity",
+      "version": "2.4.3",
+      "purl": "pkg:npm/%40bramus/specificity@2.4.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "css-syntax-patches-for-csstree",
+      "version": "1.1.15",
+      "purl": "pkg:npm/%40csstools/css-syntax-patches-for-csstree@1.1.15",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT-0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "bytes",
+      "version": "1.16.0",
+      "purl": "pkg:npm/%40exodus/bytes@1.16.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "css-tree",
+      "version": "3.2.1",
+      "purl": "pkg:npm/css-tree@3.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "data-urls",
+      "version": "7.0.0",
+      "purl": "pkg:npm/data-urls@7.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "decimal.js",
+      "version": "10.6.0",
+      "purl": "pkg:npm/decimal.js@10.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "html-encoding-sniffer",
+      "version": "6.0.0",
+      "purl": "pkg:npm/html-encoding-sniffer@6.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "is-potential-custom-element-name",
+      "version": "1.0.1",
+      "purl": "pkg:npm/is-potential-custom-element-name@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lru-cache",
+      "version": "11.5.3",
+      "purl": "pkg:npm/lru-cache@11.5.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "parse5",
+      "version": "8.0.1",
+      "purl": "pkg:npm/parse5@8.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "saxes",
+      "version": "6.0.0",
+      "purl": "pkg:npm/saxes@6.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "symbol-tree",
+      "version": "3.2.4",
+      "purl": "pkg:npm/symbol-tree@3.2.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tough-cookie",
+      "version": "6.0.2",
+      "purl": "pkg:npm/tough-cookie@6.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "undici",
+      "version": "7.30.0",
+      "purl": "pkg:npm/undici@7.30.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "w3c-xmlserializer",
+      "version": "5.0.0",
+      "purl": "pkg:npm/w3c-xmlserializer@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "webidl-conversions",
+      "version": "8.0.1",
+      "purl": "pkg:npm/webidl-conversions@8.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "whatwg-mimetype",
+      "version": "5.0.0",
+      "purl": "pkg:npm/whatwg-mimetype@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "whatwg-url",
+      "version": "16.0.1",
+      "purl": "pkg:npm/whatwg-url@16.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "eslint-plugin",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/eslint-plugin@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "typescript-estree",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/typescript-estree@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "utils",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/utils@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "fsevents",
+      "version": "2.3.3",
+      "purl": "pkg:npm/fsevents@2.3.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lightningcss",
+      "version": "1.33.0",
+      "purl": "pkg:npm/lightningcss@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "picomatch",
+      "version": "4.0.7",
+      "purl": "pkg:npm/picomatch@4.0.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "postcss",
+      "version": "8.5.29",
+      "purl": "pkg:npm/postcss@8.5.29",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "rolldown",
+      "version": "1.2.13",
+      "purl": "pkg:npm/rolldown@1.2.13",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "purl": "pkg:npm/tinyglobby@0.2.17",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "chai",
+      "version": "5.2.3",
+      "purl": "pkg:npm/%40types/chai@5.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "mocker",
+      "version": "5.0.3",
+      "purl": "pkg:npm/%40vitest/mocker@5.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "chai",
+      "version": "6.3.0",
+      "purl": "pkg:npm/chai@6.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "purl": "pkg:npm/es-module-lexer@2.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "expect-type",
+      "version": "1.4.0",
+      "purl": "pkg:npm/expect-type@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "obug",
+      "version": "2.2.1",
+      "purl": "pkg:npm/obug@2.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "std-env",
+      "version": "4.3.0",
+      "purl": "pkg:npm/std-env@4.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tinybench",
+      "version": "6.2.1",
+      "purl": "pkg:npm/tinybench@6.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "purl": "pkg:npm/tinyexec@1.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "why-is-node-running",
+      "version": "3.2.1",
+      "purl": "pkg:npm/why-is-node-running@3.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "typescript",
+      "version": "2.4.28",
+      "purl": "pkg:npm/%40volar/typescript@2.4.28",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "language-core",
+      "version": "3.3.12",
+      "purl": "pkg:npm/%40vue/language-core@3.3.12",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "compiler-sfc",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/compiler-sfc@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "runtime-dom",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/runtime-dom@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "shared",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/shared@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "compiler-core",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/compiler-core@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "compiler-ssr",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/compiler-ssr@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "config-chain",
+      "version": "1.1.13",
+      "purl": "pkg:npm/config-chain@1.1.13",
+      "licenses": [],
+      "status": "needs-review"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "editorconfig",
+      "version": "3.0.2",
+      "purl": "pkg:npm/editorconfig@3.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "glob",
+      "version": "13.0.6",
+      "purl": "pkg:npm/glob@13.0.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "js-cookie",
+      "version": "3.0.8",
+      "purl": "pkg:npm/js-cookie@3.0.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "nopt",
+      "version": "10.0.1",
+      "purl": "pkg:npm/nopt@10.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "core",
+      "version": "1.8.0",
+      "purl": "pkg:npm/%40floating-ui/core@1.8.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "utils",
+      "version": "0.2.12",
+      "purl": "pkg:npm/%40floating-ui/utils@0.2.12",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "web-bluetooth",
+      "version": "0.0.21",
+      "purl": "pkg:npm/%40types/web-bluetooth@0.0.21",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "metadata",
+      "version": "15.0.0",
+      "purl": "pkg:npm/%40vueuse/metadata@15.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "shared",
+      "version": "15.0.0",
+      "purl": "pkg:npm/%40vueuse/shared@15.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "scope-manager",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/scope-manager@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "types",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/types@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "visitor-keys",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/visitor-keys@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "boolbase",
+      "version": "1.0.0",
+      "purl": "pkg:npm/boolbase@1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "cssesc",
+      "version": "3.0.0",
+      "purl": "pkg:npm/cssesc@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "util-deprecate",
+      "version": "1.0.2",
+      "purl": "pkg:npm/util-deprecate@1.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "object-schema",
+      "version": "3.0.5",
+      "purl": "pkg:npm/%40eslint/object-schema@3.0.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "json-schema",
+      "version": "7.0.15",
+      "purl": "pkg:npm/%40types/json-schema@7.0.15",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "levn",
+      "version": "0.4.1",
+      "purl": "pkg:npm/levn@0.4.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "core",
+      "version": "0.19.2",
+      "purl": "pkg:npm/%40humanfs/core@0.19.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "types",
+      "version": "0.15.0",
+      "purl": "pkg:npm/%40humanfs/types@0.15.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "fast-json-stable-stringify",
+      "version": "2.1.0",
+      "purl": "pkg:npm/fast-json-stable-stringify@2.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "json-schema-traverse",
+      "version": "0.4.1",
+      "purl": "pkg:npm/json-schema-traverse@0.4.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "uri-js",
+      "version": "4.4.1",
+      "purl": "pkg:npm/uri-js@4.4.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "path-key",
+      "version": "3.1.1",
+      "purl": "pkg:npm/path-key@3.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "shebang-command",
+      "version": "2.0.0",
+      "purl": "pkg:npm/shebang-command@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "which",
+      "version": "2.0.2",
+      "purl": "pkg:npm/which@2.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "ms",
+      "version": "2.1.3",
+      "purl": "pkg:npm/ms@2.1.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "esrecurse",
+      "version": "4.3.1",
+      "purl": "pkg:npm/%40types/esrecurse@4.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "esrecurse",
+      "version": "4.3.0",
+      "purl": "pkg:npm/esrecurse@4.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "estraverse",
+      "version": "5.3.0",
+      "purl": "pkg:npm/estraverse@5.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "acorn-jsx",
+      "version": "5.3.2",
+      "purl": "pkg:npm/acorn-jsx@5.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "acorn",
+      "version": "8.18.0",
+      "purl": "pkg:npm/acorn@8.18.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "flat-cache",
+      "version": "6.1.23",
+      "purl": "pkg:npm/flat-cache@6.1.23",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "locate-path",
+      "version": "6.0.0",
+      "purl": "pkg:npm/locate-path@6.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "path-exists",
+      "version": "4.0.0",
+      "purl": "pkg:npm/path-exists@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "is-extglob",
+      "version": "2.1.1",
+      "purl": "pkg:npm/is-extglob@2.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "brace-expansion",
+      "version": "5.0.12",
+      "purl": "pkg:npm/brace-expansion@5.0.12",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "deep-is",
+      "version": "0.1.4",
+      "purl": "pkg:npm/deep-is@0.1.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "fast-levenshtein",
+      "version": "2.0.6",
+      "purl": "pkg:npm/fast-levenshtein@2.0.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "prelude-ls",
+      "version": "1.2.1",
+      "purl": "pkg:npm/prelude-ls@1.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "type-check",
+      "version": "0.4.0",
+      "purl": "pkg:npm/type-check@0.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "word-wrap",
+      "version": "1.2.5",
+      "purl": "pkg:npm/word-wrap@1.2.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "generational-cache",
+      "version": "1.0.1",
+      "purl": "pkg:npm/%40asamuzakjp/generational-cache@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "css-calc",
+      "version": "3.4.3",
+      "purl": "pkg:npm/%40csstools/css-calc@3.4.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "css-color-parser",
+      "version": "4.2.6",
+      "purl": "pkg:npm/%40csstools/css-color-parser@4.2.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "css-parser-algorithms",
+      "version": "4.0.2",
+      "purl": "pkg:npm/%40csstools/css-parser-algorithms@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "css-tokenizer",
+      "version": "4.0.2",
+      "purl": "pkg:npm/%40csstools/css-tokenizer@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "nwsapi",
+      "version": "2.3.9",
+      "purl": "pkg:npm/%40asamuzakjp/nwsapi@2.3.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared",
+            "url": "http://javascript.nwbox.com/nwsapi/MIT-LICENSE"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "bidi-js",
+      "version": "1.1.0",
+      "purl": "pkg:npm/bidi-js@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "mdn-data",
+      "version": "2.27.1",
+      "purl": "pkg:npm/mdn-data@2.27.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "CC0-1.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "source-map-js",
+      "version": "1.2.2",
+      "purl": "pkg:npm/source-map-js@1.2.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "xmlchars",
+      "version": "2.2.0",
+      "purl": "pkg:npm/xmlchars@2.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tldts",
+      "version": "7.4.18",
+      "purl": "pkg:npm/tldts@7.4.18",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tr46",
+      "version": "6.0.0",
+      "purl": "pkg:npm/tr46@6.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "type-utils",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/type-utils@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "ts-api-utils",
+      "version": "2.5.0",
+      "purl": "pkg:npm/ts-api-utils@2.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "project-service",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/project-service@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tsconfig-utils",
+      "version": "8.71.1",
+      "purl": "pkg:npm/%40typescript-eslint/tsconfig-utils@8.71.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "purl": "pkg:npm/detect-libc@2.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "lightningcss-darwin-arm64",
+      "version": "1.33.0",
+      "purl": "pkg:npm/lightningcss-darwin-arm64@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "nanoid",
+      "version": "3.3.19",
+      "purl": "pkg:npm/nanoid@3.3.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "purl": "pkg:npm/picocolors@1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "types",
+      "version": "0.153.0",
+      "purl": "pkg:npm/%40oxc-project/types@0.153.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "binding-darwin-arm64",
+      "version": "1.2.13",
+      "purl": "pkg:npm/%40rolldown/binding-darwin-arm64@1.2.13",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "fdir",
+      "version": "6.5.0",
+      "purl": "pkg:npm/fdir@6.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "deep-eql",
+      "version": "4.0.2",
+      "purl": "pkg:npm/%40types/deep-eql@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "purl": "pkg:npm/assertion-error@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "trace-mapping",
+      "version": "0.3.31",
+      "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "spy",
+      "version": "5.0.3",
+      "purl": "pkg:npm/%40vitest/spy@5.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "sourcemap-codec",
+      "version": "1.6.0",
+      "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "language-core",
+      "version": "2.4.28",
+      "purl": "pkg:npm/%40volar/language-core@2.4.28",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "path-browserify",
+      "version": "1.0.1",
+      "purl": "pkg:npm/path-browserify@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "vscode-uri",
+      "version": "3.2.0",
+      "purl": "pkg:npm/vscode-uri@3.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "alien-signals",
+      "version": "3.2.1",
+      "purl": "pkg:npm/alien-signals@3.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "muggle-string",
+      "version": "0.4.1",
+      "purl": "pkg:npm/muggle-string@0.4.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "parser",
+      "version": "7.29.9",
+      "purl": "pkg:npm/%40babel/parser@7.29.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "estree-walker",
+      "version": "2.0.2",
+      "purl": "pkg:npm/estree-walker@2.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "magic-string",
+      "version": "0.30.21",
+      "purl": "pkg:npm/magic-string@0.30.21",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "reactivity",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/reactivity@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "runtime-core",
+      "version": "3.5.43",
+      "purl": "pkg:npm/%40vue/runtime-core@3.5.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "csstype",
+      "version": "3.2.3",
+      "purl": "pkg:npm/csstype@3.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "entities",
+      "version": "7.0.1",
+      "purl": "pkg:npm/entities@7.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "ini",
+      "version": "1.3.8",
+      "purl": "pkg:npm/ini@1.3.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "proto-list",
+      "version": "1.2.4",
+      "purl": "pkg:npm/proto-list@1.2.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "wasm",
+      "version": "0.2.1",
+      "purl": "pkg:npm/%40one-ini/wasm@0.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "commander",
+      "version": "14.0.3",
+      "purl": "pkg:npm/commander@14.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "minipass",
+      "version": "7.1.3",
+      "purl": "pkg:npm/minipass@7.1.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "path-scurry",
+      "version": "2.0.2",
+      "purl": "pkg:npm/path-scurry@2.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "abbrev",
+      "version": "5.0.0",
+      "purl": "pkg:npm/abbrev@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "punycode",
+      "version": "2.3.1",
+      "purl": "pkg:npm/punycode@2.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "shebang-regex",
+      "version": "3.0.0",
+      "purl": "pkg:npm/shebang-regex@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "isexe",
+      "version": "2.0.0",
+      "purl": "pkg:npm/isexe@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "cacheable",
+      "version": "2.5.0",
+      "purl": "pkg:npm/cacheable@2.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "flatted",
+      "version": "3.4.4",
+      "purl": "pkg:npm/flatted@3.4.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "hookified",
+      "version": "1.15.1",
+      "purl": "pkg:npm/hookified@1.15.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "p-locate",
+      "version": "5.0.0",
+      "purl": "pkg:npm/p-locate@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "balanced-match",
+      "version": "4.0.4",
+      "purl": "pkg:npm/balanced-match@4.0.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "color-helpers",
+      "version": "6.1.2",
+      "purl": "pkg:npm/%40csstools/color-helpers@6.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT-0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "require-from-string",
+      "version": "2.0.2",
+      "purl": "pkg:npm/require-from-string@2.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "tldts-core",
+      "version": "7.4.18",
+      "purl": "pkg:npm/tldts-core@7.4.18",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "resolve-uri",
+      "version": "3.1.2",
+      "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "source-map",
+      "version": "2.4.28",
+      "purl": "pkg:npm/%40volar/source-map@2.4.28",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "types",
+      "version": "7.29.8",
+      "purl": "pkg:npm/%40babel/types@7.29.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "memory",
+      "version": "2.2.0",
+      "purl": "pkg:npm/%40cacheable/memory@2.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "utils",
+      "version": "2.5.0",
+      "purl": "pkg:npm/%40cacheable/utils@2.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "keyv",
+      "version": "5.6.0",
+      "purl": "pkg:npm/keyv@5.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "qified",
+      "version": "0.10.1",
+      "purl": "pkg:npm/qified@0.10.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "p-limit",
+      "version": "3.1.0",
+      "purl": "pkg:npm/p-limit@3.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "helper-string-parser",
+      "version": "7.29.7",
+      "purl": "pkg:npm/%40babel/helper-string-parser@7.29.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "helper-validator-identifier",
+      "version": "7.29.7",
+      "purl": "pkg:npm/%40babel/helper-validator-identifier@7.29.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "bigmap",
+      "version": "1.3.1",
+      "purl": "pkg:npm/%40keyv/bigmap@1.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "hashery",
+      "version": "1.5.1",
+      "purl": "pkg:npm/hashery@1.5.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "serialize",
+      "version": "1.1.1",
+      "purl": "pkg:npm/%40keyv/serialize@1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "frontend-20261012.cdx.json",
+      "name": "yocto-queue",
+      "version": "0.1.0",
+      "purl": "pkg:npm/yocto-queue@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "alpine",
+      "version": "3.24.2",
+      "purl": null,
+      "licenses": [],
+      "status": "needs-review"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "alpine-baselayout-data",
+      "version": "3.7.2-r1",
+      "purl": "pkg:apk/alpine/alpine-baselayout-data@3.7.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "alpine-baselayout",
+      "version": "3.7.2-r1",
+      "purl": "pkg:apk/alpine/alpine-baselayout@3.7.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "alpine-keys",
+      "version": "2.6-r0",
+      "purl": "pkg:apk/alpine/alpine-keys@2.6-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "alpine-release",
+      "version": "3.24.2-r0",
+      "purl": "pkg:apk/alpine/alpine-release@3.24.2-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "aom-libs",
+      "version": "3.14.1-r0",
+      "purl": "pkg:apk/alpine/aom-libs@3.14.1-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "custom"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "apk-tools",
+      "version": "3.0.8-r0",
+      "purl": "pkg:apk/alpine/apk-tools@3.0.8-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "brotli-libs",
+      "version": "1.2.0-r1",
+      "purl": "pkg:apk/alpine/brotli-libs@1.2.0-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "busybox-binsh",
+      "version": "1.37.0-r31",
+      "purl": "pkg:apk/alpine/busybox-binsh@1.37.0-r31?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "busybox",
+      "version": "1.37.0-r31",
+      "purl": "pkg:apk/alpine/busybox@1.37.0-r31?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "c-ares",
+      "version": "1.34.8-r0",
+      "purl": "pkg:apk/alpine/c-ares@1.34.8-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "ca-certificates-bundle",
+      "version": "20260909-r0",
+      "purl": "pkg:apk/alpine/ca-certificates-bundle@20260909-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "ca-certificates",
+      "version": "20260909-r0",
+      "purl": "pkg:apk/alpine/ca-certificates@20260909-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "curl",
+      "version": "8.22.0-r0",
+      "purl": "pkg:apk/alpine/curl@8.22.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "curl"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "fontconfig",
+      "version": "2.17.1-r1",
+      "purl": "pkg:apk/alpine/fontconfig@2.17.1-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "freetype",
+      "version": "2.14.3-r0",
+      "purl": "pkg:apk/alpine/freetype@2.14.3-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "FTL"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "geoip",
+      "version": "1.6.12-r6",
+      "purl": "pkg:apk/alpine/geoip@1.6.12-r6?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "gettext-envsubst",
+      "version": "1.0-r0",
+      "purl": "pkg:apk/alpine/gettext-envsubst@1.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libapk",
+      "version": "3.0.8-r0",
+      "purl": "pkg:apk/alpine/libapk@3.0.8-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libavif",
+      "version": "1.4.1-r0",
+      "purl": "pkg:apk/alpine/libavif@1.4.1-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libbsd",
+      "version": "0.12.2-r0",
+      "purl": "pkg:apk/alpine/libbsd@0.12.2-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libbz2",
+      "version": "1.0.8-r6",
+      "purl": "pkg:apk/alpine/libbz2@1.0.8-r6?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "bzip-2-1.0.6"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libcrypto3",
+      "version": "3.5.9-r0",
+      "purl": "pkg:apk/alpine/libcrypto3@3.5.9-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libcurl",
+      "version": "8.22.0-r0",
+      "purl": "pkg:apk/alpine/libcurl@8.22.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "curl"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libdav1d",
+      "version": "1.5.3-r0",
+      "purl": "pkg:apk/alpine/libdav1d@1.5.3-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libedit",
+      "version": "20260508.3.1-r1",
+      "purl": "pkg:apk/alpine/libedit@20260508.3.1-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libexpat",
+      "version": "2.8.5-r0",
+      "purl": "pkg:apk/alpine/libexpat@2.8.5-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libgcc",
+      "version": "15.2.0-r5",
+      "purl": "pkg:apk/alpine/libgcc@15.2.0-r5?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libgd",
+      "version": "2.3.3-r10",
+      "purl": "pkg:apk/alpine/libgd@2.3.3-r10?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GD"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libice",
+      "version": "1.1.2-r0",
+      "purl": "pkg:apk/alpine/libice@1.1.2-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libidn2",
+      "version": "2.3.8-r0",
+      "purl": "pkg:apk/alpine/libidn2@2.3.8-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libintl",
+      "version": "1.0-r0",
+      "purl": "pkg:apk/alpine/libintl@1.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libjpeg-turbo",
+      "version": "3.1.3-r0",
+      "purl": "pkg:apk/alpine/libjpeg-turbo@3.1.3-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "IJG"
+          }
+        },
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libmd",
+      "version": "1.2.0-r0",
+      "purl": "pkg:apk/alpine/libmd@1.2.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "ISC"
+          }
+        },
+        {
+          "license": {
+            "id": "Beerware"
+          }
+        },
+        {
+          "license": {
+            "name": "Public"
+          }
+        },
+        {
+          "license": {
+            "name": "Domain"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libncursesw",
+      "version": "6.6_p20260516-r0",
+      "purl": "pkg:apk/alpine/libncursesw@6.6_p20260516-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libpng",
+      "version": "1.6.59-r0",
+      "purl": "pkg:apk/alpine/libpng@1.6.59-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Libpng"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libpsl",
+      "version": "0.21.5-r3",
+      "purl": "pkg:apk/alpine/libpsl@0.21.5-r3?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libsharpyuv",
+      "version": "1.6.0-r0",
+      "purl": "pkg:apk/alpine/libsharpyuv@1.6.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libsm",
+      "version": "1.2.6-r0",
+      "purl": "pkg:apk/alpine/libsm@1.2.6-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libssl3",
+      "version": "3.5.9-r0",
+      "purl": "pkg:apk/alpine/libssl3@3.5.9-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libstdc++",
+      "version": "15.2.0-r5",
+      "purl": "pkg:apk/alpine/libstdc%2B%2B@15.2.0-r5?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libunistring",
+      "version": "1.4.2-r0",
+      "purl": "pkg:apk/alpine/libunistring@1.4.2-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libuuid",
+      "version": "2.42.3-r1",
+      "purl": "pkg:apk/alpine/libuuid@2.42.3-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libwebp",
+      "version": "1.6.0-r0",
+      "purl": "pkg:apk/alpine/libwebp@1.6.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libx11",
+      "version": "1.8.13-r0",
+      "purl": "pkg:apk/alpine/libx11@1.8.13-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxau",
+      "version": "1.0.12-r0",
+      "purl": "pkg:apk/alpine/libxau@1.0.12-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxcb",
+      "version": "1.17.0-r2",
+      "purl": "pkg:apk/alpine/libxcb@1.17.0-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxdmcp",
+      "version": "1.1.5-r1",
+      "purl": "pkg:apk/alpine/libxdmcp@1.1.5-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxext",
+      "version": "1.3.7-r0",
+      "purl": "pkg:apk/alpine/libxext@1.3.7-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxml2",
+      "version": "2.13.9-r2",
+      "purl": "pkg:apk/alpine/libxml2@2.13.9-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxpm",
+      "version": "3.5.19-r0",
+      "purl": "pkg:apk/alpine/libxpm@3.5.19-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxslt",
+      "version": "1.1.43-r3",
+      "purl": "pkg:apk/alpine/libxslt@1.1.43-r3?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libxt",
+      "version": "1.3.1-r0",
+      "purl": "pkg:apk/alpine/libxt@1.3.1-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "libyuv",
+      "version": "0.0.1928-r0",
+      "purl": "pkg:apk/alpine/libyuv@0.0.1928-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "musl-utils",
+      "version": "1.2.6-r2",
+      "purl": "pkg:apk/alpine/musl-utils@1.2.6-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "musl",
+      "version": "1.2.6-r2",
+      "purl": "pkg:apk/alpine/musl@1.2.6-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "ncurses-terminfo-base",
+      "version": "6.6_p20260516-r0",
+      "purl": "pkg:apk/alpine/ncurses-terminfo-base@6.6_p20260516-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "X-11"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "nghttp2-libs",
+      "version": "1.70.0-r0",
+      "purl": "pkg:apk/alpine/nghttp2-libs@1.70.0-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "nginx-module-acme",
+      "version": "1.31.6.0.4.1-r1",
+      "purl": "pkg:apk/alpine/nginx-module-acme@1.31.6.0.4.1-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "2-clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "license"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "nginx-module-geoip",
+      "version": "1.31.6-r1",
+      "purl": "pkg:apk/alpine/nginx-module-geoip@1.31.6-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "2-clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "license"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "nginx-module-image-filter",
+      "version": "1.31.6-r1",
+      "purl": "pkg:apk/alpine/nginx-module-image-filter@1.31.6-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "2-clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "license"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "nginx-module-njs",
+      "version": "1.31.6.1.0.1-r1",
+      "purl": "pkg:apk/alpine/nginx-module-njs@1.31.6.1.0.1-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "2-clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "license"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "nginx-module-xslt",
+      "version": "1.31.6-r1",
+      "purl": "pkg:apk/alpine/nginx-module-xslt@1.31.6-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "2-clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "license"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "nginx",
+      "version": "1.31.6-r1",
+      "purl": "pkg:apk/alpine/nginx@1.31.6-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "2-clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "license"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "pcre2",
+      "version": "10.49-r0",
+      "purl": "pkg:apk/alpine/pcre2@10.49-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "scanelf",
+      "version": "1.3.9-r1",
+      "purl": "pkg:apk/alpine/scanelf@1.3.9-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "ssl_client",
+      "version": "1.37.0-r31",
+      "purl": "pkg:apk/alpine/ssl_client@1.37.0-r31?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "tiff",
+      "version": "4.7.2-r0",
+      "purl": "pkg:apk/alpine/tiff@4.7.2-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "libtiff"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "tzdata",
+      "version": "2026e-r0",
+      "purl": "pkg:apk/alpine/tzdata@2026e-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Public-Domain"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "xz-libs",
+      "version": "5.8.4-r0",
+      "purl": "pkg:apk/alpine/xz-libs@5.8.4-r0?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        },
+        {
+          "license": {
+            "name": "Public-Domain"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "zlib",
+      "version": "1.3.2-r1",
+      "purl": "pkg:apk/alpine/zlib@1.3.2-r1?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    },
+    {
+      "scope": "web-image-20261012.cdx.json",
+      "name": "zstd-libs",
+      "version": "1.5.7-r2",
+      "purl": "pkg:apk/alpine/zstd-libs@1.5.7-r2?arch=aarch64&distro=3.24.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "status": "declaration-found"
+    }
+  ]
+}

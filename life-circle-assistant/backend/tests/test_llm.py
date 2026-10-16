@@ -1,6 +1,9 @@
 import asyncio
 import os
+from copy import deepcopy
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from app.ai_assistant import build_ai_interpretation
 from app.llm import LLMSettings, OpenAICompatibleProvider, enhance_interpretation, llm_configuration
@@ -52,27 +55,23 @@ def report_fixture():
     }
 
 
-def test_structured_llm_result_uses_only_canonical_evidence():
+def test_structured_llm_selects_typed_facts_and_server_renders_values():
     report = report_fixture()
     deterministic = build_ai_interpretation(report)
     result = asyncio.run(
         enhance_interpretation(
             FakeProvider(
                 {
-                    "summary": "这里的菜市场服务需要优先关注。",
-                    "recommendations": [
+                    "claims": [
                         {
-                            "title": "优先核查菜市场补充方案",
-                            "text": "先复核现场通行和用地条件。",
-                            "priority": "high",
-                            "evidence_refs": [
-                                {"type": "category_score", "id": "market"},
-                                {"type": "service_area", "id": "fake-grid"},
-                            ],
+                            "report_id": "report-llm-1",
+                            "type": "category_score",
+                            "id": "market",
+                            "slot": "score",
                         }
                     ],
-                    "evidence_refs": [{"type": "report", "id": "report-llm-1"}],
-                    "uncertainties": ["需要现场核验"],
+                    "recommendation_indexes": [0],
+                    "uncertainty_codes": ["field_verification"],
                 }
             ),
             report,
@@ -82,8 +81,44 @@ def test_structured_llm_result_uses_only_canonical_evidence():
 
     assert result["mode"] == "llm_structured"
     assert result["model"] == "test-model"
-    assert "fake-grid" not in {ref["id"] for ref in result["evidence_refs"]}
-    assert result["recommendations"][0]["evidence_refs"][0]["id"] == "market"
+    assert result["summary"] == "菜市场评分：54。"
+    assert result["claims"][0]["value"] == 54
+    assert result["recommendations"] == deterministic["recommendations"]
+    assert result["claims"][0]["report_id"] == report["report_id"]
+
+
+@pytest.mark.parametrize(
+    "model_result",
+    [
+        {"summary": "本次总分99，药店步行1分钟", "evidence_refs": [{"type": "report", "id": "report-llm-1"}]},
+        {"summary": "本社区已经具备医院，选址完全可行。", "evidence_refs": [{"type": "report", "id": "report-llm-1"}]},
+        {"claims": [{"report_id": "other-report", "type": "report", "id": "report-llm-1", "slot": "score"}]},
+        {"claims": [{"report_id": "report-llm-1", "type": "report", "id": "report-llm-1", "slot": "walk_minutes"}]},
+        {"claims": [{"report_id": "report-llm-1", "type": "facility", "id": "invented", "slot": "walk_minutes"}]},
+        {
+            "claims": [
+                {"report_id": "report-llm-1", "type": "report", "id": "report-llm-1", "slot": "score", "value": 99}
+            ]
+        },
+        {
+            "claims": [{"report_id": "report-llm-1", "type": "report", "id": "report-llm-1", "slot": "score"}],
+            "recommendation_indexes": [True],
+        },
+        {
+            "claims": [{"report_id": "report-llm-1", "type": "report", "id": "report-llm-1", "slot": "score"}],
+            "uncertainty_codes": ["已有医院"],
+        },
+    ],
+)
+def test_fabricated_text_or_invalid_claim_falls_back_without_mutating_report(model_result):
+    report = report_fixture()
+    original = deepcopy(report)
+    deterministic = build_ai_interpretation(report)
+    result = asyncio.run(enhance_interpretation(FakeProvider(model_result), report, deterministic))
+    assert result["mode"] == "rule_template_degraded"
+    assert result["summary"] == deterministic["summary"]
+    assert result["claims"] == deterministic["claims"]
+    assert report == original
 
 
 def test_llm_failure_falls_back_to_deterministic_result():

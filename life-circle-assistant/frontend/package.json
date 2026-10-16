@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "build": "vite build",
+    "capture:contest": "node ../scripts/capture_contest_screenshots.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "serve": "vite preview --host 0.0.0.0 --port 4173"
   },
@@ -29,6 +30,7 @@
     "eslint": "^10.12.0",
     "eslint-plugin-vue": "^10.11.1",
     "jsdom": "^29.1.1",
+    "playwright-core": "1.64.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.1",
     "vite": "^8.3.4",

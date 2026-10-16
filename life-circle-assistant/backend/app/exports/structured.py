@@ -145,6 +145,17 @@ def build_csv_export(report: dict[str, Any]) -> ExportArtifact:
 
 
 def build_geojson_export(report: dict[str, Any]) -> ExportArtifact:
+    collection = build_geojson_collection(report)
+    return ExportArtifact(
+        content=json.dumps(collection, ensure_ascii=False, indent=2).encode("utf-8"),
+        media_type="application/geo+json",
+        filename=_filename(report, "geojson"),
+    )
+
+
+def build_geojson_collection(report: dict[str, Any]) -> dict[str, Any]:
+    """创建独立的 BD-09 导出对象，供兼容出口及标准坐标转换共用。"""
+
     features: list[dict[str, Any]] = []
     isochrone = report.get("isochrone")
     if isochrone:
@@ -175,7 +186,7 @@ def build_geojson_export(report: dict[str, Any]) -> ExportArtifact:
                 }
             )
 
-    collection = {
+    return {
         "type": "FeatureCollection",
         "report_id": report["report_id"],
         "generated_at": report["completed_at"],
@@ -185,11 +196,6 @@ def build_geojson_export(report: dict[str, Any]) -> ExportArtifact:
         "data_quality": deepcopy(report.get("data_quality") or {}),
         "features": features,
     }
-    return ExportArtifact(
-        content=json.dumps(collection, ensure_ascii=False, indent=2).encode("utf-8"),
-        media_type="application/geo+json",
-        filename=_filename(report, "geojson"),
-    )
 
 
 def _spatial_feature(feature: dict[str, Any], layer: str, report: dict[str, Any]) -> dict[str, Any]:

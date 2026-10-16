@@ -1,8 +1,7 @@
-FROM python:3.12.14-slim
+FROM python:3.12.15-alpine
 WORKDIR /app
-RUN apt-get update \
-    && apt-get install --no-install-recommends --yes fonts-wqy-zenhei \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk upgrade --no-cache \
+    && apk add --no-cache font-wqy-zenhei
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app

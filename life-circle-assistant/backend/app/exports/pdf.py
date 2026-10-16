@@ -29,6 +29,7 @@ from reportlab.platypus import (
 )
 
 from ..contracts.sources import source_label
+from .charts import ReportScoreChart
 from .structured import ExportArtifact, _filename
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
@@ -256,6 +257,24 @@ def _build_story(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> l
                 styles["body"],
             ),
             PageBreak(),
+            Paragraph("设施评分图表", styles["section"]),
+            Paragraph(
+                "以下图表使用本报告中的原始评分，满分 100。无数据与零分分别展示，雷达图只纳入有评分的类别。",
+                styles["body"],
+            ),
+            _score_charts(report, styles),
+            Spacer(1, 5 * mm),
+            Paragraph("设施指标评分热力图", styles["subsection"]),
+            Paragraph("颜色越绿评分越高，灰色表示无数据。展示数量、步行时间、空间分布的指标评分。", styles["small"]),
+            Spacer(1, 3 * mm),
+            ReportScoreChart(
+                report.get("category_scores", report.get("categories", [])),
+                "heatmap",
+                170 * mm,
+                90 * mm,
+                styles["small"].fontName,
+            ),
+            PageBreak(),
             Paragraph("重点服务盲区", styles["section"]),
             Paragraph(_blind_spot_summary(report), styles["body"]),
             _blind_spot_table(report, styles),
@@ -299,6 +318,30 @@ def _build_story(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> l
         ]
     )
     return story
+
+
+def _score_charts(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> Table:
+    scores = report.get("category_scores", report.get("categories", []))
+    table = Table(
+        [
+            [Paragraph("设施覆盖柱状图", styles["subsection"]), Paragraph("设施覆盖雷达图", styles["subsection"])],
+            [
+                ReportScoreChart(scores, "bar", 82 * mm, 85 * mm, styles["small"].fontName),
+                ReportScoreChart(scores, "radar", 82 * mm, 85 * mm, styles["small"].fontName),
+            ],
+        ],
+        colWidths=[85 * mm, 85 * mm],
+    )
+    table.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return table
 
 
 def _ai_interpretation_section(report: dict[str, Any], styles: dict[str, ParagraphStyle]) -> list[Flowable]:

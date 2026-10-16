@@ -74,7 +74,11 @@ jobs:
           npm ci
           npm audit --audit-level=high
       - name: 执行完整质量门禁
-        run: make -C life-circle-assistant quality
+        # PDF 导出测试需要中文字体和 PDF 文本提取工具。
+        # 与日常质量门禁使用相同系统依赖，避免仅在发布时失败。
+        run: |
+          sudo apt-get update && sudo apt-get install --yes poppler-utils fonts-wqy-zenhei
+          make -C life-circle-assistant quality
 
   images:
     name: 构建并推送 GHCR 镜像

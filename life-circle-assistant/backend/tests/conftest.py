@@ -16,3 +16,21 @@ os.environ.pop("BAIDU_MAP_SECRET", None)
 os.environ["AMAP_VALIDATION_ENABLED"] = "false"
 os.environ["AMAP_QPS"] = "0"
 os.environ.pop("AMAP_WEB_SERVICE_KEY", None)
+# 模型测试同样必须隔离本机 .env；专项测试通过注入 FakeProvider 验证协议。
+os.environ["LLM_ENABLED"] = "false"
+os.environ.pop("LLM_API_KEY", None)
+# 中文嵌入、OCR与原生等时圈也须显式注入模拟客户端；不继承本机付费配置。
+os.environ["SEMANTIC_EMBEDDING_ENABLED"] = "false"
+os.environ["OBSERVATION_OCR_ENABLED"] = "false"
+os.environ["BAIDU_NATIVE_ISOCHRONE_ENABLED"] = "false"
+for name in (
+    "SEMANTIC_EMBEDDING_PROVIDER",
+    "SEMANTIC_EMBEDDING_BASE_URL",
+    "SEMANTIC_EMBEDDING_MODEL",
+    "SEMANTIC_EMBEDDING_API_KEY",
+    "SEMANTIC_EMBEDDING_MODEL_PATH",
+    "OBSERVATION_OCR_ENDPOINT",
+    "OBSERVATION_OCR_API_KEY",
+    "LIFE_CIRCLE_NORMS_PATH",
+):
+    os.environ.pop(name, None)

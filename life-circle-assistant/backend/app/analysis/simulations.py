@@ -9,6 +9,7 @@ from typing import Any
 from ..maps.provider import MapProvider, MapProviderError
 from ..mock_data import CATEGORIES
 from ..schemas import SimulationRequest
+from .coverage_optimizer import _usable_route
 from .scoring import aggregate_overall_score, score_category
 from .service_areas import build_category_service_areas
 
@@ -71,6 +72,9 @@ class ReportSimulationService:
             request.category,
             simulated_category_facilities,
             center,
+            facility_search_failed=original_category_score.get("status") == "data_unavailable",
+            calculation_failed=original_category_score.get("status") == "calculation_incomplete"
+            or any(f["properties"].get("classification_status") != "valid" for f in service_areas["features"]),
         )
         simulated_scores = [
             simulated_category_score if item.get("category") == request.category else item for item in original_scores
@@ -151,6 +155,9 @@ class ReportSimulationService:
                 [(lng, lat)],
             )
             route = matrix[0][0] if matrix and matrix[0] else None
+            if not _usable_route(route, center, (lng, lat)):
+                route = None
+                failure_message = "假设设施路线缺失、来源不可核验或非同点零值，保持未知"
         except MapProviderError as exc:
             failure_message = str(exc)
         if route is None or not route.success:

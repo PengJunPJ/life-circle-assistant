@@ -8,7 +8,7 @@
 | E-02 | 一键构建/部署与示例数据（Docker Compose + 合成快照 + 缓存种子） | [../../README.md](../../README.md)、[../../docker-compose.yml](../../docker-compose.yml)、[../../backend/data/baidu_snapshot.json](../../backend/data/baidu_snapshot.json)、[../../backend/data/walking_cache_seed.json](../../backend/data/walking_cache_seed.json) | ✅ | — |
 | E-03 | 无凭证离线演示闭环 | [demo-script.md](demo-script.md) 路径 A | ✅ | — |
 | E-04 | 真实模式地图能力（坐标转换/地理编码/POI/步行/等时圈） | [demo-script.md](demo-script.md) 路径 B；[algorithm-overview.md](algorithm-overview.md)；[../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md) | ✅ WGS84/GCJ-02 经百度 Geoconv V2 统一为 BD-09；其余地图能力已实现 | — |
-| E-05 | 定稿真实跑报告归档（含执行指标） | [../validation/reports/shachong-changsheng-20261004.json](../validation/reports/shachong-changsheng-20261004.json)；历史对照：[红山报告](../validation/reports/hongshan-haiyundonglu-20260921.json) | 🟡 现有报告早于 2.3.0 候选版；可证明历史真实链路，不能证明当前候选版真实复跑 | 自动 |
+| E-05 | 定稿真实跑报告归档（含执行指标） | [../validation/reports/v2.3.0-20261012/](../validation/reports/v2.3.0-20261012/)；历史对照：[沙涌报告](../validation/reports/shachong-changsheng-20261004.json) | ✅ 已归档 2 份 v2.3.0 真实百度完整报告；冷/热缓存性能另见 [v2.3.0-real-cold-warm-20261012.json](../performance/v2.3.0-real-cold-warm-20261012.json) | 自动 |
 | E-06 | 等时圈生成算法（扇形采样+二分细化+降级标识） | [algorithm-overview.md](algorithm-overview.md)；[../../../docs/adr/0004-等时圈精度分档与报告导出.md](../../../docs/adr/0004-等时圈精度分档与报告导出.md) | ✅ | — |
 | E-07 | 地图 API 调用策略（逐词 POI、预筛、批量算路分块、缓存/限流/重试） | [algorithm-overview.md](algorithm-overview.md)；[../../../docs/adr/0009-百度地图调用的两阶段筛选策略.md](../../../docs/adr/0009-百度地图调用的两阶段筛选策略.md) | ✅ | — |
 | E-08a | 百度单源 POI 多关键词语义归一与去重 | [../architecture/v2.1-facility-normalization.md](../architecture/v2.1-facility-normalization.md)；[../../backend/app/maps/baidu.py](../../backend/app/maps/baidu.py) | ✅ 当前运行时能力仅限百度单源 | — |
@@ -20,19 +20,20 @@
 | E-11 | 64 网格人工基准 → verified 指标（准确率/精确率/召回率/F1/混淆矩阵） | [../validation/benchmarks/](../validation/benchmarks/)、[../validation/results/shachong-changsheng-20261004.md](../validation/results/shachong-changsheng-20261004.md)、[../validation/v2.1-benchmark-evaluation.md](../validation/v2.1-benchmark-evaluation.md) | 🟡 沙涌长盛花园 64/64 已完成；与系统同源同规则，仅作一致性证据；红山基准仍为 draft | 自动+人工 |
 | E-12 | 性能三档实测（冷 124s / 种子 19s / 全缓存 12.5s）与批量对照 | [../performance/v2-baseline.md](../performance/v2-baseline.md) | ✅ | — |
 | E-13 | 容错与降级证据（限流/超时/重试/部分失败/降级估算披露） | 报告 `data_quality` 区；[../architecture/v2-trustworthy-analysis.md](../architecture/v2-trustworthy-analysis.md) | ✅ | — |
-| E-14 | 可视化与交互（等时圈、网格色块、柱状+tooltip、雷达图、七类图层） | [../releases/v2.3.0.md](../releases/v2.3.0.md)；截图待补 | 🟡 功能已有，截图待补 | 自动 |
+| E-14 | 可视化与交互（等时圈、网格色块、柱状+tooltip、雷达图、七类图层） | [../releases/v2.3.0.md](../releases/v2.3.0.md)；[截图集](screenshots/README.md) | ✅ 功能与 14 张离线截图均已归档 | 自动 |
 | E-15 | AI 解读能力与证据约束（引用校验、防幻觉过滤、无密钥规则降级） | [../../backend/app/ai_assistant.py](../../backend/app/ai_assistant.py)；[demo-script.md](demo-script.md) A6 | ✅ | — |
-| E-16 | 质量门禁（CI 三 job + 本地 `make quality`） | [../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../Makefile](../../Makefile) | ✅ 候选依赖下后端 126、前端 46 测试通过；Ruff、ESLint、类型检查、构建和容器冒烟通过。远端 CI 待候选提交后实跑 | 自动 |
+| E-16 | 质量门禁（CI 三 job + 本地 `make quality`） | [../../../.github/workflows/quality.yml](../../../.github/workflows/quality.yml)、[../../Makefile](../../Makefile) | 🟡 本地候选版后端 140、前端 48 测试通过；Ruff、ESLint、类型检查、构建和容器冒烟通过。GitHub `main` 最近一次后端 job 因开发依赖漏声明 `pytest-asyncio` 失败，补依赖后待远端重跑 | 自动 |
 | E-17 | 密钥脱敏扫描记录（仓库无 AK/Secret/模型密钥） | [security-scan-2026-10-08.md](security-scan-2026-10-08.md) | ✅ 工作树与 Git 历史未发现高置信度凭证值；发布物仍需复核 | 自动 |
 | E-18 | Gitee 镜像仓库 CI/保护分支（可选，不作为 GitHub 主仓库参赛阻断项） | [../research/gitee-go-quality-gate.md](../research/gitee-go-quality-gate.md)（调研已有，实跑未做） | ⬜ | 人工+自动配合 |
-| E-19 | 截图集（深浅主题、图层、盲区依据、雷达、AI、导出、执行指标） | [screenshots/](screenshots/README.md) | ⬜ | 自动 |
-| E-20 | 演示录屏（3~5 分钟） | 赛事平台附件 | ⬜ | 人工 |
+| E-19 | 截图集（深浅主题、图层、盲区依据、雷达、AI、导出、执行指标） | [screenshots/](screenshots/README.md) | ✅ 14 张离线截图与 1 张真实模式步行路线图已归档 | 自动 |
+| E-20 | 演示录屏（3~5 分钟） | [submission/v2.3.0-real-demo-20261012.webm](submission/v2.3.0-real-demo-20261012.webm)；公开链接待赛事平台上传 | 🟡 本地视频已生成并复核时长；尚未取得公开上传地址 | 自动+人工 |
 | E-21 | 限制与披露汇总 | [limitations.md](limitations.md) | ✅ | — |
 | E-22 | 赛事平台材料（报名表、作品描述、视频上传） | 外部系统 | ⬜ | 人工 |
-| E-23 | 依赖与容器漏洞审计（Python/npm + 应用/基础镜像） | [dependency-audit-2026-10-09.md](dependency-audit-2026-10-09.md)、[container-audit-2026-10-11.md](container-audit-2026-10-11.md)、[../../../.github/workflows/security.yml](../../../.github/workflows/security.yml) | 🟡 Python/npm 审计为 0；Grype 已发现应用/基础镜像 Critical/High；Trivy 因数据库下载失败待重跑 | 自动 |
+| E-23 | 依赖与容器漏洞审计（Python/npm + 应用/基础镜像） | [dependency-audit-2026-10-09.md](dependency-audit-2026-10-09.md)、[container-audit-2026-10-11.md](container-audit-2026-10-11.md)、[修复复验](container-audit-remediation-2026-10-11.md)、[../../../.github/workflows/security.yml](../../../.github/workflows/security.yml) | ✅ Python/npm 审计为 0；API/Web 运行镜像经 Trivy/Grype 复验为 0 Critical / 0 High；基础镜像和构建期残余风险已披露 | 自动 |
 | E-24 | 开源治理规则（许可证、Issue/PR、评审、发布、安全和外部服务责任边界） | [../../../CONTRIBUTING.md](../../../CONTRIBUTING.md)、[../../../SECURITY.md](../../../SECURITY.md)、[../../../MAINTAINERS.md](../../../MAINTAINERS.md)、[../governance/open-source-governance.md](../governance/open-source-governance.md) | ✅ 初版材料已提交；DCO/CLA、分支保护实际配置和安全联系入口仍以 GitHub 设置为准 | 自动+人工 |
-| E-25 | 依赖合规、第三方声明和 SBOM 生成口径 | [../governance/dependency-compliance.md](../governance/dependency-compliance.md)、[../governance/third-party-notices.md](../governance/third-party-notices.md)、[../governance/sbom/README.md](../governance/sbom/README.md)、[../governance/dependency-inventory.yaml](../governance/dependency-inventory.yaml)、[container-audit-2026-10-11.md](container-audit-2026-10-11.md) | 🟡 容器扫描脚本和证据已归档；现有镜像有 Critical/High，Trivy 数据库待网络可用后重跑，许可证和正式 SBOM 仍待发布前复核 | 自动+人工 |
+| E-25 | 依赖合规、第三方声明和 SBOM 生成口径 | [../governance/dependency-compliance.md](../governance/dependency-compliance.md)、[../governance/third-party-notices.md](../governance/third-party-notices.md)、[../governance/sbom/README.md](../governance/sbom/README.md)、[../governance/sbom/](../governance/sbom/)、[license-review-20261012.md](../governance/license-review-20261012.md) | 🟡 5 份实际 SBOM 已生成；440 条组件记录中 4 条缺少许可证声明，需人工确认许可证与地图服务条款；旧归档运行镜像双扫描通过，本次新扫描因 Trivy 数据库下载超时未完成 | 自动+人工 |
 | E-26 | 维护路线和多源验证门槛 | [../governance/maintenance-roadmap.md](../governance/maintenance-roadmap.md)、[../architecture/multi-source-poi-reconciliation.md](../architecture/multi-source-poi-reconciliation.md) | 🟡 路线与验收标准已记录；高德书面许可、50–100 对双源人工标签和独立指标仍待完成 | 自动+人工 |
+| E-27 | 中文作品介绍与自动交付预检 | [submission/15-minute-life-circle-competition-brief.pdf](submission/15-minute-life-circle-competition-brief.pdf)、[../../scripts/contest_preflight.py](../../scripts/contest_preflight.py) | ✅ PDF 已生成并渲染核验；预检自动项通过，人工事项单列 | 自动 |
 
 ## 使用规则
 

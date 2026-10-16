@@ -1,0 +1,375 @@
+{
+  "contract_version": "five-arm-ablation-v1",
+  "dataset_kind": "synthetic",
+  "label_source": "固定合成标签与解析路线oracle，非现场验证",
+  "community_count": 2,
+  "same_budget": true,
+  "community_isolation": true,
+  "arms": [
+    {
+      "arm": "no_model",
+      "components": {
+        "conversation": false,
+        "semantic": false,
+        "active": false
+      },
+      "community_count": 2,
+      "category_accuracy": 0.6667,
+      "false_merges": 0,
+      "missed_merges": 2,
+      "heldout_mae_minutes": 1.971093942519356,
+      "latency_ms": 1.8437295220792294,
+      "constraint_violations": 0,
+      "route_pairs": 32,
+      "model_calls": 0,
+      "tokens": null,
+      "review_workload": 2,
+      "user_steps": 6
+    },
+    {
+      "arm": "conversation_only",
+      "components": {
+        "conversation": true,
+        "semantic": false,
+        "active": false
+      },
+      "community_count": 2,
+      "category_accuracy": 0.6667,
+      "false_merges": 0,
+      "missed_merges": 2,
+      "heldout_mae_minutes": 1.971093942519356,
+      "latency_ms": 2.5534789310768247,
+      "constraint_violations": 0,
+      "route_pairs": 32,
+      "model_calls": 2,
+      "tokens": null,
+      "review_workload": 2,
+      "user_steps": 2
+    },
+    {
+      "arm": "semantic_review",
+      "components": {
+        "conversation": true,
+        "semantic": true,
+        "active": false
+      },
+      "community_count": 2,
+      "category_accuracy": 1.0,
+      "false_merges": 0,
+      "missed_merges": 0,
+      "heldout_mae_minutes": 1.971093942519356,
+      "latency_ms": 1.6004579374566674,
+      "constraint_violations": 0,
+      "route_pairs": 32,
+      "model_calls": 4,
+      "tokens": null,
+      "review_workload": 4,
+      "user_steps": 2
+    },
+    {
+      "arm": "active_sampling",
+      "components": {
+        "conversation": true,
+        "semantic": false,
+        "active": true
+      },
+      "community_count": 2,
+      "category_accuracy": 0.6667,
+      "false_merges": 0,
+      "missed_merges": 2,
+      "heldout_mae_minutes": 0.9710758351838955,
+      "latency_ms": 2.4818539386615157,
+      "constraint_violations": 0,
+      "route_pairs": 32,
+      "model_calls": 2,
+      "tokens": null,
+      "review_workload": 2,
+      "user_steps": 2
+    },
+    {
+      "arm": "full_system",
+      "components": {
+        "conversation": true,
+        "semantic": true,
+        "active": true
+      },
+      "community_count": 2,
+      "category_accuracy": 1.0,
+      "false_merges": 0,
+      "missed_merges": 0,
+      "heldout_mae_minutes": 0.9710758351838955,
+      "latency_ms": 2.5405834894627333,
+      "constraint_violations": 0,
+      "route_pairs": 32,
+      "model_calls": 4,
+      "tokens": null,
+      "review_workload": 4,
+      "user_steps": 2
+    }
+  ],
+  "rows": [
+    {
+      "community_id": "synthetic-community-1",
+      "arm": "no_model",
+      "category_accuracy": 0.6667,
+      "category_count": 3,
+      "category_correct": 2,
+      "false_merges": 0,
+      "missed_merges": 1,
+      "heldout_mae_minutes": 1.821699351235828,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 0,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 2.242542104795575,
+      "review_workload": 1,
+      "user_steps": 3,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-1",
+      "arm": "conversation_only",
+      "category_accuracy": 0.6667,
+      "category_count": 3,
+      "category_correct": 2,
+      "false_merges": 0,
+      "missed_merges": 1,
+      "heldout_mae_minutes": 1.821699351235828,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 1,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 3.617249894887209,
+      "review_workload": 1,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-1",
+      "arm": "semantic_review",
+      "category_accuracy": 1.0,
+      "category_count": 3,
+      "category_correct": 3,
+      "false_merges": 0,
+      "missed_merges": 0,
+      "heldout_mae_minutes": 1.821699351235828,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 2,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 1.6790409572422504,
+      "review_workload": 2,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-1",
+      "arm": "active_sampling",
+      "category_accuracy": 0.6667,
+      "category_count": 3,
+      "category_correct": 2,
+      "false_merges": 0,
+      "missed_merges": 1,
+      "heldout_mae_minutes": 0.6878190720916783,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 1,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 2.503457944840193,
+      "review_workload": 1,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-1",
+      "arm": "full_system",
+      "category_accuracy": 1.0,
+      "category_count": 3,
+      "category_correct": 3,
+      "false_merges": 0,
+      "missed_merges": 0,
+      "heldout_mae_minutes": 0.6878190720916783,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 2,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 2.513208892196417,
+      "review_workload": 2,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-2",
+      "arm": "no_model",
+      "category_accuracy": 0.6667,
+      "category_count": 3,
+      "category_correct": 2,
+      "false_merges": 0,
+      "missed_merges": 1,
+      "heldout_mae_minutes": 2.120488533802884,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 0,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 1.4449169393628836,
+      "review_workload": 1,
+      "user_steps": 3,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-2",
+      "arm": "conversation_only",
+      "category_accuracy": 0.6667,
+      "category_count": 3,
+      "category_correct": 2,
+      "false_merges": 0,
+      "missed_merges": 1,
+      "heldout_mae_minutes": 2.120488533802884,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 1,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 1.4897079672664404,
+      "review_workload": 1,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-2",
+      "arm": "semantic_review",
+      "category_accuracy": 1.0,
+      "category_count": 3,
+      "category_correct": 3,
+      "false_merges": 0,
+      "missed_merges": 0,
+      "heldout_mae_minutes": 2.120488533802884,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 2,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 1.5218749176710844,
+      "review_workload": 2,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-2",
+      "arm": "active_sampling",
+      "category_accuracy": 0.6667,
+      "category_count": 3,
+      "category_correct": 2,
+      "false_merges": 0,
+      "missed_merges": 1,
+      "heldout_mae_minutes": 1.2543325982761129,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 1,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 2.4602499324828386,
+      "review_workload": 1,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    },
+    {
+      "community_id": "synthetic-community-2",
+      "arm": "full_system",
+      "category_accuracy": 1.0,
+      "category_count": 3,
+      "category_correct": 3,
+      "false_merges": 0,
+      "missed_merges": 0,
+      "heldout_mae_minutes": 1.2543325982761129,
+      "false_reachable_count": 0,
+      "unknown_prediction_count": 0,
+      "constraint_violations": 0,
+      "intent_correct": true,
+      "usage": {
+        "route_pairs": 16,
+        "model_calls": 2,
+        "total_tokens": null,
+        "physical_http_requests": 0
+      },
+      "latency_ms": 2.5679580867290497,
+      "review_workload": 2,
+      "user_steps": 1,
+      "selected_ids": [
+        "plot-c"
+      ]
+    }
+  ],
+  "effect_strength": "fixture_contract_validation_only",
+  "cost_cny": null,
+  "disclosure": "合成路径和脚本模型结果只能检验管线，不能证明现场精度、模型收益、真实节省配额或人工效率；token缺失与价格未知保持未知。"
+}

@@ -1,7 +1,7 @@
 import type { DataQuality } from './quality'
 import type { CategoryScore, OverallScoring } from './scoring'
 import type { CenterSelectionMethod } from './location'
-import type { PlanningRecommendation, RecommendationSummary } from './recommendations'
+import type { PlanningRecommendation, RecommendationCandidate, RecommendationSummary } from './recommendations'
 
 export type AnalysisMode = 'demo' | 'analysis'
 export type AnalysisMinutes = 10 | 15 | 20
@@ -56,10 +56,14 @@ export type ServiceAreaProperties = {
   critical_conditions_met: boolean
   classification_status: 'valid' | 'calculation_incomplete'
   source: string
+  underlying_source?: string
   calculation_method: string
   basis: string
   confidence: 'high' | 'medium' | 'low'
   failed_route_count: number
+  nearby_scarcity?: boolean | null
+  walking_reachable?: boolean | null
+  walking_reachability_status?: 'measured' | 'estimated' | 'unknown'
 }
 
 export type GeoJsonFeature<TProperties extends Record<string, any> = Record<string, any>> = {
@@ -70,7 +74,26 @@ export type GeoJsonFeature<TProperties extends Record<string, any> = Record<stri
 
 export type ServiceAreaFeature = GeoJsonFeature<ServiceAreaProperties>
 
+export type ExecutionLedger = {
+  id: string
+  status?: string
+  budget: Record<string, number>
+  usage: Record<string, number>
+  versions: Record<string, string>
+  cost: {
+    currency: string
+    estimated_total: number | null
+    settled_total: number | null
+    status: string
+    disclosure?: string
+    settlement_version?: number
+    usage_sha256?: string
+    settlement_stale?: boolean
+  }
+}
+
 export type Report = {
+  execution_ledger?: ExecutionLedger
   schema_version: '2.0' | string
   id: string
   report_id: string
@@ -130,6 +153,16 @@ export type Report = {
   }
   zones: { type: 'FeatureCollection'; features: ServiceAreaFeature[] }
   service_areas: { type: 'FeatureCollection'; features: ServiceAreaFeature[] }
+  gap_groups?: { type: 'FeatureCollection'; features: {
+    type: 'Feature'
+    geometry: { type: 'MultiPolygon'; coordinates: number[][][][] }
+    properties: { id: string; category: string; grid_ids: string[]; grid_count: number; contains_unknown: false; method: string; gap_kind?: 'scarcity' | 'walking_timeout' | 'critical'; [key: string]: unknown }
+  }[] }
+  gap_candidates?: (RecommendationCandidate & { gap_group_id: string; gap_kind: 'scarcity' | 'walking_timeout' | 'critical'; connectivity_status: string; adjacency_evidence?: unknown })[]
+  spatial_statistics?: { categories: {
+    category: string; grid_count: number; nearby_scarcity_count: number; walking_gap_count: number
+    walking_reachable_count: number; unknown_walking_count: number; unknown_scarcity_count: number
+  }[] }
   summary: {
     score: number | null
     score_status: OverallScoring['status']
@@ -184,7 +217,8 @@ export type AiInterpretation = {
   recommendations: { title: string; text: string; priority: string; evidence_refs: AiEvidenceRef[] }[]
   evidence_refs: AiEvidenceRef[]
   model: string
-  mode: 'rule_template' | 'rule_template_degraded' | 'llm_structured'
+  mode: 'rule_template' | 'rule_template_degraded' | 'llm_structured' | 'llm_tools' | 'tool_rules' | 'tool_rules_degraded'
+  id?: string
   prompt_version: string
   generated_at: string
   data_quality_notice: string
@@ -194,7 +228,7 @@ export type AiInterpretation = {
 
 export type AnalysisTask = {
   id: string
-  status: 'queued' | 'running' | 'completed' | 'failed'
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
   progress: number
   stage: string
   stage_label: string

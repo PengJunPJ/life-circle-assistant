@@ -6,8 +6,9 @@
           <i :style="{ background: category.color }"></i>
           {{ category.label }}
         </span>
-        <span :class="['score-status', category.status]">{{ category.status_label }}</span>
         <strong>{{ category.score === null ? '不计分' : `${category.score} 分` }}</strong>
+        <span class="facility-metrics">{{ category.count }} 个设施 · 最近步行{{ category.nearest_walk_minutes === null ? '未测算' : ` ${category.nearest_walk_minutes} 分钟` }}</span>
+        <span :class="['score-status', category.status]">{{ category.status_label }} <span class="expand-mark">＋</span></span>
       </summary>
       <div class="score-category-body">
         <p>{{ category.status_explanation }}</p>
@@ -46,29 +47,33 @@ function percent(value: number) {
 
 <style scoped>
 .score-breakdown { display: grid; gap: 7px; margin-top: 10px; }
-.score-category { border: 1px solid #dce6e0; border-radius: 5px; background: #fbfcfa; }
-.score-category summary { min-height: 38px; display: grid; grid-template-columns: minmax(80px, 1fr) auto auto; align-items: center; gap: 7px; padding: 8px 9px; cursor: pointer; list-style-position: inside; color: #45635d; font-size: 10px; }
+.score-category { border: 0; border-bottom: 1px solid #dce6e0; border-radius: 0; background: transparent; }
+.score-category summary { min-height: 64px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 9px 0; cursor: pointer; color: #45635d; font-size: 13px; list-style: none; }
+.score-category summary::-webkit-details-marker { display: none; }
+.facility-metrics { grid-column: 1 / -1; grid-row: 2; color: var(--report-muted, #667d75); font-size: 12px; line-height: 1.5; }
+.expand-mark { margin-left: 4px; }
+.score-category[open] .expand-mark { display: none; }
 .score-category summary::marker { color: #78908a; }
 .score-category-name { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
 .score-category-name i { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }
-.score-category summary > strong { color: #294d46; font-size: 10px; white-space: nowrap; }
-.score-status { padding: 2px 5px; border-radius: 8px; background: #e5f1eb; color: #397662; font-size: 8px; white-space: nowrap; }
+.score-category summary > strong { color: #294d46; font-size: 13px; white-space: nowrap; }
+.score-status { grid-column: 1 / -1; justify-self: start; padding: 2px 5px; border-radius: 4px; background: #e5f1eb; color: #397662; font-size: 11px; }
 .score-status.poor_coverage { background: #f4dfd9; color: #a14e3b; }
 .score-status.calculation_incomplete, .score-status.data_unavailable { background: #f5ead3; color: #946b29; }
 .score-category-body { padding: 0 10px 10px; border-top: 1px solid #e5ebe7; }
-.score-category-body > p { margin: 8px 0; color: #71827e; font-size: 9px; line-height: 1.55; }
+.score-category-body > p { margin: 8px 0; color: #667d75; font-size: 12px; line-height: 1.65; }
 .component-list { display: grid; gap: 8px; }
 .score-component { padding: 7px; border-radius: 4px; background: #f3f7f4; }
-.component-heading { display: flex; align-items: center; gap: 6px; font-size: 9px; }
+.component-heading { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; }
 .component-heading strong { color: #3f5d56; }
 .component-heading span { color: #899793; }
 .component-heading b { margin-left: auto; color: #526d66; }
 .component-meter { height: 3px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: #dfe8e3; }
 .component-meter span { display: block; height: 100%; border-radius: inherit; }
-.score-component p { margin: 6px 0 0; color: #788985; font-size: 9px; line-height: 1.5; }
-.category-weight { display: flex; justify-content: space-between; gap: 8px; margin-top: 9px; color: #85938f; font-size: 8px; }
+.score-component p { margin: 6px 0 0; color: #667d75; font-size: 12px; line-height: 1.6; }
+.category-weight { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 9px; color: #667d75; font-size: 11px; }
 .category-weight strong { color: #56756d; }
-html[data-theme="dark"] .score-category { border-color: rgba(126,214,199,.16); background: rgba(16,32,46,.6); }
+html[data-theme="dark"] .score-category { border-color: rgba(126,214,199,.16); background: transparent; }
 html[data-theme="dark"] .score-category summary { color: #cfe7e1; }
 html[data-theme="dark"] .score-category summary::marker { color: #6f8b90; }
 html[data-theme="dark"] .score-category summary > strong { color: #eaf6f3; }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections import Counter
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
@@ -181,11 +182,32 @@ def _merge_cluster(cluster: list[_Candidate]) -> dict[str, Any]:
         confidence = "medium"
 
     semantic_type = _semantic_type(str(representative.facility["category"]), canonical_name)
+    source_evidence = []
+    for item in cluster:
+        facility = item.facility
+        # Keep each raw source and entrance disclosure even when a representative
+        # supplies the display name and coordinates. Provenance is not identity.
+        existing = facility.get("source_evidence")
+        if isinstance(existing, list):
+            for trace in existing:
+                if trace not in source_evidence:
+                    source_evidence.append(deepcopy(trace))
+        current_trace = {
+            "facility_id": str(facility.get("id") or ""),
+            "source": facility.get("source"),
+            "name": facility.get("name"),
+            "address": facility.get("address"),
+            "location": {"lng": facility.get("lng"), "lat": facility.get("lat")},
+            "evidence": facility.get("evidence"),
+        }
+        if current_trace not in source_evidence:
+            source_evidence.append(deepcopy(current_trace))
     return {
         **representative.facility,
         "canonical_name": canonical_name,
         "semantic_type": semantic_type,
         "semantic_type_label": SEMANTIC_TYPE_LABELS[semantic_type],
+        "source_evidence": source_evidence,
         "normalization": {
             "rules_version": RULES_VERSION,
             "method": method,

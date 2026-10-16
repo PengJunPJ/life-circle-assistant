@@ -10,7 +10,7 @@
 | Python 开发包 | `backend/requirements-dev.txt` | 测试、格式检查、PDF 断言 | 逐包核对官方元数据 | 直接/继承生产 | requirements-dev | needs-review |
 | npm 生产包 | `frontend/package.json` + `package-lock.json` | Vue、Element Plus、ECharts | 逐包核对 npm license/NOTICE | 直接/间接 | package-lock | needs-review |
 | npm 开发包 | `frontend/package.json` + `package-lock.json` | Vite、Vitest、TypeScript、ESLint | 逐包核对 npm license/NOTICE | 直接/间接 | package-lock | needs-review |
-| Python 基础镜像 | `backend/Dockerfile` | API 运行时 | Debian/Python 镜像及系统包需单独核对 | 运行时 | Dockerfile、镜像 manifest | needs-review |
+| Python 基础镜像 | `backend/Dockerfile` | API 运行时 | Alpine/Python 镜像及系统包需单独核对 | 运行时 | Dockerfile、镜像 manifest | needs-review |
 | Node 构建镜像 | `frontend/Dockerfile` | 前端构建 | Alpine/Node 镜像及系统包需单独核对 | 构建时 | Dockerfile、镜像 manifest | needs-review |
 | Nginx 基础镜像 | `frontend/Dockerfile` | 静态文件服务 | Alpine/Nginx 镜像及系统包需单独核对 | 运行时 | Dockerfile、镜像 manifest | needs-review |
 | GitHub Actions | `.github/workflows/*.yml` | CI、安全、发布 | 各 Action 仓库许可证和版本需复核 | 供应链工具 | workflow 文件 | needs-review |
@@ -25,7 +25,7 @@
 - Dependabot：`.github/dependabot.yml` 覆盖 pip、npm、Docker 和 GitHub Actions。
 - 发布镜像：`.github/workflows/release.yml` 使用 Docker Buildx 的 SBOM/provenance 选项；容器扫描脚本为 `scripts/container-audit.sh`，命令入口为 `make container-audit`。
 
-2026-10-11 的容器审计已归档至 `docs/contest/container-audit-2026-10-11.md`。Grype 已实际扫描五个镜像并发现 Critical/High 结果；Trivy 因无法下载漏洞数据库而失败，不能将本次审计表述为通过或零漏洞。漏洞扫描通过只表示当前数据库快照下未发现目标级别漏洞，不表示未来无漏洞，也不替代许可证、服务条款和数据授权审查。
+2026-10-11 的首次容器审计归档于 `docs/contest/container-audit-2026-10-11.md`；修复和双扫描器复验见 `docs/contest/container-audit-remediation-2026-10-11.md`。API/Web 最终运行镜像在 Trivy 和 Grype 中均为 0 Critical / 0 High，发布门禁通过。原始基础镜像及不发布的 Node 构建阶段仍有发现，处置边界和残余风险已在复验记录中保留。漏洞扫描通过只表示当前数据库快照下未发现目标级别漏洞，不表示未来无漏洞，也不替代许可证、服务条款和数据授权审查。
 
 ## 外部服务合规边界
 

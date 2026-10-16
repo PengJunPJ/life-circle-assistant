@@ -1,0 +1,64 @@
+{
+  "manifest": {
+    "status": "synthetic_contract_only",
+    "label_origin": "handcrafted_contract_labels_not_real_map_or_field_measurements",
+    "created_at": "2026-10-14",
+    "disclosure": "只验证评估流程、预算及独立留出，不用于证明AI优于基线或现场有效。"
+  },
+  "communities": [
+    {
+      "id": "synthetic-flat-a",
+      "points": [
+        {"id": "a01", "features_m": [-900, -900], "duration_s": 1310, "source": "local_snapshot"},
+        {"id": "a02", "features_m": [-600, -900], "duration_s": 1190, "source": "local_snapshot"},
+        {"id": "a03", "features_m": [-300, -900], "duration_s": 970, "source": "local_snapshot"},
+        {"id": "a04", "features_m": [0, -900], "duration_s": 880, "source": "local_snapshot"},
+        {"id": "a05", "features_m": [300, -900], "duration_s": 960, "source": "local_snapshot"},
+        {"id": "a06", "features_m": [600, -900], "duration_s": 1160, "source": "local_snapshot"},
+        {"id": "a07", "features_m": [900, -900], "duration_s": 1290, "source": "local_snapshot"},
+        {"id": "a08", "features_m": [-900, -300], "duration_s": 960, "source": "local_snapshot"},
+        {"id": "a09", "features_m": [-300, -300], "duration_s": 420, "source": "local_snapshot"},
+        {"id": "a10", "features_m": [300, -300], "duration_s": 440, "source": "local_snapshot"},
+        {"id": "a11", "features_m": [900, -300], "duration_s": 970, "source": "local_snapshot"},
+        {"id": "a12", "features_m": [-900, 300], "duration_s": 960, "source": "local_snapshot"},
+        {"id": "a13", "features_m": [-300, 300], "duration_s": 410, "source": "local_snapshot"},
+        {"id": "a14", "features_m": [300, 300], "duration_s": 430, "source": "local_snapshot"},
+        {"id": "a15", "features_m": [900, 300], "duration_s": 980, "source": "local_snapshot"},
+        {"id": "a16", "features_m": [-900, 900], "duration_s": 1320, "source": "local_snapshot"},
+        {"id": "a17", "features_m": [-600, 900], "duration_s": 1130, "source": "local_snapshot"},
+        {"id": "a18", "features_m": [-300, 900], "duration_s": 970, "source": "local_snapshot"},
+        {"id": "a19", "features_m": [0, 900], "duration_s": 890, "source": "local_snapshot"},
+        {"id": "a20", "features_m": [300, 900], "duration_s": 980, "source": "local_snapshot"},
+        {"id": "a21", "features_m": [600, 900], "duration_s": 1150, "source": "local_snapshot"},
+        {"id": "a22", "features_m": [900, 900], "duration_s": 1310, "source": "local_snapshot"}
+      ]
+    },
+    {
+      "id": "synthetic-barrier-b",
+      "points": [
+        {"id": "b01", "features_m": [-900, -900], "duration_s": 1320, "source": "local_snapshot"},
+        {"id": "b02", "features_m": [-600, -900], "duration_s": 1130, "source": "local_snapshot"},
+        {"id": "b03", "features_m": [-300, -900], "duration_s": 980, "source": "local_snapshot"},
+        {"id": "b04", "features_m": [0, -900], "duration_s": 900, "source": "local_snapshot"},
+        {"id": "b05", "features_m": [300, -900], "duration_s": 1560, "source": "local_snapshot", "high_risk": true},
+        {"id": "b06", "features_m": [600, -900], "duration_s": 1760, "source": "local_snapshot"},
+        {"id": "b07", "features_m": [900, -900], "duration_s": 1920, "source": "local_snapshot"},
+        {"id": "b08", "features_m": [-900, -300], "duration_s": 970, "source": "local_snapshot"},
+        {"id": "b09", "features_m": [-300, -300], "duration_s": 430, "source": "local_snapshot"},
+        {"id": "b10", "features_m": [300, -300], "duration_s": 1040, "source": "local_snapshot", "high_risk": true},
+        {"id": "b11", "features_m": [900, -300], "duration_s": 1560, "source": "local_snapshot"},
+        {"id": "b12", "features_m": [-900, 300], "duration_s": 980, "source": "local_snapshot"},
+        {"id": "b13", "features_m": [-300, 300], "duration_s": 420, "source": "local_snapshot"},
+        {"id": "b14", "features_m": [300, 300], "duration_s": 1040, "source": "local_snapshot", "high_risk": true},
+        {"id": "b15", "features_m": [900, 300], "duration_s": 1580, "source": "local_snapshot"},
+        {"id": "b16", "features_m": [-900, 900], "duration_s": 1310, "source": "local_snapshot"},
+        {"id": "b17", "features_m": [-600, 900], "duration_s": 1140, "source": "local_snapshot"},
+        {"id": "b18", "features_m": [-300, 900], "duration_s": 980, "source": "local_snapshot"},
+        {"id": "b19", "features_m": [0, 900], "duration_s": 880, "source": "local_snapshot"},
+        {"id": "b20", "features_m": [300, 900], "duration_s": 1590, "source": "local_snapshot", "high_risk": true},
+        {"id": "b21", "features_m": [600, 900], "duration_s": 1770, "source": "local_snapshot"},
+        {"id": "b22", "features_m": [900, 900], "duration_s": 1930, "source": "local_snapshot"}
+      ]
+    }
+  ]
+}

@@ -4,14 +4,20 @@ import { ROUTE_ARROW_SPACING, ROUTE_BORDER, ROUTE_COLOR, categoryColor, category
 import { drawCanvasAnalysisCenter, renderBaiduAnalysisCenter } from '../mapLayers/analysisCenterLayer'
 import { fetchMapConfig } from '../services/analysisApi'
 import type { AnalysisCenter, WalkingRoute } from '../types/location'
-import type { Poi, Report, ServiceAreaFeature } from '../types/report'
+import type { AnalysisMinutes, Poi, Report, ServiceAreaFeature } from '../types/report'
 import type { PlanningRecommendation } from '../types/recommendations'
 import type { SimulationResult } from '../types/simulation'
 import { isServiceAreaVisible, pointInPolygon } from '../utils/serviceAreaLayers'
 import { computeRouteArrows } from '../utils/routeArrows'
+import { loadBaiduSdk } from '../utils/baiduSdk'
+import { buildEvidenceOverlays, buildSamplingPoints } from '../utils/completionLayers'
+import { DEFAULT_STATUS_LAYERS, type Combination, type SamplingLayers, type StatusLayers } from '../types/completion'
 
 export type MapHoverTarget = { poi: Poi; x: number; y: number }
 export type MapRoutePreview = { poi: Poi; route: WalkingRoute }
+
+// 顶部工具栏和设施图例共用右上角，导航控件需要落在图例下方，避免遮挡图例内容。
+const MAP_NAVIGATION_CONTROL_OFFSET = { width: 10, height: 110 }
 
 function drawRouteEndpointLabel(context: CanvasRenderingContext2D, x: number, y: number, text: string) {
   context.font = '700 10px sans-serif'
@@ -31,18 +37,24 @@ function drawRouteEndpointLabel(context: CanvasRenderingContext2D, x: number, y:
 type MapRendererOptions = {
   report: Ref<Report | null>
   analysisCenter: Ref<AnalysisCenter>
+  minutes: Ref<AnalysisMinutes>
   visibleCategories: Ref<string[]>
   showNormal: Ref<boolean>
   showSparse: Ref<boolean>
   showCritical: Ref<boolean>
   focusRecommendationId: Ref<string | null>
+  focusGridId?: Ref<string | null>
   simulation: Ref<SimulationResult | null>
   simulationPicking: Ref<boolean>
+  centerPicking?: Ref<boolean>
+  statusLayers?: Ref<StatusLayers>
+  samplingLayers?: Ref<SamplingLayers | null>
+  combination?: Ref<Combination | null>
   onSelectCenter: (lng: number, lat: number) => void
   onSelectSimulationLocation: (lng: number, lat: number) => void
 }
 
-export function useMapRenderer({ report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, simulation, simulationPicking, onSelectCenter, onSelectSimulationLocation }: MapRendererOptions) {
+export function useMapRenderer({ report, analysisCenter, minutes, visibleCategories, showNormal, showSparse, showCritical, focusRecommendationId, focusGridId = ref(null), simulation, simulationPicking, centerPicking = ref(false), statusLayers = ref({ ...DEFAULT_STATUS_LAYERS }), samplingLayers = ref(null), combination = ref(null), onSelectCenter, onSelectSimulationLocation }: MapRendererOptions) {
   const mapCanvas = ref<HTMLCanvasElement | null>(null)
   const mapContainer = ref<HTMLDivElement | null>(null)
   const realMapReady = ref(false)
@@ -195,6 +207,23 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       simulationAreas().forEach((zone) => {
         drawPolygon(zone.geometry.coordinates[0], 'rgba(51, 126, 184, .18)', '#2f70a5', 3)
       })
+      buildEvidenceOverlays(currentReport, visibleCategories.value, statusLayers.value, samplingLayers.value, combination.value).forEach(overlay => {
+        ctx.beginPath()
+        for (const ring of overlay.rings) {
+          ring.forEach(([lng, lat], index) => { const p = project(lng, lat, w, h); if (index) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y) })
+          ctx.closePath()
+        }
+        ctx.fillStyle = overlay.fill; ctx.fill('evenodd'); ctx.strokeStyle = overlay.stroke; ctx.lineWidth = 3; ctx.setLineDash([5, 3]); ctx.stroke(); ctx.setLineDash([])
+      })
+      buildSamplingPoints(statusLayers.value, samplingLayers.value).forEach(item => {
+        const point = project(item.lng, item.lat, w, h)
+        ctx.beginPath(); ctx.arc(point.x, point.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#277c70'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke()
+      })
+      combination.value?.hypothetical_facilities.forEach(facility => {
+        const point = project(facility.lng, facility.lat, w, h)
+        ctx.beginPath(); ctx.arc(point.x, point.y, 10, 0, Math.PI * 2); ctx.fillStyle = '#286995'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke()
+        ctx.fillStyle = '#214e73'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(`组合假设 ${facility.id}`, point.x + 13, point.y + 3)
+      })
       const preview = routePreview.value
       if (preview) {
         // 首尾补上起点/终点，保证路线真正连到地图上的两个点
@@ -265,11 +294,11 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         ctx.font = '700 10px sans-serif'; ctx.fillStyle = '#214e73'; ctx.textAlign = 'left'; ctx.fillText(`假设${simulation.value.category_label}`, point.x + 15, point.y + 4)
       }
     }
-    drawCanvasAnalysisCenter(ctx, analysisCenter.value, (lng, lat) => project(lng, lat, w, h), currentReport?.isochrone.properties.minutes || 15)
+    drawCanvasAnalysisCenter(ctx, analysisCenter.value, (lng, lat) => project(lng, lat, w, h), minutes.value)
   }
 
   function visibility() {
-    return { normal: showNormal.value, sparse: showSparse.value, critical: showCritical.value, unknown: true }
+    return { normal: showNormal.value, sparse: showSparse.value, critical: showCritical.value, unknown: statusLayers.value.unknown }
   }
 
   function visibleServiceAreas() {
@@ -343,9 +372,10 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     if (!canvas || realMapReady.value) return
     const rect = canvas.getBoundingClientRect()
     const point = { x: event.clientX - rect.left, y: event.clientY - rect.top }
-    if (simulationPicking.value) {
+    if (simulationPicking.value || centerPicking.value) {
       const location = unproject(point.x, point.y, rect.width, rect.height)
-      onSelectSimulationLocation(location.lng, location.lat)
+      if (simulationPicking.value) onSelectSimulationLocation(location.lng, location.lat)
+      else onSelectCenter(location.lng, location.lat)
       return
     }
     const poiHit = hitTestPoi(point, rect.width, rect.height)
@@ -377,7 +407,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
   }
 
   function handleCanvasMouseMove(event: MouseEvent) {
-    if (realMapReady.value || simulationPicking.value) return
+    if (realMapReady.value || simulationPicking.value || centerPicking.value) return
     const canvas = mapCanvas.value
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
@@ -404,32 +434,17 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
       ? null
       : feature
   }
-  function loadScript(src: string) {
-    return new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = src
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error('百度地图 JavaScript API 加载失败'))
-      document.head.appendChild(script)
-    })
-  }
-
   async function loadBaiduMap() {
     try {
       const config = await fetchMapConfig()
       if (config.mode !== 'real' || !config.browser_ak) return
-      ;(window as any).__lifeCircleBaiduReady = () => undefined
-      await loadScript(`https://api.map.baidu.com/api?v=3.0&ak=${encodeURIComponent(config.browser_ak)}&callback=__lifeCircleBaiduReady`)
-      await new Promise<void>((resolve, reject) => {
-        const timer = window.setInterval(() => {
-          if ((window as any).BMap) { window.clearInterval(timer); resolve() }
-        }, 50)
-        window.setTimeout(() => { window.clearInterval(timer); reject(new Error('百度地图初始化超时')) }, 8000)
-      })
+      await loadBaiduSdk(config.browser_ak)
       realMapReady.value = true
       await nextTick()
       renderBaiduMap()
     } catch {
+      realMapReady.value = false
+      await nextTick()
       ElMessage.warning('百度地图底图加载失败，请检查浏览器端 AK 的域名白名单')
     } finally {
       // 无论使用真实底图还是 Canvas 降级图，都只在地图探测结束后通知页面开始首次分析。
@@ -444,7 +459,10 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     if (!baiduMap) {
       baiduMap = new BMap.Map(mapContainer.value)
       baiduMap.enableScrollWheelZoom(true)
-      baiduMap.addControl(new BMap.NavigationControl({ anchor: (window as any).BMAP_ANCHOR_TOP_RIGHT }))
+      baiduMap.addControl(new BMap.NavigationControl({
+        anchor: (window as any).BMAP_ANCHOR_TOP_RIGHT,
+        offset: new BMap.Size(MAP_NAVIGATION_CONTROL_OFFSET.width, MAP_NAVIGATION_CONTROL_OFFSET.height),
+      }))
       baiduMap.addControl(new BMap.ScaleControl({ anchor: (window as any).BMAP_ANCHOR_BOTTOM_LEFT }))
     }
     if (!baiduClickBound) {
@@ -471,6 +489,20 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     if (currentReport) {
       const polygon = currentReport.isochrone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
       baiduMap.addOverlay(new BMap.Polygon(polygon, { strokeColor: '#237866', strokeWeight: 4, strokeOpacity: .95, strokeStyle: 'dashed', fillColor: '#3d9b8b', fillOpacity: .2 }))
+      buildEvidenceOverlays(currentReport, visibleCategories.value, statusLayers.value, samplingLayers.value, combination.value).forEach(overlay => {
+        overlay.rings.forEach(ring => {
+          const points = ring.map(([lng, lat]) => new BMap.Point(lng, lat))
+          const polygon = new BMap.Polygon(points, { strokeColor: overlay.stroke, strokeWeight: 3, strokeStyle: 'dashed', fillColor: overlay.stroke, fillOpacity: overlay.rings.length === 1 ? .12 : 0 })
+          baiduMap.addOverlay(polygon)
+        })
+      })
+      buildSamplingPoints(statusLayers.value, samplingLayers.value).forEach(item => {
+        baiduMap.addOverlay(new BMap.Marker(new BMap.Point(item.lng, item.lat), { title: item.label }))
+      })
+      combination.value?.hypothetical_facilities.forEach(facility => {
+        const point = new BMap.Point(facility.lng, facility.lat)
+        baiduMap.addOverlay(new BMap.Marker(point, { title: `组合假设 ${facility.id}` }))
+      })
       visibleServiceAreas().forEach((zone) => {
         const points = zone.geometry.coordinates[0].map(([lng, lat]) => new BMap.Point(lng, lat))
         const selected = isSelectedRegion(zone.properties.grid_id)
@@ -491,7 +523,11 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
           fillOpacity: selected ? .42 : focused ? .42 : dimmed ? .08 : zone.properties.kind === 'normal' ? .08 : .25,
         })
         areaPolygon.addEventListener('click', (event: any) => {
-          selectServiceArea(zone)
+          if (centerPicking.value) {
+            const point = event?.point || serviceAreaCenter(zone)
+            onSelectCenter(point.lng, point.lat)
+          }
+          else selectServiceArea(zone)
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(areaPolygon)
@@ -548,6 +584,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         const point = new BMap.Point(poi.lng, poi.lat)
         const marker = new BMap.Marker(point)
         const showAt = (event: any, sticky = false) => {
+          if (centerPicking.value || simulationPicking.value) return
           const pixel = event?.pixel || baiduMap.pointToOverlayPixel(point)
           scheduleHover(poi, pixel.x, pixel.y, sticky)
         }
@@ -558,7 +595,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
           overlay.addEventListener('mouseover', (event: any) => showAt(event))
           overlay.addEventListener('mouseout', () => requestClearHover())
           overlay.addEventListener('click', (event: any) => {
-            showAt(event, true)
+            if (centerPicking.value) onSelectCenter(poi.lng, poi.lat)
+            else showAt(event, true)
             event?.domEvent?.stopPropagation?.()
           })
         })
@@ -571,7 +609,8 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         marker.setTitle(`${recommendation.category_label}规划候选点 · ${candidate.region_id}`)
         marker.addEventListener('click', (event: any) => {
           const candidateArea = serviceAreaById(candidate.region_id)
-          if (candidateArea) selectServiceArea(candidateArea)
+          if (centerPicking.value) onSelectCenter(candidate.lng, candidate.lat)
+          else if (candidateArea) selectServiceArea(candidateArea)
           event?.domEvent?.stopPropagation?.()
         })
         baiduMap.addOverlay(marker)
@@ -591,7 +630,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
         baiduMap.addOverlay(label)
       }
     }
-    renderBaiduAnalysisCenter(baiduMap, BMap, analysisCenter.value, currentReport?.isochrone.properties.minutes || 15)
+    renderBaiduAnalysisCenter(baiduMap, BMap, analysisCenter.value, minutes.value)
   }
 
   function resize() {
@@ -599,7 +638,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     else drawMap()
   }
 
-  watch([report, analysisCenter, visibleCategories, showNormal, showSparse, showCritical, simulation, simulationPicking, selectedServiceArea, routePreview], async () => {
+  watch([report, analysisCenter, minutes, visibleCategories, showNormal, showSparse, showCritical, simulation, simulationPicking, selectedServiceArea, routePreview, statusLayers, samplingLayers, combination], async () => {
     clearHover()
     if (selectedServiceArea.value && !isServiceAreaVisible(selectedServiceArea.value, visibleCategories.value, visibility())) {
       selectedServiceArea.value = null
@@ -609,6 +648,7 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     else drawMap()
   })
   watch([report, focusRecommendationId], async () => {
+    if (focusGridId.value) return
     if (manualServiceAreaSelection.value) {
       manualServiceAreaSelection.value = false
       return
@@ -622,8 +662,14 @@ export function useMapRenderer({ report, analysisCenter, visibleCategories, show
     if (realMapReady.value) renderBaiduMap()
     else drawMap()
   })
+  watch([report, focusGridId], () => {
+    if (!focusGridId.value) return
+    const target = serviceAreaById(focusGridId.value)
+    if (target && isServiceAreaVisible(target, visibleCategories.value, visibility())) selectedServiceArea.value = target
+  })
   // 报告或分析中心变化后，旧路线不再对应新结果，自动清除
   watch([report, analysisCenter], () => { routePreview.value = null })
+  watch(centerPicking, picking => { if (picking) clearHover() })
   onMounted(async () => {
     window.addEventListener('resize', resize)
     window.addEventListener('life-circle:theme', redrawForTheme)

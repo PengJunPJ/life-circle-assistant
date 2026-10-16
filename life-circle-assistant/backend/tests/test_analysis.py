@@ -132,15 +132,18 @@ def test_map_status_and_mock_geocode():
     status = client.get("/api/map/status")
     assert status.status_code == 200
     assert status.json()["mock_available"] is True
-    geocode = client.get("/api/geocode", params={"address": "红山街道海韵东路"})
+    geocode = client.get("/api/geocode", params={"address": "沙涌长盛花园"})
     assert geocode.json()["source"] == "local_snapshot"
     unsupported = client.get("/api/geocode", params={"address": "广州市其他任意地址"})
     assert unsupported.status_code == 422
     assert "只支持内置" in unsupported.json()["detail"]
 
-    reverse = client.get("/api/locations/reverse", params={"lng": 113.4872, "lat": 23.1068})
+    reverse = client.get(
+        "/api/locations/reverse",
+        params={"lng": 113.53382359909054, "lat": 23.08901171541019},
+    )
     assert reverse.status_code == 200
-    assert reverse.json()["result"]["address"] == "广州市黄埔区红山街道海韵东路离线样例中心"
+    assert reverse.json()["result"]["address"] == "广州市黄埔区沙涌长盛花园"
 
     outside = client.get("/api/locations/reverse", params={"lng": 113.6, "lat": 23.2})
     assert outside.status_code == 422
@@ -150,12 +153,12 @@ def test_map_status_and_mock_geocode():
 def test_snapshot_coordinate_conversion_keeps_bd09_and_rejects_external_systems():
     identity = client.post(
         "/api/coordinates/convert",
-        json={"lng": 113.4872, "lat": 23.1068, "from_system": "bd09"},
+        json={"lng": 113.53382359909054, "lat": 23.08901171541019, "from_system": "bd09"},
     )
     assert identity.status_code == 200
     assert identity.json()["result"] == {
-        "lng": 113.4872,
-        "lat": 23.1068,
+        "lng": 113.53382359909054,
+        "lat": 23.08901171541019,
         "coordinate_system": "bd09",
     }
     assert identity.json()["method"] == "identity_bd09"
@@ -209,9 +212,9 @@ def test_create_and_get_analysis():
     assert body["data_quality"]["overall_status"] == "limited"
     assert "不代表最新真实地图测算" in body["data_quality"]["summary"]
     assert body["center"] == {
-        "lng": 113.4872,
-        "lat": 23.1068,
-        "address": "广州市黄埔区红山街道海韵东路离线样例中心",
+        "lng": 113.53382359909054,
+        "lat": 23.08901171541019,
+        "address": "广州市黄埔区沙涌长盛花园",
         "selection_method": "default",
         "source": "local_snapshot",
         "support_status": "supported",

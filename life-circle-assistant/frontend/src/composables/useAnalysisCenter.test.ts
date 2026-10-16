@@ -18,6 +18,7 @@ import { useAnalysisCenter } from './useAnalysisCenter'
 
 function reportFor(params: any) {
   return {
+    parameters: { ...params },
     source: params.center_selection_method === 'address' ? 'baidu' : 'local_snapshot',
     center: {
       lng: params.lng,
@@ -42,6 +43,21 @@ async function submitCurrentCenter(location = useAnalysisCenter()) {
 
 describe('统一分析中心选点流程', () => {
   beforeEach(() => vi.clearAllMocks())
+
+  it('默认选择沙涌长盛花园及其核查坐标', () => {
+    const location = useAnalysisCenter()
+
+    expect(location.center.value).toMatchObject({
+      lng: 113.53382359909054,
+      lat: 23.08901171541019,
+      address: '广州市黄埔区沙涌长盛花园',
+      selectionMethod: 'default',
+      source: 'local_snapshot',
+    })
+    expect(location.addressQuery.value).toBe('广州市黄埔区沙涌长盛花园')
+    expect(location.coordinateLng.value).toBe('113.533824')
+    expect(location.coordinateLat.value).toBe('23.089012')
+  })
 
   it('从地址候选选择后使用同一地址和坐标提交并生成报告', async () => {
     api.searchAddressCandidates.mockResolvedValue([
@@ -150,5 +166,25 @@ describe('统一分析中心选点流程', () => {
     const analysis = useAnalysis(invalid.center)
     await analysis.runAnalysis()
     expect(api.createAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('编辑地址与坐标标记待确认，单一候选自动确认，失败不复用旧位置', async () => {
+    const location = useAnalysisCenter()
+    expect(location.locationPending.value).toBe(false)
+    location.updateAddressQuery('新社区')
+    expect(location.locationPending.value).toBe(true)
+    api.searchAddressCandidates.mockResolvedValueOnce([{ lng: 113.49, lat: 23.11, address: '新社区已确认', source: 'real_api', provider: 'baidu' }])
+    await location.searchCandidates()
+    expect(location.locationPending.value).toBe(false)
+    expect(location.addressQuery.value).toBe('新社区已确认')
+    location.coordinateLng.value = '113.500000'
+    expect(location.locationPending.value).toBe(true)
+    location.coordinateLng.value = '113.490000'
+    expect(location.locationPending.value).toBe(false)
+    location.updateAddressQuery('无法找到的地址')
+    api.searchAddressCandidates.mockRejectedValueOnce(new Error('地址不存在'))
+    await location.searchCandidates()
+    expect(location.locationPending.value).toBe(true)
+    expect(location.center.value.address).toBe('新社区已确认')
   })
 })

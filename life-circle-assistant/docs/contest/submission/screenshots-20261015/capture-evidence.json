@@ -1,0 +1,118 @@
+{
+  "captured_at": "2026-10-15T14:29:50.606Z",
+  "version": "2.3.0",
+  "mode": "real",
+  "model": "qwen3.7-flash",
+  "calls_before": 0,
+  "captures": [
+    "00-real-service.png",
+    "01-real-map-report.png",
+    "02-real-ai-summary.png",
+    "03-real-ai-tools.png",
+    "04-real-simulation.png",
+    "05-real-ai-detail.png"
+  ],
+  "responses": [
+    {
+      "path": "/api/map/probe",
+      "status": 200
+    },
+    {
+      "path": "/api/analyze",
+      "status": 200,
+      "id": "dc7af45e-a0ef-45f4-b7aa-cc9cef781a02"
+    },
+    {
+      "path": "/api/reports/bc450907-59ba-45b3-9bf4-75ec067404cb/ai/interpret",
+      "status": 200,
+      "id": "bc450907-59ba-45b3-9bf4-75ec067404cb",
+      "mode": "llm_structured",
+      "model": "qwen3.7-flash",
+      "summary": "综合指数：77。 小学评分：60。 菜市场评分：76。"
+    },
+    {
+      "path": "/api/reports/bc450907-59ba-45b3-9bf4-75ec067404cb/ai/plan",
+      "status": 200,
+      "id": "bc450907-59ba-45b3-9bf4-75ec067404cb",
+      "mode": "llm_tools",
+      "model": "qwen3.7-flash",
+      "summary": "最近同类设施步行26.1分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行30.2分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行31.1分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行21.9分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行32.0分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行23.5分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行21.7分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行26.2分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行23.7分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行22.7分钟，超过15分钟阈值，且周边1000米内无同类设施。 最近同类设施步行23.7分钟，超过15分钟阈值，且周边1000米内无同类设施。",
+      "tool_calls": [
+        {
+          "name": "get_grid_evidence",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "path": "/api/reports/bc450907-59ba-45b3-9bf4-75ec067404cb/simulations",
+      "status": 200,
+      "id": "bc450907-59ba-45b3-9bf4-75ec067404cb"
+    },
+    {
+      "path": "/api/reports/bc450907-59ba-45b3-9bf4-75ec067404cb/ai/interpret",
+      "status": 200,
+      "id": "bc450907-59ba-45b3-9bf4-75ec067404cb",
+      "mode": "llm_structured",
+      "model": "qwen3.7-flash",
+      "summary": "综合指数：77。 医疗服务评分：84。 小学评分：60。 菜市场评分：76。 药店评分：85。"
+    }
+  ],
+  "calls_after": 5,
+  "failures_after": 0,
+  "report": {
+    "id": "bc450907-59ba-45b3-9bf4-75ec067404cb",
+    "completeness": "partial",
+    "categories": [
+      "medical",
+      "school",
+      "convenience",
+      "elderly",
+      "market",
+      "pharmacy",
+      "park"
+    ],
+    "score": 77,
+    "valid_categories": 5,
+    "partial_failures": [
+      {
+        "scope": "category",
+        "category": "convenience",
+        "code": "facility_search_truncated",
+        "message": "设施检索达到分页预算，结果不完整；该类排除评分和确定性缺口结论。"
+      },
+      {
+        "scope": "category",
+        "category": "park",
+        "code": "facility_search_failed",
+        "message": "天配额超限，限制访问"
+      }
+    ],
+    "sources": [
+      {
+        "kind": "real_api",
+        "provider": "baidu-web-service",
+        "label": "百度地图 Web 服务实时测算",
+        "usage": "分析主要数据来源",
+        "is_latest_real_measurement": true
+      },
+      {
+        "kind": "cache",
+        "provider": "baidu-web-service",
+        "label": "有效缓存",
+        "usage": "task",
+        "is_latest_real_measurement": false
+      }
+    ]
+  },
+  "final_map_visible_categories": [
+    "school",
+    "market"
+  ],
+  "latest_summary": {
+    "mode": "llm_structured",
+    "model": "qwen3.7-flash",
+    "report_id": "bc450907-59ba-45b3-9bf4-75ec067404cb"
+  },
+  "finished_at": "2026-10-15T14:42:00.554Z"
+}
