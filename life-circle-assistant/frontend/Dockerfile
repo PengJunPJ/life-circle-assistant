@@ -1,4 +1,4 @@
-FROM node:22.23.2-alpine AS build
+FROM node:26.11.1-alpine AS build
 WORKDIR /app
 RUN apk upgrade --no-cache \
     && npm install --global npm@12.2.0
