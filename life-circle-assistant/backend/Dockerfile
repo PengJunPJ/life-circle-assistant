@@ -1,4 +1,4 @@
-FROM python:3.12.15-alpine
+FROM python:3.15.0-alpine
 WORKDIR /app
 RUN apk upgrade --no-cache \
     && apk add --no-cache font-wqy-zenhei
