@@ -32,7 +32,7 @@ jobs:
           languages: ${{ matrix.language }}
       - name: 准备前端 CodeQL 构建环境
         if: ${{ matrix.language == 'javascript-typescript' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.22.2
           cache: npm
@@ -103,7 +103,7 @@ jobs:
         working-directory: life-circle-assistant/frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22.22.2
           cache: npm
