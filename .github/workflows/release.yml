@@ -62,7 +62,7 @@ jobs:
           pip-audit -r life-circle-assistant/backend/requirements.txt
           pip-audit -r life-circle-assistant/backend/requirements-dev.txt
       - name: 配置 Node.js 与官方 npm 注册表
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.22.2
           cache: npm
