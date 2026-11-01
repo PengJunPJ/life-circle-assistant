@@ -27,7 +27,7 @@ jobs:
         language: [javascript-typescript, python]
     steps:
       - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
       - name: 准备前端 CodeQL 构建环境
@@ -41,7 +41,7 @@ jobs:
         if: ${{ matrix.language == 'javascript-typescript' }}
         working-directory: life-circle-assistant/frontend
         run: npm ci && npm run build
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
 
   dependency-review:
     name: PR 依赖变更审查
